@@ -26,8 +26,8 @@ export default function ComingSoonPage() {
             <Image
               src={'/icon/logo.svg'}
               alt='TREMAD Logo'
-              width={48}
-              height={48}
+              width={100}
+              height={100}
               className="object-contain"
             />
             <h1 className="text-5xl font-bold mb-4">TREMAD SCHOOLS</h1>

@@ -50,41 +50,33 @@ const Home = () => {
   // Get upcoming events (sorted by date and time)
   const upcomingEvents = React.useMemo(() => {
     const today = new Date();
+    
+    // If a specific date is selected and has events, show those events
+    if (date && selectedEvent) {
+      const dateEvents = getEventsForDate(date);
+      return dateEvents.length > 0 ? dateEvents : [selectedEvent];
+    }
+    
+    // Otherwise show upcoming events
     const upcoming = scheduleEvents
       .filter(event => event.date >= today)
       .sort((a, b) => a.date.getTime() - b.date.getTime())
-      .slice(0, selectedEvent ? 5 : 2); // Show more if an event is selected
-    
-    // If an event is selected, prioritize showing it
-    if (selectedEvent && !upcoming.find(e => e.id === selectedEvent.id)) {
-      upcoming.unshift(selectedEvent);
-    }
+      .slice(0, 2); // Show 2 upcoming events by default
     
     return upcoming;
-  }, [scheduleEvents, selectedEvent]);
+  }, [scheduleEvents, selectedEvent, date]);
 
   // Handle date selection
   const handleDateSelect = (newDate: Date | undefined) => {
-  // Check if the clicked date is the same as the currently selected date
-  if (date && newDate && 
-      date.getDate() === newDate.getDate() && 
-      date.getMonth() === newDate.getMonth() && 
-      date.getFullYear() === newDate.getFullYear()) {
-    // Same date clicked - clear selection
-    setDate(undefined);
-    setSelectedEvent(null);
-  } else {
-    // Different date clicked - select it
     setDate(newDate);
     if (newDate) {
       const events = getEventsForDate(newDate);
       if (events.length > 0) {
-        setSelectedEvent(events[0]);
+        setSelectedEvent(events[0]); // Select first event of the day
       } else {
         setSelectedEvent(null);
       }
     }
-  }
   };
 
   return (
@@ -272,8 +264,11 @@ const Home = () => {
             <div className='flex justify-between items-center mb-4'>
               <h3 className='text-lg font-semibold'>Upcoming Activities</h3>
               <span 
-                className='text-sm text-green-700 cursor-pointer'
-                onClick={() => setSelectedEvent(null)}
+                className='text-sm text-green-700 cursor-pointer hover:text-green-900'
+                onClick={() => {
+                  setDate(undefined);
+                  setSelectedEvent(null);
+                }}
               >
                 See all
               </span>
@@ -313,14 +308,22 @@ const Home = () => {
         <div className='bg-white rounded-2xl p-4'>
           <h3 className='text-lg font-semibold mb-4'>Notifications</h3>
           <div className='text-sm text-gray-500'>
-            {selectedEvent ? (
+            {date && selectedEvent ? (
               <div className='space-y-2'>
-                <p className='text-gray-700 font-medium'>Selected Class:</p>
-                <p className='text-gray-600'>{selectedEvent.subject}</p>
-                <p className='text-xs text-gray-500'>Click another date to see its schedule</p>
+                <p className='text-gray-700 font-medium'>Showing events for:</p>
+                <p className='text-gray-600'>{date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+                <p className='text-xs text-gray-500'>Click the same date again to deselect</p>
+              </div>
+            ) : date && !selectedEvent ? (
+              <div className='space-y-2'>
+                <p className='text-gray-600'>No events on this date</p>
+                <p className='text-xs text-gray-500'>Click the date again to deselect</p>
               </div>
             ) : (
-              'No new notifications'
+              <div className='space-y-2'>
+                <p className='text-gray-600'>Click any date to see its schedule</p>
+                <p className='text-xs text-gray-500'>Showing all upcoming activities</p>
+              </div>
             )}
           </div>
         </div>

@@ -12,10 +12,11 @@ const studentSections: Record<StudentSectionSlug, ComponentType<any>> = {
   profile: dynamic(() => import("./sections/Profile")),
 };
 
-type Props = { params: { section: string } };
+type Props = { params: Promise <{ section: string }> };
 
-export default function StudentSectionPage({ params }: Props) {
-  const slug = params.section as StudentSectionSlug;
+export default async function StudentSectionPage({ params }: Props) {
+  const { section } = await params;
+  const slug = section as StudentSectionSlug;
   const SectionComponent = studentSections[slug];
 
   if (!SectionComponent) {
