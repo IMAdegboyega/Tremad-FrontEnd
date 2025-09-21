@@ -22,9 +22,9 @@ const AttendanceChart: React.FC<AttendanceGaugeProps> = ({
   const partialFill = fillLength % segmentLength;
 
   return (
-    <div className="flex flex-col items-center justify-center">
-      <div className="relative" style={{ width: '240px', height: '160px' }}>
-        <svg width="240" height="200" viewBox="0 0 240 120">
+    <div className="flex flex-col items-center justify-center pt-8 pb-8">
+      <div className="relative" style={{ width: '300px', height: '160px' }}>
+        <svg width="300" height="200" viewBox="0 0 240 120">
           <g transform="translate(120, 120)">
             {/* Background Segments */}
             <path

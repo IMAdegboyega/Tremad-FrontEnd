@@ -8,6 +8,12 @@ import {
 } from "lucide-react"
 import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker"
 
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/Components/ui/hover-card"
+
 import { cn } from "@/lib/utils"
 import { Button, buttonVariants } from "@/Components/ui/button"
 
@@ -26,6 +32,7 @@ function Calendar({
   const defaultClassNames = getDefaultClassNames()
 
   return (
+    <HoverCard>
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn(
@@ -170,6 +177,7 @@ function Calendar({
       }}
       {...props}
     />
+    </HoverCard>
   )
 }
 
@@ -200,6 +208,7 @@ function CalendarDayButton({
   const isPurpleHighlight = isCurrentMonth && dayNumber === 30 // Purple for 30th
 
   return (
+    <HoverCardTrigger>
     <Button
       ref={ref}
       variant="ghost"
@@ -247,6 +256,7 @@ function CalendarDayButton({
         />
       )}
     </Button>
+    </HoverCardTrigger>
   )
 }
 

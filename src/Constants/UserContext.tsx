@@ -27,6 +27,19 @@ export interface Course {
   iconBg?: string;
 }
 
+// types/notification.ts
+export type Notification = {
+  id: string;               // Unique ID (could be UUID or MongoDB ObjectId)
+  title: string;            // Short title (e.g. "New Assignment Posted")
+  message: string;          // Detailed message (e.g. "Math assignment due on Friday")
+  type: "info" | "warning" | "success" | "error"; // For styling
+  icon?: string;            // Optional icon (or use type-based icon)
+  isRead: boolean;          // Whether user has seen it
+  createdAt: string;        // ISO date string
+  actionUrl?: string;       // Optional URL (e.g. /assignments/123)
+};
+
+
 export type User = {
   firstName: string;
   lastName: string;
@@ -126,6 +139,35 @@ export function UserProvider({ children }: { children: ReactNode }) {
     </UserContext.Provider>
   );
 }
+
+export const mockNotifications: Notification[] = [
+  {
+    id: "1",
+    title: "New Assignment",
+    message: "A new Math assignment is due Friday.",
+    type: "info",
+    isRead: false,
+    createdAt: "2025-09-11T08:30:00Z",
+    actionUrl: "/assignments/123",
+  },
+  {
+    id: "2",
+    title: "Result Published",
+    message: "Your 2nd term results are now available.",
+    type: "success",
+    isRead: true,
+    createdAt: "2025-09-09T12:00:00Z",
+  },
+  {
+    id: "3",
+    title: "Low Attendance",
+    message: "Your attendance is below 60%. Please meet your class teacher.",
+    type: "warning",
+    isRead: false,
+    createdAt: "2025-09-08T10:15:00Z",
+  },
+];
+
 
 //
 // 4. Hook for consuming user context
