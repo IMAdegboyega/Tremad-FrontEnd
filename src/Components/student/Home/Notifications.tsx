@@ -24,7 +24,7 @@ const Notifications = () => {
             {/* Icon/Indicator */}
             <div className={`w-10 h-10 ${notification.iconBg} rounded-lg flex-shrink-0`}>
               <Image
-                src={"icons/notification-icon.png"}
+                src={""}
                 alt="Notification Icon"
                 width={40}
                 height={40}
