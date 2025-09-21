@@ -1,8 +1,8 @@
 // Constants/scheduleConstants.tsx
-import { BookOpen, FlaskConical, Calculator, Laptop, PenTool, Globe, Music, Palette } from 'lucide-react';
+import { BookOpen, FlaskConical, Calculator, Laptop, PenTool, Globe,  Palette } from 'lucide-react';
 
 // Schedule event type
-interface ScheduleEvent {
+export interface ScheduleEvent {
   id: string;
   courseId: number;
   subject: string;

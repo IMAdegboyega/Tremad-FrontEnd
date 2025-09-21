@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import React, { type ComponentType } from "react";
 import type { StudentSectionSlug } from "@/Constants";
 
-const studentSections: Record<StudentSectionSlug, ComponentType<{}>> = {
+// Use Record<string, never> instead of {} to explicitly indicate "no props"
+const studentSections: Record<StudentSectionSlug, ComponentType<Record<string, never>>> = {
   home: dynamic(() => import("./sections/Home")),
   "subject-management": dynamic(() => import("./sections/SubjectManagement")),
   "time-table": dynamic(() => import("./sections/TimeTable")),
@@ -12,7 +13,7 @@ const studentSections: Record<StudentSectionSlug, ComponentType<{}>> = {
   profile: dynamic(() => import("./sections/Profile")),
 };
 
-type Props = { params: Promise <{ section: string }> };
+type Props = { params: Promise<{ section: string }> };
 
 export default async function StudentSectionPage({ params }: Props) {
   const { section } = await params;
@@ -26,4 +27,3 @@ export default async function StudentSectionPage({ params }: Props) {
 
   return <SectionComponent />;
 }
-

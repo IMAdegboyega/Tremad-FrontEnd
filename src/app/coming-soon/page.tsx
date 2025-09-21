@@ -2,17 +2,8 @@
 'use client'
 
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 
 export default function ComingSoonPage() {
-  const router = useRouter()
-  
-  // For development - show access button
-  
-  const handleAccessSite = () => {
-    // Navigate to home with bypass parameter
-    router.push('/home?bypass=true')
-  }
   
   return (
     <main className="flex items-center justify-center min-h-screen bg-gradient-to-r from-green-800 to-lime-400">

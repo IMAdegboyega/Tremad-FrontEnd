@@ -10,12 +10,11 @@ import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker"
 
 import {
   HoverCard,
-  HoverCardContent,
   HoverCardTrigger,
 } from "@/Components/ui/hover-card"
 
 import { cn } from "@/lib/utils"
-import { Button, buttonVariants } from "@/Components/ui/button"
+import { Button } from "@/Components/ui/button"
 
 function Calendar({
   className,
