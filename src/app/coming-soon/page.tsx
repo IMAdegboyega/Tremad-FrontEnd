@@ -3,14 +3,11 @@
 
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
 
 export default function ComingSoonPage() {
   const router = useRouter()
-  const [showDevAccess, setShowDevAccess] = useState(false)
   
   // For development - show access button
-  const isDevelopment = process.env.NODE_ENV === 'development'
   
   const handleAccessSite = () => {
     // Navigate to home with bypass parameter

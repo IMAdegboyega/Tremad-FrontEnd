@@ -1,3 +1,5 @@
+
+
 export const StudentNav = [
     { name: "Home", slug: "home", icon: "/icon/home.svg", url: "/home" },
     { name: "Subject Management", slug: "subject-management", icon: "/icon/subjectmanagement.svg", url: "/subject-management" },
