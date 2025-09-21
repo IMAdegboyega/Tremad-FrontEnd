@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import React, { type ComponentType } from "react";
 import type { StudentSectionSlug } from "@/Constants";
 
-const studentSections: Record<StudentSectionSlug, ComponentType<any>> = {
+const studentSections: Record<StudentSectionSlug, ComponentType<{}>> = {
   home: dynamic(() => import("./sections/Home")),
   "subject-management": dynamic(() => import("./sections/SubjectManagement")),
   "time-table": dynamic(() => import("./sections/TimeTable")),

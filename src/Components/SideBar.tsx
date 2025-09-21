@@ -45,7 +45,7 @@ export default function SideBar({ navItems }: SidebarProps) {
           </h1>
 
           <p>
-            We're here for you. Just reach out
+            We&apos;re here for you. Just reach out
           </p>
 
           <button className='bg-green-700 rounded-lg p-2 cursor-pointer'>

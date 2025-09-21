@@ -2,7 +2,7 @@
 import { BookOpen, FlaskConical, Calculator, Laptop, PenTool, Globe, Music, Palette } from 'lucide-react';
 
 // Schedule event type
-export interface ScheduleEvent {
+interface ScheduleEvent {
   id: string;
   courseId: number;
   subject: string;
@@ -14,6 +14,13 @@ export interface ScheduleEvent {
   bgColor: string;
   icon: React.ReactNode;
   type: 'class' | 'exam' | 'lab' | 'practical';
+}
+
+interface Course {
+  id: number;
+  subject: string;
+  teacher: string;
+  department: string;
 }
 
 // Course color mapping based on departments
@@ -84,7 +91,7 @@ export const ACTIVITY_TYPES = {
 } as const;
 
 // Generate schedule events based on courses
-export const generateScheduleEvents = (courses: any[]): ScheduleEvent[] => {
+export const generateScheduleEvents = (courses: Course[]): ScheduleEvent[] => {
   const currentDate = new Date();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
