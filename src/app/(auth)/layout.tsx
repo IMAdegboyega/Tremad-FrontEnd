@@ -1,9 +1,7 @@
 import React from 'react'
 
-const layout = () => {
+export default function Auth() {
   return (
     <div>layout</div>
   )
 }
-
-export default layout
