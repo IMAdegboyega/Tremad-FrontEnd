@@ -20,16 +20,6 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
   },
-  {
-    // Add this object to disable specific rules globally
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-empty-object-type": "off",
-      "@typescript-eslint/no-unused-vars": "warn", // Changed to warn instead of error
-      "react-hooks/rules-of-hooks": "warn", // Critical rule - keep as warning at least
-      "react-hooks/exhaustive-deps": "off",
-    },
-  },
 ];
 
 export default eslintConfig;

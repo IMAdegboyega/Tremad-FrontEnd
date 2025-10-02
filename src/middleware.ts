@@ -19,6 +19,11 @@ const DEVELOPMENT_ROUTES = [
   '/time-table',
   '/results',
   '/payment',
+  '/sign-in',
+  '/forgot-password',
+  '/check-email',
+  '/reset-password',
+  '/reset-success',
   // Add all your app routes here
 ];
 

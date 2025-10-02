@@ -12,20 +12,26 @@ import WelcomeBanner from '@/Components/student/Home/WelcomeBanner';
 const Home = () => {
 
   return (
-    <div className='flex gap-3'>
+    <div className='flex flex-col lg:flex-row gap-3 no-scrollbar'>
       {/* Main Content Area */}
       <div className='flex-1 space-y-4'>
         {/* Welcome Banner */}
         <WelcomeBanner/>
 
         {/* Attendance and Position Cards */}
-        <div className='flex gap-3'>
-          <div className='w-1/2 h-full'>
+        <div className='flex flex-col md:flex-row gap-3'>
+          <div className='w-full md:w-1/2 h-full'>
             <Attendance/>
           </div>
-          <div className='w-1/2 h-full'>
+          <div className='w-full md:w-1/2 h-full'>
             <LastPosition/>
           </div>
+        </div>
+
+        {/* Mobile: Upcoming Activities + Notifications */}
+        <div className="block lg:hidden space-y-4">
+          <CalenderActivities />
+          <Notifications />
         </div>
 
         {/* Current Subjects Table */}
@@ -33,7 +39,7 @@ const Home = () => {
       </div>
 
       {/* Right Sidebar */}
-      <div className=' flex flex-col w-80 space-y-4'>
+      <div className='hidden lg:flex flex-col w-80 space-y-4'>
         <CalenderActivities/>
 
         {/* Notifications */}
