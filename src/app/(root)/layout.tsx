@@ -20,7 +20,7 @@ export default function Home({ children }: HomeProps) {
         <div className="flex bg-white p-6 space-x-4 text-black h-full">
           {/* Sidebar */}
 
-          <div className='hidden md:block'>
+          <div className='hidden md:block sticky'>
             <SideBar navItems={StudentNav}/>
           </div>
           

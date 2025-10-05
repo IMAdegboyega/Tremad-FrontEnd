@@ -60,56 +60,35 @@ const ClassManagement = () => {
       </div>
 
       {/* Mobile Cards */}
-      <div className="lg:hidden flex flex-col divide-y divide-gray-200">
-        {subjects.map((subject) => (
-          <div key={subject.id} className="p-4 flex flex-col space-y-3">
-            {/* Subject Info */}
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 ${subject.iconBg} rounded-lg flex items-center justify-center`}>
-                <div className="text-gray-700">{subject.icon}</div>
-              </div>
+      <div className="bg-white rounded-2xl shadow-sm p-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-base font-medium">Current subjects</h2>
+          <button className="text-green-600 text-sm font-medium hover:underline">
+            View all
+          </button>
+        </div>
+
+        <div className="divide-y divide-gray-100">
+          {subjects.map((subject) => (
+            <div key={subject.id} className="py-3 flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-900">{subject.name}</p>
-                <p className="text-xs text-gray-500">{subject.department || subject.room}</p>
+                <p className="text-xs text-gray-500">{subject.teacher}</p>
               </div>
-            </div>
 
-            {/* Assignment */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Assignment</span>
+              {/* Assignment Status */}
               <span
-                className={`flex items-center gap-2 ${
-                  subject.assignment === 'Submitted' ? 'text-green-600' : 'text-yellow-600'
+                className={`px-2 py-1 text-xs font-medium rounded-full ${
+                  subject.assignment === "Submitted"
+                    ? "bg-green-100 text-green-700"
+                    : "bg-yellow-100 text-yellow-700"
                 }`}
               >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    subject.assignment === 'Submitted' ? 'bg-green-500' : 'bg-yellow-500'
-                  }`}
-                />
                 {subject.assignment}
               </span>
             </div>
-
-            {/* Teacher */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Teacher</span>
-              <span className="text-gray-700">{subject.teacher}</span>
-            </div>
-
-            {/* Subject Type */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Type</span>
-              <span className="text-gray-700">{subject.type}</span>
-            </div>
-
-            {/* Schedule */}
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-500">Schedule</span>
-              <span className="text-gray-700">{subject.schedule}</span>
-            </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
   )
