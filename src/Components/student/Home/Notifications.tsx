@@ -5,24 +5,24 @@ import Image from 'next/image'
 const Notifications = () => {
 
   return (
-    <div className='bg-white rounded-2xl space-y-2 p-4 h-full'>
-      <div className='flex items-center justify-between mb-4'>
-        <h2 className='text-lg font-semibold text-gray-900'>
+    <div className='bg-white rounded-xl lg:rounded-2xl space-y-2 p-4 h-full'>
+      <div className='flex items-center justify-between mb-3 lg:mb-4'>
+        <h2 className='text-base lg:text-lg font-semibold text-gray-900'>
           Notifications
         </h2>
-        <span className='text-sm text-green-700 hover:text-green-900 cursor-pointer font-medium'>
+        <span className='text-xs lg:text-sm text-green-700 hover:text-green-900 cursor-pointer font-medium'>
           See all
         </span>
       </div>
       
-      <div className='space-y-3'>
-        {notifications.map((notification) => (
+      <div className='space-y-2 lg:space-y-3'>
+        {notifications.slice(0, 3).map((notification) => (
           <div 
             key={notification.id} 
-            className='flex items-start gap-3 p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer'
+            className='flex items-start gap-2 lg:gap-3 p-2 lg:p-3 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer'
           >
             {/* Icon/Indicator */}
-            <div className={`w-10 h-10 ${notification.iconBg} rounded-lg flex-shrink-0`}>
+            <div className={`w-8 h-8 lg:w-10 lg:h-10 ${notification.iconBg} rounded-lg flex-shrink-0`}>
               <Image
                 src={""}
                 alt="Notification Icon"
@@ -34,17 +34,17 @@ const Notifications = () => {
             
             {/* Notification Content */}
             <div className='flex-1'>
-              <p className='text-sm font-medium text-gray-900'>
+              <p className='text-xs lg:text-sm font-medium text-gray-900 line-clamp-1'>
                 {notification.title}
               </p>
-              <p className='text-xs text-gray-500 mt-0.5'>
+              <p className='text-xs text-gray-500 mt-0.5 line-clamp-2'>
                 {notification.description}
               </p>
             </div>
             
             {/* Arrow indicator */}
             <svg 
-              className='w-4 h-4 text-gray-400 flex-shrink-0 mt-1' 
+              className='w-3 h-3 lg:w-4 lg:h-4 text-gray-400 flex-shrink-0 mt-1' 
               fill='none' 
               stroke='currentColor' 
               viewBox='0 0 24 24'

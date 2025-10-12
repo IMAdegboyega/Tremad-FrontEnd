@@ -14,6 +14,7 @@ type SidebarProps = {
 };
 
 export default function SideBar({ navItems }: SidebarProps) {
+  
   return (
     <aside className=' bg-gray-50 rounded-2xl p-4 space-y-5 max-h-screen w-70 sticky'>
       <nav className='flex flex-col gap-1'>

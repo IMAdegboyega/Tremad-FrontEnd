@@ -19,6 +19,7 @@ const DEVELOPMENT_ROUTES = [
   '/time-table',
   '/results',
   '/payment',
+  '/notification',
   '/sign-in',
   '/forgot-password',
   '/check-email',

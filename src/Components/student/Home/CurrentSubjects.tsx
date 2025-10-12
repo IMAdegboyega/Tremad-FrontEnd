@@ -11,7 +11,8 @@ const CurrentSubjects = () => {
 
   return (
     <div>
-        <div className='flex flex-col bg-white p-6 rounded-2xl w-full space-y-2'>
+        {/* Desktop View */}
+        <div className='hidden sm:flex flex-col bg-white p-6 rounded-2xl w-full space-y-2'>
           <div className='flex justify-between'>
             <h2>Current Subjects</h2>
             <div className='text-green-700 ml-auto cursor-pointer'>
@@ -79,6 +80,43 @@ const CurrentSubjects = () => {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        {/* Mobile View */}
+        <div className='sm:hidden bg-white rounded-xl p-4'>
+          <div className='flex justify-between items-center mb-3'>
+            <h2 className='text-base font-semibold text-gray-900'>Current subjects</h2>
+            <span className='text-xs text-green-700 font-medium'>View all</span>
+          </div>
+
+          <div className='space-y-3'>
+            {courses.slice(0, 4).map((course) => (
+              <div key={course.id} className='flex items-center justify-between'>
+                <div className='flex items-center gap-3'>
+                  <div className={`w-10 h-10 ${course.iconBg || 'bg-gray-100'} rounded-lg flex items-center justify-center text-lg`}>
+                    {departmentImages[course.department] ? (
+                      <Image
+                        src={departmentImages[course.department] || fallbackDepartmentImage}
+                        alt={course.department}
+                        width={40}
+                        height={40}
+                        className="object-cover rounded-lg"
+                      />
+                    ) : (
+                      <span>{course.icon || '📚'}</span>
+                    )}
+                  </div>
+                  <div>
+                    <p className='text-sm font-medium text-gray-900'>{course.subject}</p>
+                    <p className='text-xs text-gray-500'>{course.teacher}</p>
+                  </div>
+                </div>
+                <button className='text-xs text-green-700 font-medium'>
+                  View
+                </button>
+              </div>
+            ))}
           </div>
         </div>
     </div>

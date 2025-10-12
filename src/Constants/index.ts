@@ -1,12 +1,13 @@
 
 
 export const StudentNav = [
-    { name: "Home", slug: "home", icon: "/icon/home.svg", url: "/home" },
-    { name: "Subject Management", slug: "subject-management", icon: "/icon/subjectmanagement.svg", url: "/subject-management" },
-    { name: "Time Table", slug: "time-table", icon: "/icon/timetable.svg", url: "/time-table" },
-    { name: "Results", slug: "results", icon: "/icon/results.svg", url: "/results" },
-    { name: "Payment", slug: "payment", icon: "/icon/payments.svg", url: "/payment" },
-    { name: "Profile", slug: "profile", icon: "/icon/profile.svg", url: "/profile" },
+    { name: "Home", slug: "home", icon: "/icon/home.svg", url: "/home", showInSidebar: true },
+    { name: "Subject Management", slug: "subject-management", icon: "/icon/subjectmanagement.svg", url: "/subject-management", showInSidebar: true },
+    { name: "Time Table", slug: "time-table", icon: "/icon/timetable.svg", url: "/time-table", showInSidebar: true },
+    { name: "Results", slug: "results", icon: "/icon/results.svg", url: "/results", showInSidebar: true },
+    { name: "Payment", slug: "payment", icon: "/icon/payments.svg", url: "/payment", showInSidebar: true },
+    { name: "Profile", slug: "profile", icon: "/icon/profile.svg", url: "/profile", showInSidebar: true },
+    { name: "Notification", slug: "notification", icon: "/icon/notification.svg", url: "/notification", showInSidebar: false },
 ] as const;
 
 export type StudentSectionSlug = typeof StudentNav[number]["slug"];

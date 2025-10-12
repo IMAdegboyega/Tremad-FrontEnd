@@ -11,6 +11,7 @@ const studentSections: Record<StudentSectionSlug, ComponentType<Record<string, n
   results: dynamic(() => import("./sections/Results")),
   payment: dynamic(() => import("./sections/Payment")),
   profile: dynamic(() => import("./sections/Profile")),
+  notification: dynamic(() => import("./sections/Notification")),
 };
 
 type Props = { params: Promise<{ section: string }> };

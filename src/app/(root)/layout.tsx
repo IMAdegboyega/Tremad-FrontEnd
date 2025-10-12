@@ -5,24 +5,35 @@ import SearchBar from '@/Components/SearchBar';
 import SideBar from '@/Components/SideBar';
 import { StudentNav } from '@/Constants';
 import { Bell, Menu } from 'lucide-react';
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useState } from 'react';
 import { UserProvider } from '@/Constants/UserContext';
 import Image from 'next/image';
+import MobileSidebar from '@/Components/MobileSidebar';
 
 type HomeProps = {
   children: ReactNode;
 };
 
 export default function Home({ children }: HomeProps) {
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  
+  const sidebarNavItems = StudentNav.filter(item => item.showInSidebar);
+
   return (
     <UserProvider>
       <main className="h-screen">
         <div className="flex bg-white p-6 space-x-4 text-black h-full">
           {/* Sidebar */}
-
           <div className='hidden md:block sticky'>
-            <SideBar navItems={StudentNav}/>
+            <SideBar navItems={sidebarNavItems}/>
           </div>
+
+          {/* Mobile Sidebar */}
+          <MobileSidebar 
+            isOpen={isMobileSidebarOpen}
+            onClose={() => setIsMobileSidebarOpen(false)}
+            navItems={sidebarNavItems}
+          />
           
 
           {/* Main Content */}
@@ -32,7 +43,10 @@ export default function Home({ children }: HomeProps) {
               <SearchBar />
               <div className='flex items-center gap-6'>
                 <div className='bg-white p-2 rounded-full cursor-pointer'>
-                  <Bell />
+                  <Bell 
+                    className='cursor-pointer'
+                    onClick={() => window.location.href = '/notification'}
+                  />
                 </div>
 
                 <ProfileCard />
@@ -40,7 +54,7 @@ export default function Home({ children }: HomeProps) {
             </header>
 
             {/* ✅ Mobile Header */}
-            <header className="flex md:hidden items-center justify-between p-4 bg-white sticky top-0 z-10 rounded-2xl h-20">
+            <header className="flex md:hidden items-center justify-between px-0 p-4 bg-white sticky top-0 z-10 rounded-2xl h-20">
               <div className='flex items-center gap-2 mb-5 p-2'>
                 <Image
                   src={'/icon/logo.svg'}
@@ -53,8 +67,14 @@ export default function Home({ children }: HomeProps) {
 
               {/* Right icons */}
               <div className="flex gap-4 items-center">
-                <Bell className='cursor-pointer'/>
-                <Menu className='cursor-pointer'/>
+                <Bell 
+                  className='cursor-pointer' 
+                  onClick={() => window.location.href = '/notification'}
+                />
+                <Menu 
+                  className='cursor-pointer'
+                  onClick={() => setIsMobileSidebarOpen(true)}
+                />
               </div>
             </header>
 
