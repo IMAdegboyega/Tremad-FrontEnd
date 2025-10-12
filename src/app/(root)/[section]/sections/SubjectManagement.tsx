@@ -20,13 +20,12 @@ const SubjectManagement = () => {
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <button className="flex sm:w-1/2 items-center gap-1 text-gray-600 text-sm border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50">
+          <button className="flex items-center gap-1 text-gray-600 text-sm border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50">
             <ListFilter size={16} />
             Current term
           </button>
-          <button className="flex sm:w-1/2 items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800">
-            <Download size={16} />
-            Download report
+          <button className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800">
+            <Download size={16} /> Download report
           </button>
         </div>
       </div>

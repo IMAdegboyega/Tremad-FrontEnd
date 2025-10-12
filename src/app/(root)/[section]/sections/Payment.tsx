@@ -33,12 +33,12 @@ const SelectDropdown = ({
       <DropdownMenuTrigger asChild>
         <Button 
           variant="outline" 
-          className="flex items-center shadow-none gap-0 px-5 py-5 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-green-500"
+          className="flex items-center shadow-none gap-0 px-3 lg:px-5 py-3 lg:py-5 bg-gray-50 border-gray-200 focus:ring-2 focus:ring-green-500 w-full lg:w-auto"
         >
           <span className='text-gray-500'>
             {icon}
           </span>
-          <span className='px-3 py-2 text-sm text-gray-700 font-normal'>
+          <span className='px-2 lg:px-3 py-2 text-sm text-gray-700 font-normal'>
             {selectedOption?.label || placeholder}
           </span>
         </Button>
@@ -77,15 +77,15 @@ const Payment = () => {
   ];
 
   return (
-    <div className='space-y-4'>
+    <div className='space-y-4 lg:space-y-6'>
       {/* Header */}
-      <div className='flex items-center justify-between'>
+      <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>
         <div>
           <h1 className='text-2xl font-semibold text-gray-900'>Payment</h1>
           <p className='text-sm text-gray-500 mt-1'>Easily manage and track your payments and fees</p>
         </div>
 
-        <div className='flex items-center gap-4'>
+        <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3 lg:gap-4'>
           {/* Term Selector */}
           <SelectDropdown
             options={termOptions}
@@ -95,9 +95,9 @@ const Payment = () => {
             placeholder='Select term'
           />
 
-          {/* Download Receipt Button */}
+          {/* Download Receipt Button - Hidden on mobile */}
           <Button 
-            className='bg-green-700 hover:bg-green-800 px-5 py-5 text-white'
+            className='hidden lg:flex bg-green-700 hover:bg-green-800 px-5 py-5 text-white items-center justify-center'
             onClick={() => setShowDownloadModal(true)}
           >
             <Download size={18} className='mr-2' />
@@ -112,7 +112,7 @@ const Payment = () => {
 
       {/* Download Receipt Modal */}
       {showDownloadModal && (
-        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
+        <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
           <div className='bg-white rounded-xl p-6 max-w-sm w-full mx-4'>
             <div className='flex justify-center mb-4'>
               <div className='w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center'>
@@ -147,7 +147,7 @@ const Payment = () => {
 
       {/* Success Modal */}
       {showSuccessModal && (
-        <div className='fixed inset-0 bg-black/40 flex items-center justify-center z-50'>
+        <div className='fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4'>
           <div className='bg-white rounded-xl p-6 max-w-sm w-full mx-4'>
             <div className='flex justify-center mb-4'>
               <div className='w-16 h-16 bg-green-100 rounded-full flex items-center justify-center'>

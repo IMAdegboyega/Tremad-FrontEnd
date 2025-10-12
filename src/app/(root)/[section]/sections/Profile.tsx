@@ -1,521 +1,335 @@
-// file: src/Components/student/Profile/StudentProfile.tsx
 'use client'
 
-import React, { useState } from 'react';
-import { User, Mail, Phone, MapPin, Calendar, Globe, Edit2, Check, X } from 'lucide-react';
-import { Button } from '@/Components/ui/button';
-import { intitialProfileData, ProfileData } from '@/Constants/Profile';
+import React, { useState } from 'react'
+import {
+  User,
+  Edit2
+} from 'lucide-react'
+import { Button } from '@/Components/ui/button'
+import { intitialProfileData, ProfileData } from '@/Constants/Profile'
 
 const Profile = () => {
-  const [activeTab, setActiveTab] = useState<'student-details' | 'academic-info' | 'guardian-info' | 'security'>('student-details');
-  const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState<ProfileData>(intitialProfileData);
-  const [editedData, setEditedData] = useState(profileData);
+  // ===== STATE MANAGEMENT =====
+  // Controls which tab is currently active
+  const [activeTab, setActiveTab] = useState<
+    'student-details' | 'academic-info' | 'guardian-info' | 'security'
+  >('student-details')
+  
+  // Controls whether the form is in edit mode
+  const [isEditing, setIsEditing] = useState(false)
+  
+  // Main profile data (saved state)
+  const [profileData, setProfileData] = useState<ProfileData>(intitialProfileData)
+  
+  // Temporary data for editing (unsaved changes)
+  const [editedData, setEditedData] = useState(profileData)
 
+  // ===== EVENT HANDLERS =====
+  // Switches to edit mode and copies current data to editedData
   const handleEdit = () => {
-    setIsEditing(true);
-    setEditedData(profileData);
-  };
+    setIsEditing(true)
+    setEditedData(profileData)
+  }
 
+  // Saves edited data to main profile data and exits edit mode
   const handleSave = () => {
-    setProfileData(editedData);
-    setIsEditing(false);
-  };
+    setProfileData(editedData)
+    setIsEditing(false)
+  }
 
+  // Cancels editing and resets editedData to original values
   const handleCancel = () => {
-    setEditedData(profileData);
-    setIsEditing(false);
-  };
+    setEditedData(profileData)
+    setIsEditing(false)
+  }
 
+  // Updates a specific field in the editedData state
   const handleInputChange = (field: keyof ProfileData, value: string | boolean) => {
-    setEditedData(prev => ({
+    setEditedData((prev) => ({
       ...prev,
-      [field]: value
-    }));
-  };
+      [field]: value,
+    }))
+  }
 
   return (
-    <div className='bg-white rounded-2xl shadow-sm overflow-hidden'>
-      {/* Header Section with gradient background */}
-      <div className='relative h-36 bg-gradient-to-r from-green-800 to-teal-600'>
-        {/* You can add a pattern or image overlay here */}
-      </div>
+    <div className='bg-white rounded-xl lg:rounded-2xl shadow-sm overflow-hidden w-full max-w-5xl mx-auto'>
+      {/* ===== HEADER SECTION ===== */}
+      {/* Background gradient banner */}
+      <div className='relative'>
+        <div className='h-24 lg:h-32 bg-gradient-to-r from-green-700 to-green-900 rounded-t-xl lg:rounded-t-2xl'></div>
 
-      {/* Profile Info Section */}
-      <div className='px-8 pb-6'>
-        <div className='flex items-start gap-6 -mt-12'>
-          {/* Profile Picture */}
+        {/* Profile info overlay */}
+        <div className='flex flex-col lg:flex-row items-center lg:items-end gap-3 lg:gap-4 px-4 lg:px-6 -mt-10 lg:-mt-12 lg:pb-6'>
+          {/* ===== AVATAR SECTION ===== */}
           <div className='relative'>
-            <div className='w-24 h-24 bg-gradient-to-br from-lime-400 to-green-500 rounded-full flex items-center justify-center border-4 border-white'>
-              <User className='w-12 h-12 text-white' />
+            {/* Main avatar circle with gradient background */}
+            <div className='w-20 h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-lime-400 to-green-500 rounded-full flex items-center justify-center border-4 border-white shadow-md'>
+              <User className='w-10 h-10 lg:w-12 lg:h-12 text-white' />
             </div>
+            {/* Edit avatar button (only visible in edit mode) */}
             {isEditing && (
-              <button className='absolute bottom-0 right-0 w-8 h-8 bg-green-700 rounded-full flex items-center justify-center border-2 border-white'>
-                <Edit2 className='w-4 h-4 text-white' />
+              <button className='absolute bottom-0 right-0 w-7 h-7 lg:w-8 lg:h-8 bg-green-700 rounded-full flex items-center justify-center border-2 border-white'>
+                <Edit2 className='w-3 h-3 lg:w-4 lg:h-4 text-white' />
               </button>
             )}
           </div>
+          
+          {/* ===== BASIC INFO SECTION ===== */}
+          <div className='flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4 lg:gap-6 text-center lg:pt-14 sm:text-left flex-1'>
+            {/* Left side - Name and Email */}
+            <div className='flex flex-col space-y-1'>
+              <h2 className='text-lg lg:text-xl font-semibold'>{profileData.fullName}</h2>
+              <p className='text-gray-500 text-xs lg:text-sm'>{profileData.email}</p>
+            </div>
 
-          {/* Name and Basic Info */}
-          <div className='flex-1 pt-4'>
-            <div className='flex items-center justify-between'>
-              <div className='flex mt-10 space-x-2 border-center border-gray-600'>
-                <div className='flex flex-col p-2'>
-                  <h1 className='text-2xl font-semibold text-gray-900'>{profileData.fullName}</h1>
-                  <p className='text-sm text-gray-500'>{profileData.email}</p>
-                </div>
-                <div className='flex flex-col items-center gap-2 p-2 mt-2'>
-                  <span className='inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800'>
-                    <span className='w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5'></span>
-                    {profileData.status}
-                  </span>
-                  <span className='text-sm text-gray-500'>{profileData.gradeInfo}</span>
-                </div>
-              </div>
+            {/* Right side - Status and Grade (horizontal on desktop) */}
+            <div className='flex flex-col space-y-1'>
+              {/* Status Badge */}
+              <span 
+                className={`flex items-center justify-center gap-1.5 lg:gap-2 px-2.5 lg:px-3 py-1 w-fit rounded-full text-xs lg:text-sm font-medium ${
+                  profileData.status === 'Active' 
+                    ? 'bg-green-50 text-green-700' 
+                    : 'bg-gray-100 text-gray-700'
+                }`}
+              >
+                <span 
+                  className={`w-1.5 h-1.5 lg:w-2 lg:h-2 rounded-full ${
+                    profileData.status === 'Active' 
+                      ? 'bg-green-600' 
+                      : 'bg-gray-900'
+                  }`}
+                ></span>
+                {profileData.status}
+              </span>
+                
+              {/* Grade Info */}
+              <p className='text-xs text-gray-400'>{profileData.gradeInfo}</p>
             </div>
           </div>
-        </div>
-
-        {/* Tabs */}
-        <div className='mt-6'>
-          <div className='flex gap-8'>
-            <div className='flex space-x-8 bg-gray-100 rounded-lg p-2'>
-              <button
-                onClick={() => setActiveTab('student-details')}
-                className={`p-2 text-sm font-medium items-center justify-center ${
-                  activeTab === 'student-details'
-                    ? 'text-black bg-white p-3 rounded-lg'
-                    : 'text-gray-400 border-transparent hover:text-gray-700'
-                }`}
-              >
-                Student details
-              </button>
-              <button
-                onClick={() => setActiveTab('academic-info')}
-                className={`p-2 text-sm font-medium border-b-2 items-center justify-center ${
-                  activeTab === 'academic-info'
-                    ? 'text-black bg-white p-3 rounded-lg'
-                    : 'text-gray-400 border-transparent hover:text-gray-700'
-                }`}
-              >
-                Academic info
-              </button>
-              <button
-                onClick={() => setActiveTab('guardian-info')}
-                className={`p-2 text-sm font-medium border-b-2 items-center justify-center ${
-                  activeTab === 'guardian-info'
-                    ? 'text-black bg-white p-3 rounded-lg'
-                    : 'text-gray-400 border-transparent hover:text-gray-700'
-                }`}
-              >
-                Guardian info
-              </button>
-              <button
-                onClick={() => setActiveTab('security')}
-                className={`p-2 text-sm font-medium border-b-2 items-center justify-center ${
-                  activeTab === 'security'
-                    ? 'text-black bg-white p-3 rounded-lg'
-                    : 'text-gray-400 border-transparent hover:text-gray-700'
-                }`}
-              >
-                Settings
-              </button>
-            </div>
-
-            {/* Edit/Save/Cancel Buttons - positioned at top right */}
-              <div className='ml-auto'>
-                {!isEditing ? (
-                  <Button
-                    onClick={handleEdit}
-                    className='bg-green-700 hover:bg-green-800 text-white px-6'
-                  >
-                    Edit
-                  </Button>
-                ) : (
-                  <div className='flex gap-3'>
-                    <Button
-                      onClick={handleCancel}
-                      variant='outline'
-                      className='border-gray-300 text-gray-700 px-6'
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={handleSave}
-                      className='bg-green-700 hover:bg-green-800 text-white px-6'
-                    >
-                      Save changes
-                    </Button>
-                  </div>
-                )}
-              </div>
-          </div>
-        </div>
-
-        {/* Tab Content */}
-        <div className='mt-6'>
-          {activeTab === 'student-details' && (
-            <div className='grid grid-cols-2 gap-x-12 gap-y-6'>
-              {/* Full Name */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Full name</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.fullName}
-                    onChange={(e) => handleInputChange('fullName', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.fullName}</p>
-                )}
-              </div>
-
-              {/* Email */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Email address</label>
-                {isEditing ? (
-                  <input
-                    type='email'
-                    value={editedData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.email}</p>
-                )}
-              </div>
-
-              {/* Phone */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Phone number</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.phoneNumber}
-                    onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.phoneNumber}</p>
-                )}
-              </div>
-
-              {/* Date of Birth */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Date of birth</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.dateOfBirth}
-                    onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                    placeholder='DD/MM/YYYY'
-                  />
-                ) : (
-                  <p className='text-gray-400 py-2'>{profileData.dateOfBirth}</p>
-                )}
-              </div>
-
-              {/* Address */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Address</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.address}
-                    onChange={(e) => handleInputChange('address', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.address}</p>
-                )}
-              </div>
-
-              {/* City */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>City</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.city}
-                    onChange={(e) => handleInputChange('city', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.city}</p>
-                )}
-              </div>
-
-              {/* State */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>State</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.state}
-                    onChange={(e) => handleInputChange('state', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.state}</p>
-                )}
-              </div>
-
-              {/* Country */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Country</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.country}
-                    onChange={(e) => handleInputChange('country', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.country}</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'academic-info' && (
-            <div className='grid grid-cols-2 gap-x-12 gap-y-6'>
-              {/* Student Admission CID */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Student admission CID</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.studentAdmissionCID}
-                    onChange={(e) => handleInputChange('studentAdmissionCID', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.studentAdmissionCID}</p>
-                )}
-              </div>
-
-              {/* Current Grade */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Current grade</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.currentGrade}
-                    onChange={(e) => handleInputChange('currentGrade', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.currentGrade}</p>
-                )}
-              </div>
-
-              {/* Class Section */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Class section</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.classSection}
-                    onChange={(e) => handleInputChange('classSection', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.classSection}</p>
-                )}
-              </div>
-
-              {/* Admission Date */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Admission date</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.admissionDate}
-                    onChange={(e) => handleInputChange('admissionDate', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-400 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                    placeholder='DD/MM/YYYY'
-                  />
-                ) : (
-                  <p className='text-gray-400 py-2'>{profileData.admissionDate}</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'guardian-info' && (
-            <div className='grid grid-cols-2 gap-x-12 gap-y-6'>
-              {/* Guardian Name */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Guardian name</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.guardianName}
-                    onChange={(e) => handleInputChange('guardianName', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.guardianName}</p>
-                )}
-              </div>
-
-              {/* Relationship */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Relationship</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.relationship}
-                    onChange={(e) => handleInputChange('relationship', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.relationship}</p>
-                )}
-              </div>
-
-              {/* Guardian Phone */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Guardian phone</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.guardianPhone}
-                    onChange={(e) => handleInputChange('guardianPhone', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.guardianPhone}</p>
-                )}
-              </div>
-
-              {/* Guardian Email */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Guardian email</label>
-                {isEditing ? (
-                  <input
-                    type='email'
-                    value={editedData.guardianEmail}
-                    onChange={(e) => handleInputChange('guardianEmail', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.guardianEmail}</p>
-                )}
-              </div>
-
-              {/* Emergency Contact */}
-              <div>
-                <label className='block text-sm text-gray-600 mb-2'>Emergency contact</label>
-                {isEditing ? (
-                  <input
-                    type='text'
-                    value={editedData.emergencyContact}
-                    onChange={(e) => handleInputChange('emergencyContact', e.target.value)}
-                    className='w-full px-3 py-2 border border-gray-300 rounded-lg text-gray-900 bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-                  />
-                ) : (
-                  <p className='text-gray-900 py-2'>{profileData.emergencyContact}</p>
-                )}
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'security' && (
-            <div className='space-y-6'>
-              {/* Email Notifications */}
-              <div className='flex items-center justify-between py-3'>
-                <div>
-                  <p className='text-gray-900 font-medium'>Email notifications</p>
-                  <p className='text-sm text-gray-500'>Academic info</p>
-                </div>
-                <button
-                  onClick={() => isEditing && handleInputChange('emailNotifications', !editedData.emailNotifications)}
-                  disabled={!isEditing}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    isEditing 
-                      ? (editedData.emailNotifications ? 'bg-green-600' : 'bg-gray-200')
-                      : (profileData.emailNotifications ? 'bg-green-600' : 'bg-gray-200')
-                  } ${!isEditing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      isEditing
-                        ? (editedData.emailNotifications ? 'translate-x-6' : 'translate-x-1')
-                        : (profileData.emailNotifications ? 'translate-x-6' : 'translate-x-1')
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* SMS Notifications */}
-              <div className='flex items-center justify-between py-3'>
-                <div>
-                  <p className='text-gray-900 font-medium'>SMS notifications</p>
-                  <p className='text-sm text-gray-500'>Academic info</p>
-                </div>
-                <button
-                  onClick={() => isEditing && handleInputChange('smsNotifications', !editedData.smsNotifications)}
-                  disabled={!isEditing}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    isEditing 
-                      ? (editedData.smsNotifications ? 'bg-green-600' : 'bg-gray-200')
-                      : (profileData.smsNotifications ? 'bg-green-600' : 'bg-gray-200')
-                  } ${!isEditing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      isEditing
-                        ? (editedData.smsNotifications ? 'translate-x-6' : 'translate-x-1')
-                        : (profileData.smsNotifications ? 'translate-x-6' : 'translate-x-1')
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* School Announcements */}
-              <div className='flex items-center justify-between py-3'>
-                <div>
-                  <p className='text-gray-900 font-medium'>School annuncments</p>
-                  <p className='text-sm text-gray-500'>Academic info</p>
-                </div>
-                <button
-                  onClick={() => isEditing && handleInputChange('schoolAnnouncements', !editedData.schoolAnnouncements)}
-                  disabled={!isEditing}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    isEditing 
-                      ? (editedData.schoolAnnouncements ? 'bg-green-600' : 'bg-gray-200')
-                      : (profileData.schoolAnnouncements ? 'bg-green-600' : 'bg-gray-200')
-                  } ${!isEditing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      isEditing
-                        ? (editedData.schoolAnnouncements ? 'translate-x-6' : 'translate-x-1')
-                        : (profileData.schoolAnnouncements ? 'translate-x-6' : 'translate-x-1')
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Password Change */}
-              <div className='flex items-center justify-between py-3 pt-6 border-t border-gray-200'>
-                <div>
-                  <p className='text-gray-900 font-medium'>Password change</p>
-                  <p className='text-sm text-gray-500'>Academic info</p>
-                </div>
-                <button className='text-green-700 hover:text-green-800 text-sm font-medium'>
-                  Change password
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
-    </div>
-  );
-};
 
-export default Profile;
+      {/* ===== TABS SECTION ===== */}
+      <div className='px-4 lg:px-6 mt-6 lg:mt-8 border-b pb-3 flex flex-wrap gap-3 lg:gap-4 items-center justify-between'>
+        {/* ===== TAB NAVIGATION ===== */}
+        <div className='flex gap-1 sm:gap-3 p-1 lg:p-2 bg-gray-100 w-full overflow-x-auto scrollbar-hide rounded-lg'>
+          {[
+            { id: 'student-details', label: 'Student details' },
+            { id: 'academic-info', label: 'Academic info' },
+            { id: 'guardian-info', label: 'Guardian info' },
+            { id: 'security', label: 'Security' },
+          ].map((tab) => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`text-xs lg:text-sm font-medium px-2 sm:px-3 py-1.5 lg:py-2 rounded-lg whitespace-nowrap flex-1 sm:flex-initial ${
+                activeTab === tab.id
+                  ? 'bg-white text-black '
+                  : 'text-gray-500 hover:text-green-700'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* ===== ACTION BUTTONS ===== */}
+        <div className='flex w-full'>
+          <h1 className='text-base lg:text-lg font-semibold text-gray-900 w-full block md:hidden'>
+            {[
+              { id: 'student-details', label: 'Student details' },
+              { id: 'academic-info', label: 'Academic info' },
+              { id: 'guardian-info', label: 'Guardian info' },
+              { id: 'security', label: 'Security' },
+            ].find(tab => tab.id === activeTab)?.label}
+          </h1>
+          <div className='flex ml-auto items-center justify-center'>
+            {!isEditing ? (
+              // Edit button (default state)
+              <Button
+                onClick={handleEdit}
+                className='bg-green-700 hover:bg-green-800 text-white px-4 lg:px-6 text-xs lg:text-sm h-8 lg:h-10'
+              >
+                Edit
+              </Button>
+            ) : (
+              // Save and Cancel buttons (edit mode)
+              <div className='flex gap-2 lg:gap-3'>
+                <Button
+                  onClick={handleCancel}
+                  variant='outline'
+                  className='border-gray-300 text-gray-700 px-3 lg:px-6 text-xs lg:text-sm h-8 lg:h-10'
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleSave}
+                  className='bg-green-700 hover:bg-green-800 text-white px-3 lg:px-6 text-xs lg:text-sm h-8 lg:h-10'
+                >
+                  Save changes
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* ===== TAB CONTENT SECTION ===== */}
+      <div className='p-4 lg:p-6'>
+        {/* ===== STUDENT DETAILS TAB ===== */}
+        {activeTab === 'student-details' && (
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6'>
+            {[
+              { label: 'Full name', field: 'fullName' },
+              { label: 'Email address', field: 'email' },
+              { label: 'Phone number', field: 'phoneNumber' },
+              { label: 'Date of birth', field: 'dateOfBirth' },
+              { label: 'Address', field: 'address' },
+              { label: 'City', field: 'city' },
+              { label: 'State', field: 'state' },
+              { label: 'Country', field: 'country' },
+            ].map(({ label, field }) => (
+              <div key={field}>
+                <label className='block text-xs lg:text-sm text-gray-600 mb-1 lg:mb-2'>{label}</label>
+                {isEditing ? (
+                  // Editable input field
+                  <input
+                    type='text'
+                    value={editedData[field as keyof ProfileData] as string}
+                    onChange={(e) => handleInputChange(field as keyof ProfileData, e.target.value)}
+                    className='w-full px-3 bg-gray-100 py-1.5 lg:py-2 text-sm lg:text-base border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500'
+                  />
+                ) : (
+                  // Read-only display
+                  <p className='text-gray-900 bg-gray-100 rounded-md p-2 py-1 lg:py-2 text-sm lg:text-base'>{profileData[field as keyof ProfileData]}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ===== ACADEMIC INFO TAB ===== */}
+        {activeTab === 'academic-info' && (
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6'>
+            {[
+              { label: 'Student admission CID', field: 'studentAdmissionCID' },
+              { label: 'Current grade', field: 'currentGrade' },
+              { label: 'Class section', field: 'classSection' },
+              { label: 'Admission date', field: 'admissionDate' },
+            ].map(({ label, field }) => (
+              <div key={field}>
+                <label className='block text-xs lg:text-sm text-gray-600 mb-1 lg:mb-2'>{label}</label>
+                {isEditing ? (
+                  // Editable input field
+                  <input
+                    type='text'
+                    value={editedData[field as keyof ProfileData] as string}
+                    onChange={(e) => handleInputChange(field as keyof ProfileData, e.target.value)}
+                    className='w-full bg-gray-100 px-3 py-1.5 lg:py-2 text-sm lg:text-base border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500'
+                  />
+                ) : (
+                  // Read-only display
+                  <p className='text-gray-900 bg-gray-100 p-2 rounded-md py-1 lg:py-2 text-sm lg:text-base'>{profileData[field as keyof ProfileData]}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ===== GUARDIAN INFO TAB ===== */}
+        {activeTab === 'guardian-info' && (
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6'>
+            {[
+              { label: 'Guardian name', field: 'guardianName' },
+              { label: 'Relationship', field: 'relationship' },
+              { label: 'Guardian phone', field: 'guardianPhone' },
+              { label: 'Guardian email', field: 'guardianEmail' },
+              { label: 'Emergency contact', field: 'emergencyContact' },
+            ].map(({ label, field }) => (
+              <div key={field}>
+                <label className='block text-xs lg:text-sm text-gray-600 mb-1 lg:mb-2'>{label}</label>
+                {isEditing ? (
+                  // Editable input field
+                  <input
+                    type='text'
+                    value={editedData[field as keyof ProfileData] as string}
+                    onChange={(e) => handleInputChange(field as keyof ProfileData, e.target.value)}
+                    className='w-full bg-gray-100 px-3 py-1.5 lg:py-2 text-sm lg:text-base border border-gray-300 rounded-lg text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500'
+                  />
+                ) : (
+                  // Read-only display
+                  <p className='text-gray-900 py-1 bg-gray-100 rounded-md p-2 lg:py-2 text-sm lg:text-base'>{profileData[field as keyof ProfileData]}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* ===== SECURITY TAB ===== */}
+        {activeTab === 'security' && (
+          <div className='space-y-4 lg:space-y-6'>
+            {/* ===== NOTIFICATION SETTINGS ===== */}
+            {[
+              {
+                label: 'Email notifications',
+                field: 'emailNotifications',
+              },
+              {
+                label: 'SMS notifications',
+                field: 'smsNotifications',
+              },
+              {
+                label: 'School announcements',
+                field: 'schoolAnnouncements',
+              },
+            ].map(({ label, field }) => (
+              <div key={field} className='flex items-center justify-between py-2 lg:py-3'>
+                <div>
+                  <p className='text-gray-900 font-medium text-sm lg:text-base'>{label}</p>
+                  <p className='text-xs lg:text-sm text-gray-500'>Academic info</p>
+                </div>
+                {/* Toggle switch for notifications */}
+                <button
+                  onClick={() =>
+                    isEditing && handleInputChange(field as keyof ProfileData, !editedData[field as keyof ProfileData])
+                  }
+                  disabled={!isEditing}
+                  className={`relative inline-flex h-5 w-10 lg:h-6 lg:w-11 items-center rounded-full transition-colors ${
+                    (isEditing
+                      ? editedData[field as keyof ProfileData]
+                      : profileData[field as keyof ProfileData])
+                      ? 'bg-green-600'
+                      : 'bg-gray-200'
+                  } ${!isEditing ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-3 w-3 lg:h-4 lg:w-4 transform rounded-full bg-white transition-transform ${
+                      (isEditing
+                        ? editedData[field as keyof ProfileData]
+                        : profileData[field as keyof ProfileData])
+                        ? 'translate-x-5 lg:translate-x-6'
+                        : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+            ))}
+
+            {/* ===== PASSWORD CHANGE SECTION ===== */}
+            <div className='flex items-center justify-between py-2 lg:py-3 pt-4 lg:pt-6 border-t border-gray-200'>
+              <div>
+                <p className='text-gray-900 font-medium text-sm lg:text-base'>Password change</p>
+                <p className='text-xs lg:text-sm text-gray-500'>Change your password</p>
+              </div>
+              <button className='text-green-700 hover:text-green-800 text-xs lg:text-sm font-medium'>
+                Change password
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+export default Profile
