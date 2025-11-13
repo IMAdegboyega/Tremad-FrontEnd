@@ -6,10 +6,15 @@ import StatManagement from "@/Components/student/SubjectManagement/StatManagemen
 import { Download, ListFilter } from "lucide-react";
 import React from "react";
 
+/**
+ * SubjectManagement section
+ *
+ * Manage enrolled subjects: quick stats, search/filter, and class list.
+ */
 const SubjectManagement = () => {
   return (
     <div className="flex flex-col space-y-6">
-      {/* Header Section */}
+      {/* Header: title and quick actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">My Subjects</h1>
@@ -18,7 +23,7 @@ const SubjectManagement = () => {
           </p>
         </div>
 
-        {/* Actions */}
+        {/* Actions: term filter and report download */}
         <div className="flex items-center gap-3">
           <button className="flex items-center gap-1 text-gray-600 text-sm border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50">
             <ListFilter size={16} />
@@ -30,7 +35,7 @@ const SubjectManagement = () => {
         </div>
       </div>
 
-      {/* Stats Section */}
+      {/* Stats: overview cards */}
       <StatManagement />
 
       {/* Search + Filter */}
@@ -42,7 +47,7 @@ const SubjectManagement = () => {
         </button>
       </div>
 
-      {/* Subject List */}
+      {/* Subject list */}
       <ClassManagement />
     </div>
   );

@@ -2,7 +2,7 @@ import React from 'react'
 
 const layout = () => {
   return (
-    <div>Admin</div>
+    <div>Super-Admin</div>
   )
 }
 

@@ -13,6 +13,9 @@ import {
 import PaymentTable from '@/Components/student/Payment/PaymentTable';
 import StatsCard from '@/Components/student/Payment/StatsCard';
 
+/**
+ * Lightweight dropdown for selecting term/filters in Payment.
+ */
 const SelectDropdown = ({
   options,
   value,
@@ -64,8 +67,11 @@ const SelectDropdown = ({
 };
 
 const Payment = () => {
+  // Selected academic term for filtering payment data
   const [selectedTerm, setSelectedTerm] = useState('current');
+  // Active tab (e.g., school fees vs supplementary vs history)
   const [activeTab, setActiveTab] = useState<'school-fees' | 'supplementary' | 'history'>('school-fees');
+  // Modal visibility states
   const [showDownloadModal, setShowDownloadModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -78,7 +84,7 @@ const Payment = () => {
 
   return (
     <div className='space-y-4 lg:space-y-6'>
-      {/* Header */}
+      {/* Header: title, context, and filters/actions */}
       <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>
         <div>
           <h1 className='text-2xl font-semibold text-gray-900'>Payment</h1>
@@ -95,7 +101,7 @@ const Payment = () => {
             placeholder='Select term'
           />
 
-          {/* Download Receipt Button - Hidden on mobile */}
+          {/* Download receipt (desktop only) */}
           <Button 
             className='hidden lg:flex bg-green-700 hover:bg-green-800 px-5 py-5 text-white items-center justify-center'
             onClick={() => setShowDownloadModal(true)}
@@ -110,7 +116,7 @@ const Payment = () => {
 
       <PaymentTable/>
 
-      {/* Download Receipt Modal */}
+      {/* Download receipt modal */}
       {showDownloadModal && (
         <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4'>
           <div className='bg-white rounded-xl p-6 max-w-sm w-full mx-4'>
@@ -145,7 +151,7 @@ const Payment = () => {
         </div>
       )}
 
-      {/* Success Modal */}
+      {/* Success toast/modal after download */}
       {showSuccessModal && (
         <div className='fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4'>
           <div className='bg-white rounded-xl p-6 max-w-sm w-full mx-4'>

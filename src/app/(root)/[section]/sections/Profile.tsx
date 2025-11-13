@@ -8,6 +8,12 @@ import {
 import { Button } from '@/Components/ui/button'
 import { intitialProfileData, ProfileData } from '@/Constants/Profile'
 
+/**
+ * Profile section
+ *
+ * View and edit student profile data with tabbed navigation.
+ * Uses a simple edit flow: toggle edit mode, modify fields, save or cancel.
+ */
 const Profile = () => {
   // ===== STATE MANAGEMENT =====
   // Controls which tab is currently active
@@ -58,7 +64,7 @@ const Profile = () => {
       <div className='relative'>
         <div className='h-24 lg:h-32 bg-gradient-to-r from-green-700 to-green-900 rounded-t-xl lg:rounded-t-2xl'></div>
 
-        {/* Profile info overlay */}
+        {/* Profile info overlay (avatar + basic info) */}
         <div className='flex flex-col lg:flex-row items-center lg:items-end gap-3 lg:gap-4 px-4 lg:px-6 -mt-10 lg:-mt-12 lg:pb-6'>
           {/* ===== AVATAR SECTION ===== */}
           <div className='relative'>
@@ -66,7 +72,7 @@ const Profile = () => {
             <div className='w-20 h-20 lg:w-24 lg:h-24 bg-gradient-to-br from-lime-400 to-green-500 rounded-full flex items-center justify-center border-4 border-white shadow-md'>
               <User className='w-10 h-10 lg:w-12 lg:h-12 text-white' />
             </div>
-            {/* Edit avatar button (only visible in edit mode) */}
+            {/* Edit avatar button (visible only in edit mode) */}
             {isEditing && (
               <button className='absolute bottom-0 right-0 w-7 h-7 lg:w-8 lg:h-8 bg-green-700 rounded-full flex items-center justify-center border-2 border-white'>
                 <Edit2 className='w-3 h-3 lg:w-4 lg:h-4 text-white' />

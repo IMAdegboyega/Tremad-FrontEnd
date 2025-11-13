@@ -16,7 +16,7 @@ type SidebarProps = {
 export default function SideBar({ navItems }: SidebarProps) {
   
   return (
-    <aside className=' bg-gray-50 rounded-2xl p-4 space-y-5 max-h-screen w-70 sticky'>
+    <aside className=' bg-gray-50 rounded-2xl p-4 space-y-5 max-h-fit w-70 sticky'>
       <nav className='flex flex-col gap-1'>
         <div className='flex items-center gap-2 mb-5 p-2'>
           <Image

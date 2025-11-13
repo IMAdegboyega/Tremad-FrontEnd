@@ -1,16 +1,13 @@
-import Sidebar from '@/Components/SideBar';
-import { AdminNav } from '@/Constants';
 import React, { ReactNode } from 'react';
 
-type AdminProps = {
+type SuperAdminProps = {
   children: ReactNode;
 };
 
-export default function Admin({ children }: AdminProps) {
+export default function SuperAdmin({ children }: SuperAdminProps) {
   return (
     <main>
       <div>
-        <Sidebar navItems={AdminNav}/>
         <section>{children}</section>
       </div>
     </main>

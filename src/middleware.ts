@@ -25,6 +25,16 @@ const DEVELOPMENT_ROUTES = [
   '/check-email',
   '/reset-password',
   '/reset-success',
+  '/SuperAdmin/home', 
+  '/SuperAdmin/portal-login', 
+  '/SuperAdmin/student-management',
+  '/SuperAdmin/staff-management',
+  '/SuperAdmin/exam-questions', 
+  '/SuperAdmin/result-management', 
+  '/SuperAdmin/receipts',
+  '/SuperAdmin/payment-management', 
+  '/SuperAdmin/analyticsandinsight', 
+  '/SuperAdmin/notification', 
   // Add all your app routes here
 ];
 

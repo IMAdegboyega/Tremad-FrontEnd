@@ -95,7 +95,7 @@ const MobileSidebar = ({ isOpen, onClose, navItems }: MobileSidebarProps) => {
                     key={item.slug}
                     href={item.url}
                     onClick={onClose} // Close sidebar when navigating
-                    className={`flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
+                    className={`relative flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
                       isActive 
                         ? 'bg-green-50 text-green-700'  // Active state styling
                         : 'text-gray-700 hover:bg-gray-50' // Default and hover states
@@ -108,7 +108,7 @@ const MobileSidebar = ({ isOpen, onClose, navItems }: MobileSidebarProps) => {
                       - Positioned at the right edge
                     */}
                     {isActive && (
-                      <div className='w-1 h-4 bg-green-600 rounded-full' />
+                      <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-green-700 rounded-r-full' />
                     )}
 
                     {/* 

@@ -1,9 +1,9 @@
 import React from 'react'
 
-const page = () => {
+const layout = () => {
   return (
-    <div>Admin Auth</div>
+    <div>Super-Admin Auth</div>
   )
 }
 
-export default page
+export default layout

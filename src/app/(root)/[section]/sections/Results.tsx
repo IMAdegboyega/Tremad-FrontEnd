@@ -116,7 +116,7 @@ const Results = () => {
 
   return (
     <div className='space-y-4 lg:space-y-6'>
-      {/* Page Header Section */}
+      {/* Page header with title and filter controls */}
       <div className='flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4'>
         {/* Title and Description */}
         <div>
@@ -126,7 +126,7 @@ const Results = () => {
 
         {/* Filter Controls and Actions */}
         <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3 lg:gap-4'>
-          {/* Class Selector - Hidden on mobile for space optimization */}
+          {/* Class selector (hidden on mobile to preserve space) */}
           <div className='hidden lg:block'>
             <SelectDropdown
               options={classOptions}
@@ -137,7 +137,7 @@ const Results = () => {
             />
           </div>
 
-          {/* Term Selector - Always visible for core functionality */}
+          {/* Term selector (always visible) */}
           <SelectDropdown
             options={termOptions}
             value={selectedTerm}
@@ -146,7 +146,7 @@ const Results = () => {
             placeholder='Select term'
           />
 
-          {/* Download Button - Hidden on mobile to save space */}
+          {/* Download button (hidden on mobile) */}
           <button className='hidden lg:flex items-center gap-2 px-5 py-2.5 bg-green-700 text-white rounded-lg hover:bg-green-800 transition-colors text-sm font-medium'>
             <Download size={18} />
             Download result
@@ -154,10 +154,10 @@ const Results = () => {
         </div>
       </div>
 
-      {/* Statistics Overview Cards */}
+      {/* Statistics overview cards */}
       <StatsCard/>
 
-      {/* Detailed Results Table */}
+      {/* Detailed results table */}
       <ResultsTable/>
       
     </div>

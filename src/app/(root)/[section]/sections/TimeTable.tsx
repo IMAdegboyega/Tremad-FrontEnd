@@ -24,7 +24,7 @@ const TimeTable = () => {
 
   return (
     <div className='space-y-4 lg:space-y-6'>
-      {/* Page Header Section with View Toggle */}
+      {/* Page header with view toggle */}
       <div className='p-0'>
         <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
           {/* Title and Description */}
@@ -33,7 +33,7 @@ const TimeTable = () => {
             <p className='text-sm text-gray-500 mt-1'>Stay up to date with what is going on.</p>
           </div>
           
-          {/* View Mode Toggle Buttons */}
+          {/* View mode toggle buttons */}
           <div className='flex'>
             {/* Week View Button */}
             <button
@@ -61,10 +61,10 @@ const TimeTable = () => {
         </div>
       </div>
 
-      {/* Statistics Overview Cards */}
+      {/* Statistics overview cards */}
       <StatsCard/>
 
-      {/* Conditional Rendering: Week View or Day View */}
+      {/* Conditional rendering: Week view or Day view */}
       {viewMode === 'Week view' ? <WeekView /> : <DayView />}
     </div>
   )

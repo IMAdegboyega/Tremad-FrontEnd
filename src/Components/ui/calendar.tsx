@@ -59,16 +59,17 @@ function Calendar({
           defaultClassNames.months
         ),
         month: cn("flex flex-col w-full gap-3", defaultClassNames.month),
+
         nav: cn(
           "flex items-center gap-1 w-full absolute top-0 inset-x-0 justify-between",
           defaultClassNames.nav
         ),
         button_previous: cn(
-          "h-7 w-7 bg-transparent opacity-50 hover:opacity-100 hover:bg-gray-100 rounded-lg p-0 select-none",
+          "h-7 w-7 bg-transparent opacity-70 hover:opacity-100 hover:bg-gray-100 rounded-lg p-0 select-none",
           defaultClassNames.button_previous
         ),
         button_next: cn(
-          "h-7 w-7 bg-transparent opacity-50 hover:opacity-100 hover:bg-gray-100 rounded-lg p-0 select-none",
+          "h-7 w-7 bg-transparent opacity-70 hover:opacity-100 hover:bg-gray-100 rounded-lg p-0 select-none",
           defaultClassNames.button_next
         ),
         month_caption: cn(

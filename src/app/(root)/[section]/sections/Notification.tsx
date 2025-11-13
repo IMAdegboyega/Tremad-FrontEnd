@@ -5,14 +5,24 @@ import { Bell, BookOpen, ChevronRight, Circle, FileText, Megaphone, Trophy } fro
 import { notifications, formatNotificationDate, getGroupedNotifications } from '@/Constants/Notification'
 import Link from 'next/link'
 
+/**
+ * Notifications section
+ *
+ * Renders user notifications with simple filtering (all vs unread) and
+ * date-based grouping (today, yesterday, older). Icons are derived from
+ * the notification type for quick visual scanning.
+ */
 const Notifications = () => {
   const [filter, setFilter] = useState<'all' | 'unread'>('all');
+  // Group notifications for sectioned rendering when the "all" filter is active
   const groupedNotifications = getGroupedNotifications();
   
+  // Apply filter: either show only unread or the full list
   const filteredNotifications = filter === 'unread' 
     ? notifications.filter(n => !n.read)
     : notifications;
 
+  // Map a notification type to a compact, colored icon tile
   const getNotificationIcon = (type: string) => {
     switch(type) {
       case 'project':
@@ -48,14 +58,15 @@ const Notifications = () => {
     }
   };
 
+  // Single notification row with icon, content, unread dot, and (desktop) chevron
   const NotificationItem = ({ notification }: { notification: typeof notifications[0] }) => (
     <div className='flex items-start gap-3 lg:gap-4 p-3 lg:p-4 hover:bg-gray-50 transition-colors cursor-pointer border-b border-gray-100 last:border-0'>
-      {/* Icon */}
+      {/* Leading icon tile */}
       <div className='w-10 h-10 lg:w-12 lg:h-12 flex-shrink-0'>
         {getNotificationIcon(notification.type)}
       </div>
       
-      {/* Content */}
+      {/* Title, description, timestamp; unread dot appears when not yet read */}
       <div className='flex-1 min-w-0'>
         <div className='flex items-start justify-between gap-2'>
           <div className='flex-1'>
@@ -82,17 +93,18 @@ const Notifications = () => {
 
   return (
     <div className='max-w-4xl mx-auto'>
-      {/* Header */}
+      {/* Header: title and quick actions */}
       <div className='bg-white rounded-xl lg:rounded-2xl shadow-sm mb-4 lg:mb-6'>
         <div className='p-4 lg:p-6'>
           <div className='flex items-center justify-between mb-4 lg:mb-6'>
             <h1 className='text-xl lg:text-2xl font-semibold text-gray-900'>Notifications</h1>
+            {/* Placeholder action; wire to a clear-all endpoint or settings page as needed */}
             <Link href='/notifications/settings' className='text-sm lg:text-base text-green-700 hover:text-green-800 font-medium'>
               Clear All
             </Link>
           </div>
           
-          {/* Filter Tabs */}
+          {/* Filter tabs: switch between all notifications and only unread */}
           <div className='flex gap-4 lg:gap-6 border-b border-gray-200'>
             <button
               onClick={() => setFilter('all')}
@@ -133,6 +145,7 @@ const Notifications = () => {
           </div>
         ) : (
           <div>
+            {/* Render groups only when showing "all" (unread view is ungrouped) */}
             {/* Today's Notifications */}
             {groupedNotifications.today.length > 0 && filter === 'all' && (
               <div>
