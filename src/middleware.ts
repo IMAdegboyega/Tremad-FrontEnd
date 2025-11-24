@@ -35,6 +35,7 @@ const DEVELOPMENT_ROUTES = [
   '/SuperAdmin/payment-management', 
   '/SuperAdmin/analyticsandinsight', 
   '/SuperAdmin/notification', 
+  '/landing-page', 
   // Add all your app routes here
 ];
 
