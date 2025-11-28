@@ -13,6 +13,7 @@ const ACCESSIBLE_ROUTES = [
 
 // Routes for development/testing (you can toggle these)
 const DEVELOPMENT_ROUTES = [
+  '/',
   '/home',
   '/profile', 
   '/subject-management',
