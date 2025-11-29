@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useState } from 'react'
-import StatsCard from '@/Components/student/TimeTable/StatsCard';
-import WeekView from '@/Components/student/TimeTable/WeekView';
-import DayView from '@/Components/student/TimeTable/DayView';
+import StatsCard from '@/components/student/TimeTable/StatsCard';
+import WeekView from '@/components/student/TimeTable/WeekView';
+import DayView from '@/components/student/TimeTable/DayView';
 
 /**
  * TimeTable Page Component

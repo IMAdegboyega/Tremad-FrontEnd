@@ -2,16 +2,16 @@
 
 import React, { useState } from 'react';
 import { Download, TrendingUp, TrendingDown, Award, Users, Target, BookOpen, Filter, Calendar, Check, ChevronDown, ListFilter } from 'lucide-react';
-import StatsCard from '@/Components/student/Results/StatsCard';
-import ResultsTable from '@/Components/student/Results/ResultsTable';
-import { Button } from "@/Components/ui/button";
+import StatsCard from '@/components/student/Results/StatsCard';
+import ResultsTable from '@/components/student/Results/ResultsTable';
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/Components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 
 /**
  * SelectDropdown Component

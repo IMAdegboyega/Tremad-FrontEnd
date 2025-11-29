@@ -4,6 +4,7 @@ import type { NextRequest } from "next/server";
 
 // Routes that should always be accessible (no redirect to coming-soon)
 const ACCESSIBLE_ROUTES = [
+  '/',
   '/coming-soon',
   '/api',           // Keep API routes accessible
   '/admin',         // Admin panel if you have one

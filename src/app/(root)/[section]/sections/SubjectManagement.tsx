@@ -1,8 +1,8 @@
 "use client";
 
-import ClassManagement from "@/Components/student/SubjectManagement/ClassManagement";
-import SearchBar from "@/Components/student/SubjectManagement/SearchBar";
-import StatManagement from "@/Components/student/SubjectManagement/StatManagement";
+import ClassManagement from "@/components/student/SubjectManagement/ClassManagement";
+import SearchBar from "@/components/student/SubjectManagement/SearchBar";
+import StatManagement from "@/components/student/SubjectManagement/StatManagement";
 import { Download, ListFilter } from "lucide-react";
 import React from "react";
 

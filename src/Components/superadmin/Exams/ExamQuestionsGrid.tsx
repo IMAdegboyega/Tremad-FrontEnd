@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { Search, Plus, ListFilter, EllipsisVertical } from 'lucide-react';
 import Image from 'next/image';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/Components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { ExamQuestion } from '@/app/SuperAdmin/(root)/[section]/sections/ExamQuestions';
 
 interface ExamQuestionsGridProps {

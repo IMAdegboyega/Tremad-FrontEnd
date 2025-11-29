@@ -1,6 +1,6 @@
 'use client'
 
-import { Button } from '@/Components/ui/button';
+import { Button } from '@/components/ui/button';
 import { getStatusColor, getStatusDot, paymentHistory, schoolFees, supplementaryFees } from '@/Constants/Payment';
 import { Download, FileText } from 'lucide-react';
 import React, { useState } from 'react'

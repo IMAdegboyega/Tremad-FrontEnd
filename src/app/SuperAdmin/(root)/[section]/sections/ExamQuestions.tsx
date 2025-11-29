@@ -1,8 +1,8 @@
 'use client'
 
 import React, { useState } from 'react';
-import ExamQuestionsGrid from '@/Components/superadmin/Exams/ExamQuestionsGrid';
-import ExamQuestionDetail from '@/Components/superadmin/Exams/ExamQuestionDetail';
+import ExamQuestionsGrid from '@/components/superadmin/Exams/ExamQuestionsGrid';
+import ExamQuestionDetail from '@/components/superadmin/Exams/ExamQuestionDetail';
 
 export interface ExamQuestion {
   id: string;

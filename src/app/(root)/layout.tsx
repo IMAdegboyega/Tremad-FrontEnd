@@ -1,14 +1,14 @@
 'use client'
 
-import ProfileCard from '@/Components/ProfileCard';
-import SearchBar from '@/Components/SearchBar';
-import SideBar from '@/Components/SideBar';
+import ProfileCard from '@/components/ProfileCard';
+import SearchBar from '@/components/SearchBar';
+import SideBar from '@/components/SideBar';
 import { StudentNav } from '@/Constants';
 import { Bell, Menu } from 'lucide-react';
 import React, { ReactNode, useState } from 'react';
 import { UserProvider } from '@/Constants/UserContext';
 import Image from 'next/image';
-import MobileSidebar from '@/Components/MobileSidebar';
+import MobileSidebar from '@/components/MobileSidebar';
 
 type HomeProps = {
   children: ReactNode;

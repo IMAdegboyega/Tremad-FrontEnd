@@ -1,9 +1,9 @@
 import React from 'react'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/Components/ui/dropdown-menu'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import { ChevronDown } from 'lucide-react'
 import { useUser } from '@/Constants/UserContext'
-import { PositionChart } from '@/Components/StudentChats'
-import { Button } from '@/Components/ui/button'
+import { PositionChart } from '@/components/StudentChats'
+import { Button } from '@/components/ui/button'
 
 const LastPosition = () => {
 

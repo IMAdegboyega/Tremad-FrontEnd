@@ -1,14 +1,14 @@
 'use client'
 
 import React, { useState } from 'react';
-import RecentActivity from '@/Components/superadmin/PortalLogin/RecentActivity';
-import StaffLogin from '@/Components/superadmin/PortalLogin/StaffLogin';
-import StatsCard from '@/Components/superadmin/PortalLogin/StatsCard';
-import StudentLogin from '@/Components/superadmin/PortalLogin/StudentLogin';
-import DeactivateAccountModal from '@/Components/modals/Deactivate';
-import DeleteAccountModal from '@/Components/modals/DeleteAcount';
-import ResetPasswordModal from '@/Components/modals/ResetPassword';
-import SendCredentialsModal from '@/Components/modals/SendCredentials';
+import RecentActivity from '@/components/superadmin/PortalLogin/RecentActivity';
+import StaffLogin from '@/components/superadmin/PortalLogin/StaffLogin';
+import StatsCard from '@/components/superadmin/PortalLogin/StatsCard';
+import StudentLogin from '@/components/superadmin/PortalLogin/StudentLogin';
+import DeactivateAccountModal from '@/components/modals/Deactivate';
+import DeleteAccountModal from '@/components/modals/DeleteAcount';
+import ResetPasswordModal from '@/components/modals/ResetPassword';
+import SendCredentialsModal from '@/components/modals/SendCredentials';
 import { activityData, allStaffData, allStudentData, staffActivities, staffData, studentActivities, studentData } from '@/Constants/PortalLoginData';
 
 const PortalLogin: React.FC = () => {

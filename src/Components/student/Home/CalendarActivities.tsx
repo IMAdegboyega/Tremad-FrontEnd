@@ -1,5 +1,5 @@
 import React from 'react'
-import { Calendar } from '@/Components/ui/calendar';
+import { Calendar } from '@/components/ui/calendar';
 import { useUser } from '@/Constants/UserContext';
 import { formatEventDate, generateScheduleEvents, isEventToday, ScheduleEvent } from '@/Constants/schedule';
 

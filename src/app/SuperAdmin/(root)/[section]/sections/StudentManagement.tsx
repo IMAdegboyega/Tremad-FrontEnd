@@ -8,11 +8,11 @@
 
 import React, { useState } from 'react';
 import { Search, ChevronLeft, ChevronRight, ListFilter } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/Components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { allStudentData } from '@/Constants/PortalLoginData';
-import StatsCard from '@/Components/superadmin/PortalLogin/StatsCard';
-import DeleteAccountModal from '@/Components/modals/DeleteAcount';
-import AddStudentModal from '@/Components/modals/AddStudent';
+import StatsCard from '@/components/superadmin/PortalLogin/StatsCard';
+import DeleteAccountModal from '@/components/modals/DeleteAcount';
+import AddStudentModal from '@/components/modals/AddStudent';
 // Expected shape of each student in allStudentData:
 // {
 //   id: string | number,         // Stable unique key for React list rendering

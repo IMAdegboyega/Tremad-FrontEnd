@@ -5,8 +5,8 @@ import {
   User,
   Edit2
 } from 'lucide-react'
-import { Button } from '@/Components/ui/button'
 import { intitialProfileData, ProfileData } from '@/Constants/Profile'
+import { Button } from '@/components/ui/button'
 
 /**
  * Profile section

@@ -1,13 +1,13 @@
 'use client'
 
 import React, { useState } from 'react'
-import WelcomeBanner from '@/Components/superadmin/Home/WelcomeBanner'
-import StatsCards from '@/Components/superadmin/Home/StatsCards'
-import LiveActivity from '@/Components/superadmin/Home/LiveActivity'
-import CalendarSection from '@/Components/superadmin/Home/CalendarSection'
-import UpcomingActivities from '@/Components/superadmin/Home/UpcomingActivities'
-import CalendarActivities from '@/Components/student/Home/CalendarActivities'
-import Calendar from '@/Components/Calendar'
+import WelcomeBanner from '@/components/superadmin/Home/WelcomeBanner'
+import StatsCards from '@/components/superadmin/Home/StatsCards'
+import LiveActivity from '@/components/superadmin/Home/LiveActivity'
+import CalendarSection from '@/components/superadmin/Home/CalendarSection'
+import UpcomingActivities from '@/components/superadmin/Home/UpcomingActivities'
+import CalendarActivities from '@/components/student/Home/CalendarActivities'
+import Calendar from '@/components/Calendar'
 
 /**
  * SuperAdmin Dashboard

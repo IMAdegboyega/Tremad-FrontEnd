@@ -2,12 +2,12 @@
 
 import React from 'react'
 
-import Attendance from '@/Components/student/Home/Attendance';
-import LastPosition from '@/Components/student/Home/LastPosition';
-import CurrentSubjects from '@/Components/student/Home/CurrentSubjects';
-import Notifications from '@/Components/student/Home/Notifications';
-import CalenderActivities from '@/Components/student/Home/CalendarActivities';
-import WelcomeBanner from '@/Components/student/Home/WelcomeBanner';
+import Attendance from '@/components/student/Home/Attendance';
+import LastPosition from '@/components/student/Home/LastPosition';
+import CurrentSubjects from '@/components/student/Home/CurrentSubjects';
+import Notifications from '@/components/student/Home/Notifications';
+import CalenderActivities from '@/components/student/Home/CalendarActivities';
+import WelcomeBanner from '@/components/student/Home/WelcomeBanner';
 
 /**
  * Home section

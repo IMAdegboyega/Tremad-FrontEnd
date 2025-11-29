@@ -1,6 +1,6 @@
 import React from 'react';
 import { ArrowLeft, Search, Filter, MoreVertical } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/Components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
 
 /**

@@ -7,7 +7,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/Components/ui/popover";
+} from "@/components/ui/popover";
 import { useUser } from "@/Constants/UserContext";
 
 

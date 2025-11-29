@@ -2,16 +2,16 @@
 
 import React, { useState } from 'react';
 import { Download, Check, FileText, ListFilter } from 'lucide-react';
-import { Button } from "@/Components/ui/button";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/Components/ui/dropdown-menu";
-import PaymentTable from '@/Components/student/Payment/PaymentTable';
-import StatsCard from '@/Components/student/Payment/StatsCard';
+} from "@/components/ui/dropdown-menu";
+import PaymentTable from '@/components/student/Payment/PaymentTable';
+import StatsCard from '@/components/student/Payment/StatsCard';
 
 /**
  * Lightweight dropdown for selecting term/filters in Payment.

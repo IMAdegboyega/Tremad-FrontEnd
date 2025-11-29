@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { ChevronLeft, Search, ListFilter, EllipsisVertical, Plus } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/Components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Image from 'next/image';
 import { ExamQuestion } from '@/app/SuperAdmin/(root)/[section]/sections/ExamQuestions';
 import StatsCard from '../PortalLogin/StatsCard';

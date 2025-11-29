@@ -1,9 +1,9 @@
 import React from 'react'
 import { ChevronDown } from 'lucide-react'
 import { useUser } from '@/Constants/UserContext'
-import { Button } from '@/Components/ui/button'
-import AttendanceChart from '@/Components/StudentChats'
-import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/Components/ui/dropdown-menu'
+import { Button } from '@/components/ui/button'
+import AttendanceChart from '@/components/StudentChats'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 
 const Attendance = () => {
 

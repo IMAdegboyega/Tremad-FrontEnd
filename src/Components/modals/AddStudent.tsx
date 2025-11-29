@@ -15,7 +15,7 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-} from "@/Components/ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 
 interface AddStudentModalProps {
   isOpen: boolean;
