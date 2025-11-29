@@ -12,10 +12,10 @@ export default function LandingPage() {
               <Image src="/icon/logo.svg" alt="Tremad Schools" width={50} height={50} />
             </div>
             <ul className="hidden md:flex space-x-8 text-white">
-              <li><a href="/sign-in" className="hover:text-green-200 transition">Home</a></li>
-              <li><a href="#about" className="hover:text-green-200 transition">About us</a></li>
-              <li><a href="#facilities" className="hover:text-green-200 transition">Our facilities</a></li>
-              <li><a href="#contact" className="hover:text-green-200 transition">Contact us</a></li>
+              <li><Link href="/sign-in" className="hover:text-green-200 transition">Home</Link></li>
+              <li><Link href="#about" className="hover:text-green-200 transition">About us</Link></li>
+              <li><Link href="#facilities" className="hover:text-green-200 transition">Our facilities</Link></li>
+              <li><Link href="#contact" className="hover:text-green-200 transition">Contact us</Link></li>
             </ul>
             <button className="text-white px-6 py-2 rounded hover:bg-white/10 transition">
               Button
