@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 
 export default function LandingPage() {
   return (
@@ -11,7 +12,7 @@ export default function LandingPage() {
               <Image src="/icon/logo.svg" alt="Tremad Schools" width={50} height={50} />
             </div>
             <ul className="hidden md:flex space-x-8 text-white">
-              <li><a href="#home" className="hover:text-green-200 transition">Home</a></li>
+              <li><a href="/sign-in" className="hover:text-green-200 transition">Home</a></li>
               <li><a href="#about" className="hover:text-green-200 transition">About us</a></li>
               <li><a href="#facilities" className="hover:text-green-200 transition">Our facilities</a></li>
               <li><a href="#contact" className="hover:text-green-200 transition">Contact us</a></li>
@@ -44,9 +45,9 @@ export default function LandingPage() {
           <Image
             src="/icon/rocket.svg"
             alt="rocket"
-            width={150}
-            height={150}
-            className="absolute top-90 right-60 opacity-80"
+            width={200}
+            height={200}
+            className="absolute top-90 right-35 opacity-80"
           />
         </div>
         
@@ -190,7 +191,7 @@ export default function LandingPage() {
       </section>
 
       {/* Welcome Section */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="relative">
@@ -229,114 +230,138 @@ export default function LandingPage() {
           
           <div className="grid md:grid-cols-4 gap-6">
             {/* Modern Classrooms Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-gray-400 h-100">
+            <div className="relative rounded-3xl overflow-hidden h-[500px]">
               <Image 
-                src="/img/modern-classroom.jpg" 
+                src="/img/modern-classroom.webp" 
                 alt="Modern Classrooms" 
                 width={400}
-                height={400}
-                className="absolute inset-0 w-full h-full object-cover"
+                height={500}
+                className="w-full h-full object-cover"
               />
-              <div className="absolute top-0 left-0 right-0 p-6">
-                <h3 className="text-teal-400 font-semibold text-lg italic">
+              <div className="absolute top-6 left-6">
+                <h3 className="text-white font-semibold text-2xl">
                   Modern<br />classrooms
                 </h3>
               </div>
-              <button className="absolute bottom-6 right-6 w-10 h-10 bg-gray-800/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white text-2xl hover:bg-gray-800/70 transition">
+              <button className="absolute bottom-6 right-6 w-12 h-12 bg-black/80 rounded-full flex items-center justify-center text-white text-xl hover:bg-black transition">
                 +
               </button>
             </div>
 
             {/* Science Lab Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-gray-400 h-100">
+            <div className="relative rounded-3xl overflow-hidden h-[500px]">
               <Image 
-                src="/lab.jpg" 
-                alt="Science Lab" 
+                src="/img/science-lab.jpg" 
+                alt="Science Labs" 
                 width={400}
-                height={400}
-                className="absolute inset-0 w-full h-full object-cover"
+                height={500}
+                className="w-full h-full object-cover"
               />
-              <div className="absolute top-0 left-0 right-0 p-6">
-                <h3 className="text-teal-400 font-semibold text-lg italic">
-                  State-of-the-Art<br />Science<br />Laboratories
+              <div className="absolute top-6 left-6">
+                <h3 className="text-white font-semibold text-2xl">
+                  State-Of-The-Art<br />Science <br/> Laboratories
                 </h3>
               </div>
-              <button className="absolute bottom-6 right-6 w-10 h-10 bg-gray-800/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white text-2xl hover:bg-gray-800/70 transition">
+              <button className="absolute bottom-6 right-6 w-12 h-12 bg-black/80 rounded-full flex items-center justify-center text-white text-xl hover:bg-black transition">
                 +
               </button>
             </div>
+            
 
             {/* Computer Lab Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-gray-400 h-100">
+            <div className="relative rounded-3xl overflow-hidden h-[500px]">
               <Image 
-                src="/computer-lab.jpg" 
-                alt="Computer Lab" 
+                src="/img/comp-lab.jpg" 
+                alt="computer and ICT Labs" 
                 width={400}
-                height={400}
-                className="absolute inset-0 w-full h-full object-cover"
+                height={500}
+                className="w-full h-full object-cover"
               />
-              <div className="absolute top-0 left-0 right-0 p-6">
-                <h3 className="text-teal-400 font-semibold text-lg italic">
-                  Computer and<br />ICT Labs
+              <div className="absolute top-6 left-6">
+                <h3 className="text-white font-semibold text-2xl">
+                  Computer and ICT<br />Labs
                 </h3>
               </div>
-              <button className="absolute bottom-6 right-6 w-10 h-10 bg-gray-800/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white text-2xl hover:bg-gray-800/70 transition">
+              <button className="absolute bottom-6 right-6 w-12 h-12 bg-black/80 rounded-full flex items-center justify-center text-white text-xl hover:bg-black transition">
                 +
               </button>
             </div>
+            
 
             {/* Library Card */}
-            <div className="relative rounded-3xl overflow-hidden bg-gray-400 h-100">
+            <div className="relative rounded-3xl overflow-hidden h-[500px]">
               <Image 
-                src="/library.jpg" 
-                alt="Library" 
+                src="/img/lib-room.jpg" 
+                alt="Library Rooms" 
                 width={400}
-                height={400}
-                className="absolute inset-0 w-full h-full object-cover"
+                height={500}
+                className="w-full h-full object-cover"
               />
-              <div className="absolute top-0 left-0 right-0 p-6">
-                <h3 className="text-teal-400 font-semibold text-lg italic">
-                  Library and<br />Resource Room
+              <div className="absolute top-6 left-6">
+                <h3 className="text-white font-semibold text-2xl">
+                  Library<br />Rooms
                 </h3>
               </div>
-              <button className="absolute bottom-6 right-6 w-10 h-10 bg-gray-800/60 backdrop-blur-sm rounded-full flex items-center justify-center text-white text-2xl hover:bg-gray-800/70 transition">
+              <button className="absolute bottom-6 right-6 w-12 h-12 bg-black/80 rounded-full flex items-center justify-center text-white text-xl hover:bg-black transition">
                 +
               </button>
             </div>
+            
           </div>
         </div>
       </section>
 
       {/* Programs Section */}
-      <section className="py-20 bg-[#006437] relative overflow-hidden">
+      <section className="py-40 pb-50 px-10 bg-[#006437] relative overflow-hidden">
         {/* Background decorations */}
         <div className="absolute inset-0 pointer-events-none">
           <Image
             src="/icon/spiralarrow.svg"
             alt="spiral arrow"
-            width={80}
-            height={80}
-            className="absolute top-20 right-20 opacity-60"
+            width={120}
+            height={120}
+            className="absolute top-30 right-80 opacity-90 -rotate-x-180 -rotate-y-180 -rotate-[60deg]"
+          />
+          <Image
+            src="/icon/spiralarrow.svg"
+            alt="spiral arrow"
+            width={100}
+            height={100}
+            className="absolute top-20 left-20 opacity-90"
+          />
+          <Image
+            src="/icon/spiralarrow.svg"
+            alt="spiral arrow"
+            width={100}
+            height={100}
+            className="absolute bottom-20 right-110 opacity-90 -rotate-y-180 -rotate-x-180"
           />
           <Image
             src="/icon/rocket.svg"
             alt="rocket"
-            width={120}
-            height={120}
-            className="absolute bottom-20 right-32 opacity-70"
+            width={200}
+            height={200}
+            className="absolute top-130 left-50 opacity-90 -rotate-y-180 -rotate-[20deg]"
+          />
+          <Image
+            src="/icon/rocket.svg"
+            alt="rocket"
+            width={200}
+            height={200}
+            className="absolute bottom-75 right-54 opacity-90 -rotate-y-180 -rotate-[20deg]"
           />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <p className="text-white/60 text-sm mb-2 text-center">Africa Rising</p>
-          <h2 className="text-4xl font-bold text-white mb-20 text-center">Our Programs</h2>
+        <div className="max-w-7xl mx-auto sm:px-8 lg:px-0 relative z-10">
+          <p className="text-white/60 text-lg mb-2 text-center">Africa Rising</p>
+          <h2 className="text-5xl font-bold text-white mb-20 text-center">Our Programs</h2>
           
-          <div className="space-y-24">
+          <div className="space-y-60">
             {/* Primary School */}
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-              {/* Tilted Image with torn paper effect */}
+            <div className="grid mx-auto md:grid-cols-2 sm:gap-20 gap-60 space-x-20 items-center">
+              {/* Tilted Image */}
               <div className="relative flex justify-center">
-                <div className="relative hover:rotate-[-3deg] transition-transform duration-300">
+                <div className="relative hover:rotate-[3deg] transition-transform duration-300">
                   <Image
                     src="/img/PrimarySchool.png"
                     alt='Primary School'
@@ -348,55 +373,43 @@ export default function LandingPage() {
 
               {/* Content */}
               <div className="text-white">
-                <p className="text-white/60 text-sm mb-1">About us</p>
-                <h3 className="text-3xl font-bold mb-6">Primary School</h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                <p className="text-white/60 text-base mb-1">About us</p>
+                <h3 className="text-5xl font-semibold mb-6">Primary School</h3>
+                <ul className="space-y-6">
+                <li className="flex items-start text-lg">
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Basic 1-6 Nigerian Curriculum</span>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Strong foundation in English, Mathematics & Sciences</span>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Introduction to Computer Studies</span>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Creative Arts and Physical Education</span>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Character and Moral Development</span>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Regular assessments and progress reports</span>
                   </li>
                 </ul>
@@ -404,58 +417,46 @@ export default function LandingPage() {
             </div>
 
             {/* Secondary School */}
-            <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="grid md:grid-cols-2 sm:gap-20 gap-60 items-center">
               {/* Content */}
               <div className="text-white order-2 md:order-1">
-                <p className="text-white/60 text-sm mb-1">About us</p>
-                <h3 className="text-3xl font-bold mb-6">Secondary School</h3>
-                <ul className="space-y-3">
-                  <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                <p className="text-white/60 text-base mb-1">About us</p>
+                <h3 className="text-5xl font-bold mb-6">Secondary School</h3>
+                <ul className="space-y-6">
+                <li className="flex items-start text-lg">
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Junior & Senior Secondary (JSS 1 - SS 3)</span>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Science, Commercial & Arts Departments</span>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>WAEC & NECO Examination Preparation</span>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Advanced Computer & ICT Training</span>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Career Counseling and University Guidance</span>
                   </li>
                   <li className="flex items-start">
-                    <span className="w-5 h-5 rounded-full bg-yellow-400 flex items-center justify-center mr-3 mt-0.5 flex-shrink-0">
-                      <svg className="w-3 h-3 text-green-800" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    </span>
+                    <svg className="w-4 h-4 text-white mr-3 mt-0.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
                     <span>Leadership and Entrepreneurship Programs</span>
                   </li>
                 </ul>
@@ -480,14 +481,35 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-3xl p-16 text-center">
-            <h2 className="text-3xl font-bold text-green-800 mb-8">
-              LET&apos;S SHAPE THE FUTURE OF<br />
-              EDUCATION TOGETHER
-            </h2>
-            <button className="bg-green-800 text-white px-8 py-4 rounded-full font-medium hover:-translate-y-1 hover:shadow-lg transition transform">
-              Apply for admission →
-            </button>
+          <div className="relative overflow-hidden text-center rounded-3xl p-16 py-20 bg-gradient-to-b from-white via-[#F7FEE7]/70 to-[#89c082]">
+            {/* Soft vertical bars */}
+            <div className="absolute inset-0 flex justify-between opacity-40 pointer-events-none">
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100/80 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100/80 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100/80 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100/80 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100/80 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100/80 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100/80 to-transparent"></div>
+              <div className="w-1 bg-gradient-to-b from-transparent via-green-100 to-transparent"></div>
+            </div>
+            
+            <div className="relative z-10">
+              <h2 className="text-4xl font-semibold text-black mb-8">
+                LET&apos;S SHAPE THE FUTURE OF<br />
+                EDUCATION TOGETHER
+              </h2>
+              <button className="bg-green-800 text-white px-8 py-4 rounded-lg font-medium hover:-translate-y-1 hover:shadow-lg transition transform">
+                Apply for admission →
+              </button>
+            </div>
           </div>
         </div>
       </section>
@@ -591,6 +613,46 @@ export default function LandingPage() {
               <p className="mt-2 text-white/80">Follow us</p>
               <div className="flex gap-3 mt-2">
                 {/* Social icons */}
+                <Link 
+                  href="/"
+                >
+                  <Image
+                    src="/icon/linkedin.svg"
+                    alt='LinkedIn'
+                    width={15}
+                    height={15}
+                  />
+                </Link>
+                <Link 
+                  href="/"
+                >
+                  <Image
+                    src="/icon/insta.svg"
+                    alt='Instagram'
+                    width={15}
+                    height={15}
+                  />
+                </Link>
+                <Link 
+                  href="/"
+                >
+                  <Image
+                    src="/icon/X.svg"
+                    alt='X'
+                    width={15}
+                    height={15}
+                  />
+                </Link>
+                <Link 
+                  href="/"
+                >
+                  <Image
+                    src="/icon/tiktok.svg"
+                    alt='TikTok'
+                    width={15}
+                    height={15}
+                  />
+                </Link>
               </div>
             </div>
             <div>
