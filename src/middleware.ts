@@ -72,7 +72,7 @@ export function middleware(req: NextRequest) {
   if (bypassParam === 'true') {
     // Set a cookie to remember the bypass
     const response = NextResponse.next();
-    response.cookies.set('bypass-coming-soon', 'true', {
+    response.cookies.set('bypass-landing-page', 'true', {
       maxAge: 60 * 60 * 24, // 24 hours
       httpOnly: true,
       sameSite: 'lax',
@@ -81,18 +81,18 @@ export function middleware(req: NextRequest) {
   }
   
   // Check for bypass cookie
-  const bypassCookie = req.cookies.get('bypass-coming-soon');
+  const bypassCookie = req.cookies.get('bypass-landing-page');
   if (bypassCookie?.value === 'true') {
     return NextResponse.next();
   }
   
-  // If it's the root path, redirect to coming-soon
+  // If it's the root path, redirect to landing page
   if (path === '/') {
-    return NextResponse.redirect(new URL('/coming-soon', req.url));
+    return NextResponse.redirect(new URL('/', req.url));
   }
   
-  // For all other routes, redirect to coming-soon
-  return NextResponse.redirect(new URL('/coming-soon', req.url));
+  // For all other routes, redirect to landing page
+  return NextResponse.redirect(new URL('/', req.url));
 }
 
 export const config = {
