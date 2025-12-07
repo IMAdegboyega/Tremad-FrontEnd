@@ -12,7 +12,6 @@ interface ResultsTableProps {
   onSearchChange: (query: string) => void;
   currentPage: number;
   totalPages: number;
-  statusBg: string;
   onPageChange: (page: number) => void;
 }
 
@@ -22,17 +21,16 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
   onSearchChange,
   currentPage,
   totalPages,
-  statusBg,
   onPageChange,
 }) => {
   const getStatusStyles = (status: StudentResult['status']) => {
     switch (status) {
       case 'Active':
-        return 'text-green-600 bg-green-600';
+        return 'text-green-700 px-2 py-1 rounded-full bg-green-100';
       case 'Inactive':
-        return 'text-gray-500';
+        return 'text-gray-500 px-2 py-1 rounded-full bg-gray-100';
       case 'Suspended':
-        return 'text-red-500';
+        return 'text-red-500 px-2 py-1 rounded-full bg-red-100';
       default:
         return 'text-gray-600';
     }
@@ -94,34 +92,11 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200">
-      {/* Search and Filters */}
-      <div className="p-4 flex items-center gap-4 border-b border-gray-200">
-        <div className="flex-1 relative">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by student name, email or ID..."
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
-          />
-        </div>
-
-        <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
-          <ListFilter className="w-4 h-4" />
-          Filter by status
-        </button>
-
-        <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
-          <ListFilter className="w-4 h-4" />
-          Filter by grade
-        </button>
-      </div>
 
       {/* Table */}
       <table className="w-full">
         <thead>
-          <tr className="border-b border-gray-200">
+          <tr className="border-b border-gray-200 bg-gray-100">
             <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Name</th>
             <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Class</th>
             <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Total Score</th>

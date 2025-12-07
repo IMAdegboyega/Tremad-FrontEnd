@@ -12,6 +12,7 @@ import { Search, ChevronLeft, ChevronRight, ListFilter } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { allStaffData } from '@/Constants/PortalLoginData';
 import StatsCard from '@/components/superadmin/PortalLogin/StatsCard';
+import AddStaffModal from '@/components/modals/AddStaff';
 
 // Expected shape of each staff member in allStaffData:
 // {
@@ -31,6 +32,19 @@ const StaffManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   // Status filter; 'all' means include every status
   const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Inactive' | 'Suspended'>('all');
+
+  const [showAddStaffModal, setShowAddStaffModal] = useState(false);
+
+  const renderModals = () => {
+    return (
+      <>
+        <AddStaffModal
+          isOpen={showAddStaffModal}
+          onClose={() => setShowAddStaffModal(false)}
+        />
+      </>
+    )
+  }
 
   // Number of staff rows displayed per page in the table.
   // Note: If you expose this as a user setting, ensure currentPage is clamped when it changes.
@@ -138,9 +152,9 @@ const StaffManagement: React.FC = () => {
               Current term
             </button>
             {/* Trigger a create-staff modal or navigate to a creation form */}
-            <button className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2">
+            <button onClick={() => setShowAddStaffModal(true)} className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2">
               <span className="text-lg">+</span>
-              Add new staff
+              Add new staff 
             </button>
           </div>
         </div>
@@ -366,6 +380,7 @@ const StaffManagement: React.FC = () => {
           )}
         </div>
       </main>
+      {renderModals()}
     </div>
   );
 };

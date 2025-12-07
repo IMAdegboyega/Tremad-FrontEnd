@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Download, ListFilter } from 'lucide-react';
+import { Download, ListFilter, Search } from 'lucide-react';
 import ResultStatsCard from '@/components/superadmin/Result/Resultstatscard';
 import QuickActionCard from '@/components/superadmin/Result/Quickactioncard';
 import ResultsTable from '@/components/superadmin/Result/Resultstable';
@@ -16,7 +16,13 @@ export interface StudentResult {
   status: 'Active' | 'Inactive' | 'Suspended';
 }
 
-const ResultManagement: React.FC = () => {
+export interface ResultManagementprop {
+  onSearchChange: (query: string) => void;
+}
+
+const ResultManagement: React.FC<ResultManagementprop> = ({
+  onSearchChange,
+  }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTerm, setSelectedTerm] = useState('First Term 2025');
@@ -153,9 +159,9 @@ const ResultManagement: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-6 space-y-4">
       {/* Header */}
-      <div className="flex justify-between items-start mb-6">
+      <div className="flex justify-between items-start">
         <div>
           <h1 className="text-2xl font-semibold text-gray-900">Result management</h1>
           <p className="text-sm text-gray-500 mt-1">Manage subjects and view progress</p>
@@ -176,7 +182,7 @@ const ResultManagement: React.FC = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <ResultStatsCard
           title="Student pass rate"
           trinket= "/icon/message.svg"
@@ -202,7 +208,7 @@ const ResultManagement: React.FC = () => {
       </div>
 
       {/* Quick Actions */}
-      <div className="mb-6 bg-white flex flex-col p-4 rounded-xl">
+      <div className="bg-white flex flex-col p-4 rounded-xl">
         <h2 className="text-sm font-medium text-gray-700 mb-3">Quick actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
           {quickActions.map((action) => (
@@ -215,6 +221,32 @@ const ResultManagement: React.FC = () => {
               onClick={() => console.log(`Clicked: ${action.title}`)}
             />
           ))}
+        </div>
+      </div>
+
+      <div className='p-2 bg-white rounded-lg'>
+        {/* Search and Filters */}
+        <div className="p-0 flex items-center gap-4">
+          <div className="flex-1 relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by student name, email or ID..."
+              value={searchQuery}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 text-sm rounded-lg focus:outline-none  focus:border-transparent"
+            />
+          </div>
+
+          <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-100 rounded-lg hover:bg-gray-50">
+            <ListFilter className="w-4 h-4" />
+            Filter by status
+          </button>
+
+          <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-100 rounded-lg hover:bg-gray-50">
+            <ListFilter className="w-4 h-4" />
+            Filter by grade
+          </button>
         </div>
       </div>
 
