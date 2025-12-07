@@ -7,12 +7,16 @@
 // - Implements a smart pagination component with ellipses for large page counts
 
 import React, { useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, ListFilter } from 'lucide-react';
+import { Search, ChevronLeft, ChevronRight, ListFilter, ArrowLeft } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { allStudentData } from '@/Constants/PortalLoginData';
+import { allStudentData, studentActivities as importedStudentActivities, studentData } from '@/Constants/PortalLoginData';
 import StatsCard from '@/components/superadmin/PortalLogin/StatsCard';
 import DeleteAccountModal from '@/components/modals/DeleteAcount';
 import AddStudentModal from '@/components/modals/AddStudent';
+import Image from 'next/image';
+import DeactivateAccountModal from '@/components/modals/Deactivate';
+import ResetPasswordModal from '@/components/modals/ResetPassword';
+import SendCredentialsModal from '@/components/modals/SendCredentials';
 // Expected shape of each student in allStudentData:
 // {
 //   id: string | number,         // Stable unique key for React list rendering
@@ -24,7 +28,47 @@ import AddStudentModal from '@/components/modals/AddStudent';
 //   status: 'Active' | 'Inactive' | 'Suspended' // Drives badge styles and status filter
 // }
 
-const StudentManagement: React.FC = () => {
+interface StudentActivity {
+  id: string;
+  date: string;
+  time: string;
+  deviceBrowser: string;
+  actionType: string;
+  status: 'Success' | 'Failed';
+  ipAddress: string;
+}
+interface AllStudent {
+  id: string;
+  fullName: string;
+  admissionNo: string;
+  email: string;
+  status: 'Active' | 'Inactive' | 'Suspended';
+  lastLogin: string;
+  studentId: string;
+  grade: string;
+  course: string;
+  phone: string;
+  address: string;
+  dateOfBirth: string;
+  gender: string;
+  guardianName: string;
+  guardianPhone: string;
+  admissionDate: string;
+}
+
+interface StudentManagementProps {
+  isDetailView?: boolean;
+  selectedStudent?: AllStudent;
+  studentActivities?: StudentActivity[];
+  onBack?: () => void;
+  onViewAllHistory?: () => void;
+  onResetPassword?: () => void;
+  onDeactivateAccount?: () => void;
+  onSendCredentials?: () => void;
+  onDeleteAccount?: () => void;
+}
+
+const StudentManagement: React.FC<StudentManagementProps> = ({ selectedStudent, studentActivities = importedStudentActivities, onBack, onViewAllHistory, onResetPassword, onDeactivateAccount, onSendCredentials, onDeleteAccount }) => {
   // Search string entered by the user; used to match name, email, studentId, or admissionNo
   const [searchQuery, setSearchQuery] = useState('');
   // Current page for pagination (1-indexed)
@@ -33,22 +77,46 @@ const StudentManagement: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Inactive' | 'Suspended'>('all');
   // Grade/class filter; 'all' means include every grade
   const [gradeFilter, setGradeFilter] = useState<string>('all');
-  const [selectedStudentForModal, setSelectedStudentForModal] = useState<typeof allStudentData[0] | null>(null);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  const [isDetailView, setIsDetailView] = useState(false);
+  const [selectedStudentForDetail, setSelectedStudentForDetail] = useState<typeof allStudentData[0] | null>(null);
+  const [isHistoryView, setIsHistoryView] = useState(false);
+
+  const [selectedStudentForModal, setSelectedStudentForModal] = useState<typeof allStudentData[0] | null>(null);
+  const [showDeactivateModal, setShowDeactivateModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [showCredentialsModal, setShowCredentialsModal] = useState(false);
 
   const renderModals = () => {
-    
     return (
       <>
-        {selectedStudentForModal && (
-          <DeleteAccountModal
-            isOpen={showDeleteModal}
-            onClose={() => setShowDeleteModal(false)}
-            studentName={selectedStudentForModal.fullName}
-          />
-        )}
+        <DeactivateAccountModal
+          isOpen={showDeactivateModal}
+          onClose={() => setShowDeactivateModal(false)}
+          studentName={selectedStudentForModal?.fullName ?? ""}
+        />
+
+        <DeleteAccountModal
+          isOpen={showDeleteModal}
+          onClose={() => setShowDeleteModal(false)}
+          studentName={selectedStudentForModal?.fullName ?? ""}
+        />
+
+        <ResetPasswordModal
+          isOpen={showResetModal}
+          onClose={() => setShowResetModal(false)}
+          studentName={selectedStudentForModal?.fullName ?? ""}
+          studentEmail={selectedStudentForModal?.email ?? ""}
+        />
+
+        <SendCredentialsModal
+          isOpen={showCredentialsModal}
+          onClose={() => setShowCredentialsModal(false)}
+          studentName={selectedStudentForModal?.fullName ?? ""}
+        />
+  
         <AddStudentModal
           isOpen={showAddStudentModal}
           onClose={() => setShowAddStudentModal(false)}
@@ -157,281 +225,525 @@ const StudentManagement: React.FC = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 space-y-3 p-2">
-      {/* Header */}
-      <header>
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Student management</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage subjects and view progress</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {/* Could be connected to a term/semester selector in future */}
-            <button className="px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-              <ListFilter size={20} />
-              Current term
-            </button>
-            {/* Trigger a create-student modal or navigate to a creation form */}
-            <button onClick={() => setShowAddStudentModal(true)} className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2">
-              <span className="text-lg">+</span>
-              Add new student
-            </button>
-          </div>
+  const handleViewDetails = (studentId: string) => {
+    const student = allStudentData.find(s => s.id === studentId);
+    if (student) {
+      setSelectedStudentForDetail(student);
+      setIsDetailView(true);
+    }
+  };
+
+  const handleViewAllHistory = () => {
+    setIsHistoryView(true);
+    setIsDetailView(false);
+  };
+
+  const handleBackFromHistory = () => {
+    setIsHistoryView(false);
+    setIsDetailView(true);
+  };
+
+  const handleBackToList = () => {
+    setIsDetailView(false);
+    setSelectedStudentForDetail(null);
+  };
+
+  // Render full history view
+  if (isHistoryView && selectedStudentForDetail) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        {/* Header with Back Button */}
+        <div className="mb-6">
+          <button 
+            onClick={handleBackFromHistory}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            Recent History - {selectedStudentForDetail.fullName}
+          </h1>
         </div>
 
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
-          <StatsCard
-            title="Total Students" 
-            count={10} 
-            icon='/icon/message.svg'
-            change="+20.1% from last term" 
-            isPositive={true}
-          />
-          <StatsCard
-            title="Active Students" 
-            count={0} 
-            icon='/icon/activity.svg'
-            change="-20.1% from last term" 
-            isPositive={false}
-          />
-          <StatsCard
-            title="New this month" 
-            count={12} 
-            icon='/icon/activity.svg'
-            change="+20.1% from last term" 
-            isPositive={true}
-          />
+        {/* Full History Table */}
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Date & Time</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Device/Browser</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Action type</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">IP Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {studentActivities.map((activity) => (
+                  <tr key={activity.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-900">{activity.date}</div>
+                      <div className="text-xs text-gray-500">{activity.time}</div>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{activity.deviceBrowser}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{activity.actionType}</td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                        activity.status === 'Success' 
+                          ? 'bg-green-50 text-green-700' 
+                          : 'bg-red-50 text-red-700'
+                      }`}>
+                        {activity.status}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{activity.ipAddress}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Render individual student detail view
+  if (isDetailView && selectedStudentForDetail) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-8">
+        {/* Header with Back Button */}
+        <div className="mb-6">
+          <button 
+            onClick={handleBackToList}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
         </div>
 
-        
-      </header>
-
-      {/* Main Content
-          Layout/spacing is intentionally minimal here; parent container adds global padding.
-          The card below hosts search and filters; table handles overflow inside a bordered box.
-      */}
-      <main>
-        {/* Search and Filters */}
-        <div className="bg-white rounded-lg border border-gray-100 mb-6">
-          <div className="p-4 flex items-center gap-4">
-            <div className="flex-1 relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by student name, email or ID..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  // Reset to first page whenever the search query changes
-                  setCurrentPage(1);
-                }}
-                className="w-full pl-10 pr-4 py-2 text-sm border-0 focus:outline-none"
+        {/* Student Profile Card */}
+        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+          <div className="flex items-start gap-6">
+            {/* Profile Picture */}
+            <div className="w-16 h-16 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden">
+              <Image 
+                src="/avatar-placeholder.png" 
+                alt={selectedStudentForDetail.fullName}
+                width={64}
+                height={64}
+                className="w-full h-full object-cover"
               />
             </div>
 
-            {/* Status filter menu: exact match on status string.
-                UX: Chip next to label shows active selection when not 'all'. */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
-                  <ListFilter size={20} />
-                  Filter by status
-                  {statusFilter !== 'all' && (
-                    <span className="ml-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
-                      {statusFilter}
-                    </span>
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {/* Reset pagination when filters change to avoid landing on empty pages */}
-                <DropdownMenuItem onClick={() => { setStatusFilter('all'); setCurrentPage(1); }}>
-                  <span className='cursor-pointer'>All Status</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setStatusFilter('Active'); setCurrentPage(1); }}>
-                  <span className='cursor-pointer'>Active ({activeStudents})</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setStatusFilter('Inactive'); setCurrentPage(1); }}>
-                  <span className='cursor-pointer'>Inactive ({inactiveStudents})</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setStatusFilter('Suspended'); setCurrentPage(1); }}>
-                  <span className='cursor-pointer'>Suspended ({suspendedStudents})</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            {/* Student Info */}
+            <div className="flex-1">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">{selectedStudentForDetail.fullName}</h2>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {selectedStudentForDetail.studentId} • {selectedStudentForDetail.grade} - {selectedStudentForDetail.course} • Admission # {selectedStudentForDetail.admissionNo}
+                  </p>
+                </div>
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium ${
+                  selectedStudentForDetail.status === 'Active' 
+                    ? 'bg-green-50 text-green-700' 
+                    : selectedStudentForDetail.status === 'Suspended'
+                    ? 'bg-yellow-50 text-yellow-700'
+                    : 'bg-red-50 text-red-700'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${
+                    selectedStudentForDetail.status === 'Active' 
+                      ? 'bg-green-600' 
+                      : selectedStudentForDetail.status === 'Suspended'
+                      ? 'bg-yellow-600'
+                      : 'bg-red-600'
+                  }`} />
+                  {selectedStudentForDetail.status} Account
+                </span>
+              </div>
 
-            {/* Grade filter menu: unique grade values derived from dataset at runtime.
-                Consider normalizing grade labels or loading from a schema to ensure consistent options. */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
-                  <ListFilter size={20} />
-                  Filter by grade
-                  {gradeFilter !== 'all' && (
-                    <span className="ml-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
-                      {gradeFilter}
-                    </span>
-                  )}
+              {/* Quick Actions */}
+              <div className="flex gap-3">
+                <button onClick={() => {
+                  setSelectedStudentForModal(selectedStudentForDetail);
+                  setShowResetModal(true);
+                }} className="flex items-center cursor-pointer gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-lg text-sm font-medium hover:bg-green-100">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Reset password
+                  <span className="text-xs">Via email verified</span>
                 </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                {/* Same pagination reset logic applies to grade changes */}
-                <DropdownMenuItem onClick={() => { setGradeFilter('all'); setCurrentPage(1); }}>
-                  <span className='cursor-pointer'>All Grades</span>
-                </DropdownMenuItem>
-                {Array.from(new Set(allStudentData.map(s => s.grade))).map(grade => (
-                  <DropdownMenuItem key={grade} onClick={() => { setGradeFilter(grade); setCurrentPage(1); }}>
-                    <span className='cursor-pointer'>{grade}</span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                
+                <button onClick={() => {
+                  setSelectedStudentForModal(selectedStudentForDetail);
+                  setShowDeactivateModal(true);
+                }} className="flex items-center cursor-pointer gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 rounded-lg text-sm font-medium hover:bg-yellow-100">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                  Deactivate account
+                  <span className="text-xs">Settings will be saved</span>
+                </button>
+                
+                <button onClick={() => {
+                  setSelectedStudentForModal(selectedStudentForDetail);
+                  setShowCredentialsModal(true);
+                }} className="flex items-center cursor-pointer gap-2 px-4 py-2 bg-yellow-50 text-yellow-700 rounded-lg text-sm font-medium hover:bg-yellow-100">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                  </svg>
+                  Send Credentials
+                  <span className="text-xs">Settings will be saved</span>
+                </button>
+                
+                <button onClick={() => {
+                  setSelectedStudentForModal(selectedStudentForDetail);
+                  setShowDeleteModal(true);
+                }} className="flex items-center cursor-pointer gap-2 px-4 py-2 bg-red-50 text-red-700 rounded-lg text-sm font-medium hover:bg-red-100">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete Account
+                  <span className="text-xs">Remove all data</span>
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Students Table
-            Accessibility: Table uses semantic <table>/<thead>/<tbody>.
-            Consider adding scope="col" to <th> for improved screen reader support.
-            For very large datasets, consider virtualization (e.g., react-window). */}
-        <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Name</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Student ID</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Class</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentStudents.length > 0 ? (
-                currentStudents.map((student) => (
-                  <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50">
+        {/* Recent History Section */}
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="flex items-center justify-between p-4 border-b border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900">Recent History</h3>
+            <button onClick={handleViewAllHistory} className="text-sm cursor-pointer text-green-700 hover:text-green-900">View all ››</button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Date & Time</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Device/Browser</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Action type</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">IP Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(studentActivities ?? []).slice(0, 5).map((activity) => (
+                  <tr key={activity.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600">
-                            {/* Render up to two-letter initials (first letters of name parts).
-                               Edge cases: single-word names -> first letter only; names with punctuation are taken literally. */}
-                            {student.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{student.fullName}</div>
-                          {student.email && (
-                            <div className="text-xs text-gray-500">{student.email}</div>
-                          )}
-                        </div>
-                      </div>
+                      <div className="text-sm text-gray-900">{activity.date}</div>
+                      <div className="text-xs text-gray-500">{activity.time}</div>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{student.admissionNo}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{student.grade}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{activity.deviceBrowser}</td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{activity.actionType}</td>
                     <td className="px-6 py-4">
-                      {/* Status badge with color coding per status */}
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                        student.status === 'Active' 
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                        activity.status === 'Success' 
                           ? 'bg-green-50 text-green-700' 
-                          : student.status === 'Suspended'
-                          ? 'bg-yellow-50 text-yellow-700'
                           : 'bg-red-50 text-red-700'
                       }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
-                          student.status === 'Active' 
-                            ? 'bg-green-600' 
-                            : student.status === 'Suspended'
-                            ? 'bg-yellow-600'
-                            : 'bg-red-600'
-                        }`} />
-                        {student.status}
+                        {activity.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                            </svg>
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {/* Wire these to route navigations or modals as required */}
-                          <DropdownMenuItem>
-                            <span className='cursor-pointer'>View Details</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <span className='cursor-pointer'>Edit Profile</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-600">{activity.ipAddress}</td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">
-                    No students found matching your criteria
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-
-          {/* Custom Pagination - Fully Functional
-              Behavior:
-              - Prev/Next buttons are disabled at the bounds [1, totalPages]
-              - Page number list collapses with ellipses when totalPages > 7
-              - Non-numeric ellipsis elements are non-interactive */}
-          {filteredStudents.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-              {/* Previous Button */}
-              <button 
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={currentPage === 1}
-                onClick={() => handlePageChange(currentPage - 1)}
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Previous
-              </button>
-
-              {/* Page Numbers */}
-              <div className="flex items-center gap-2">
-                {generatePageNumbers().map((page, index) => (
-                  <button
-                    key={index}
-                    // Only numeric pages are interactive; ellipses act as visual separators
-                    onClick={() => typeof page === 'number' && handlePageChange(page)}
-                    disabled={typeof page !== 'number'}
-                    className={`min-w-[32px] h-8 flex items-center justify-center text-sm rounded-lg transition-colors ${
-                      page === currentPage
-                        ? 'bg-green-600 text-white font-medium'
-                        : typeof page === 'number'
-                        ? 'text-gray-700 hover:bg-gray-100'
-                        : 'text-gray-400 cursor-default'
-                    }`}
-                  >
-                    {page}
-                  </button>
                 ))}
-              </div>
-
-              {/* Next Button */}
-              <button 
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={currentPage === totalPages}
-                onClick={() => handlePageChange(currentPage + 1)}
-              >
-                Next
-                <ChevronRight className="w-4 h-4" />
+              </tbody>
+            </table>
+          </div>
+        </div>
+        {renderModals()}
+      </div>
+    );
+  }
+  
+  return (
+    <>
+      <div className="min-h-screen bg-gray-50 space-y-3 p-2">
+        {/* Header */}
+        <header>
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <h1 className="text-2xl font-semibold text-gray-900">Student management</h1>
+              <p className="text-sm text-gray-500 mt-1">Manage subjects and view progress</p>
+            </div>
+            <div className="flex items-center gap-3">
+              {/* Could be connected to a term/semester selector in future */}
+              <button className="px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+                <ListFilter size={20} />
+                Current term
+              </button>
+              {/* Trigger a create-student modal or navigate to a creation form */}
+              <button onClick={() => setShowAddStudentModal(true)} className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2">
+                <span className="text-lg">+</span>
+                Add new student
               </button>
             </div>
-          )}
-        </div>
-      </main>
-      {renderModals()}
-    </div>
+          </div>
+
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+            <StatsCard
+              title="Total Students" 
+              count={10} 
+              icon='/icon/message.svg'
+              change="+20.1% from last term" 
+              isPositive={true}
+            />
+            <StatsCard
+              title="Active Students" 
+              count={0} 
+              icon='/icon/activity.svg'
+              change="-20.1% from last term" 
+              isPositive={false}
+            />
+            <StatsCard
+              title="New this month" 
+              count={12} 
+              icon='/icon/activity.svg'
+              change="+20.1% from last term" 
+              isPositive={true}
+            />
+          </div>
+
+          
+        </header>
+
+        {/* Main Content
+            Layout/spacing is intentionally minimal here; parent container adds global padding.
+            The card below hosts search and filters; table handles overflow inside a bordered box.
+        */}
+        <main>
+          {/* Search and Filters */}
+          <div className="bg-white rounded-lg border border-gray-100 mb-6">
+            <div className="p-4 flex items-center gap-4">
+              <div className="flex-1 relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by student name, email or ID..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    // Reset to first page whenever the search query changes
+                    setCurrentPage(1);
+                  }}
+                  className="w-full pl-10 pr-4 py-2 text-sm border-0 focus:outline-none"
+                />
+              </div>
+
+              {/* Status filter menu: exact match on status string.
+                  UX: Chip next to label shows active selection when not 'all'. */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <ListFilter size={20} />
+                    Filter by status
+                    {statusFilter !== 'all' && (
+                      <span className="ml-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
+                        {statusFilter}
+                      </span>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {/* Reset pagination when filters change to avoid landing on empty pages */}
+                  <DropdownMenuItem onClick={() => { setStatusFilter('all'); setCurrentPage(1); }}>
+                    <span className='cursor-pointer'>All Status</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setStatusFilter('Active'); setCurrentPage(1); }}>
+                    <span className='cursor-pointer'>Active ({activeStudents})</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setStatusFilter('Inactive'); setCurrentPage(1); }}>
+                    <span className='cursor-pointer'>Inactive ({inactiveStudents})</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => { setStatusFilter('Suspended'); setCurrentPage(1); }}>
+                    <span className='cursor-pointer'>Suspended ({suspendedStudents})</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Grade filter menu: unique grade values derived from dataset at runtime.
+                  Consider normalizing grade labels or loading from a schema to ensure consistent options. */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
+                    <ListFilter size={20} />
+                    Filter by grade
+                    {gradeFilter !== 'all' && (
+                      <span className="ml-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
+                        {gradeFilter}
+                      </span>
+                    )}
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  {/* Same pagination reset logic applies to grade changes */}
+                  <DropdownMenuItem onClick={() => { setGradeFilter('all'); setCurrentPage(1); }}>
+                    <span className='cursor-pointer'>All Grades</span>
+                  </DropdownMenuItem>
+                  {Array.from(new Set(allStudentData.map(s => s.grade))).map(grade => (
+                    <DropdownMenuItem key={grade} onClick={() => { setGradeFilter(grade); setCurrentPage(1); }}>
+                      <span className='cursor-pointer'>{grade}</span>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+
+          {/* Students Table
+              Accessibility: Table uses semantic <table>/<thead>/<tbody>.
+              Consider adding scope="col" to <th> for improved screen reader support.
+              For very large datasets, consider virtualization (e.g., react-window). */}
+          <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Name</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Student ID</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Class</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentStudents.length > 0 ? (
+                  currentStudents.map((student) => (
+                    <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                            <span className="text-sm font-medium text-gray-600">
+                              {/* Render up to two-letter initials (first letters of name parts).
+                                Edge cases: single-word names -> first letter only; names with punctuation are taken literally. */}
+                              {student.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="text-sm font-medium text-gray-900">{student.fullName}</div>
+                            {student.email && (
+                              <div className="text-xs text-gray-500">{student.email}</div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{student.admissionNo}</td>
+                      <td className="px-6 py-4 text-sm text-gray-600">{student.grade}</td>
+                      <td className="px-6 py-4">
+                        {/* Status badge with color coding per status */}
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                          student.status === 'Active' 
+                            ? 'bg-green-50 text-green-700' 
+                            : student.status === 'Suspended'
+                            ? 'bg-yellow-50 text-yellow-700'
+                            : 'bg-red-50 text-red-700'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            student.status === 'Active' 
+                              ? 'bg-green-600' 
+                              : student.status === 'Suspended'
+                              ? 'bg-yellow-600'
+                              : 'bg-red-600'
+                          }`} />
+                          {student.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="text-gray-400 hover:text-gray-600">
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                              </svg>
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {/* View Details - same as StudentLogin pattern */}
+                            <DropdownMenuItem onClick={() => handleViewDetails(student.id)}>
+                              <span className='cursor-pointer'>View Details</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <span className='cursor-pointer'>Edit Profile</span>
+                            </DropdownMenuItem>
+                            {/* Delete User - same as StudentLogin pattern */}
+                            <DropdownMenuItem onClick={() => {
+                              setSelectedStudentForModal(selectedStudentForDetail);
+                              setShowDeleteModal(true);
+                            }}>
+                              <span className="text-red-600 cursor-pointer">Delete User</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">
+                      No students found matching your criteria
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+
+            {/* Custom Pagination - Fully Functional
+                Behavior:
+                - Prev/Next buttons are disabled at the bounds [1, totalPages]
+                - Page number list collapses with ellipses when totalPages > 7
+                - Non-numeric ellipsis elements are non-interactive */}
+            {filteredStudents.length > 0 && totalPages > 1 && (
+              <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
+                {/* Previous Button */}
+                <button 
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  Previous
+                </button>
+
+                {/* Page Numbers */}
+                <div className="flex items-center gap-2">
+                  {generatePageNumbers().map((page, index) => (
+                    <button
+                      key={index}
+                      // Only numeric pages are interactive; ellipses act as visual separators
+                      onClick={() => typeof page === 'number' && handlePageChange(page)}
+                      disabled={typeof page !== 'number'}
+                      className={`min-w-[32px] h-8 flex items-center justify-center text-sm rounded-lg transition-colors ${
+                        page === currentPage
+                          ? 'bg-green-600 text-white font-medium'
+                          : typeof page === 'number'
+                          ? 'text-gray-700 hover:bg-gray-100'
+                          : 'text-gray-400 cursor-default'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Next Button */}
+                <button 
+                  className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
+        </main>
+      </div>
+    {renderModals()}
+    </>
   );
 };
 

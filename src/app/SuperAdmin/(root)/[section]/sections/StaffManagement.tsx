@@ -140,7 +140,7 @@ const StaffManagement: React.FC = () => {
             {/* Trigger a create-staff modal or navigate to a creation form */}
             <button className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2">
               <span className="text-lg">+</span>
-              Add new student
+              Add new staff
             </button>
           </div>
         </div>

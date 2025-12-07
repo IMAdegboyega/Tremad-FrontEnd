@@ -3,6 +3,9 @@
 import React, { useState } from 'react';
 import ExamQuestionsGrid from '@/components/superadmin/Exams/ExamQuestionsGrid';
 import ExamQuestionDetail from '@/components/superadmin/Exams/ExamQuestionDetail';
+import CreateNewFolderModal from '@/components/modals/CreateNewFolderModal';
+import DeleteFileModal from '@/components/modals/DeleteFileModal';
+import RenameModal from '@/components/modals/RenameModal';
 
 export interface ExamQuestion {
   id: string;
@@ -10,7 +13,7 @@ export interface ExamQuestion {
   questionCount: number;
   duration: string;
   lastModified: string;
-  files?: ExamFile[]; // Files belonging to this subject
+  files?: ExamFile[];
 }
 
 export interface ExamFile {
@@ -24,6 +27,82 @@ export interface ExamFile {
 
 const ExamQuestions: React.FC = () => {
   const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+  const [showAddFileModal, setShowAddFileModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [itemToRename, setItemToRename] = useState<{ id: string; name: string } | null>(null);
+
+
+  // Handle file upload
+  const handleFileUpload = (files: File[]) => {
+    console.log('Uploaded files:', files);
+    // Process files - send to API, etc.
+  };
+
+  // Handle opening create folder modal
+  const handleOpenCreateModal = () => {
+    setShowAddFileModal(true);
+  };
+
+  // Handle delete folder/file - called from child components
+  const handleDeleteItem = (itemId: string, itemName: string) => {
+    setItemToDelete({ id: itemId, name: itemName });
+    setShowDeleteModal(true);
+  };
+
+  // Handle confirm delete
+  const handleConfirmDelete = () => {
+    if (itemToDelete) {
+      console.log('Deleting item:', itemToDelete.id);
+      // Call your API here to delete the folder/file
+    }
+  };
+
+  const handleRenameItem = (itemId: string, itemName: string) => {
+    setItemToRename({ id: itemId, name: itemName });
+    setShowRenameModal(true);
+  };
+  
+  const handleConfirmRename = (newName: string) => {
+    if (itemToRename) {
+      console.log('Renaming:', itemToRename.id, 'to', newName);
+      // Call your API here
+    }
+  };
+
+  // Render all modals
+  const renderModals = () => {
+    return (
+      <>
+        <CreateNewFolderModal
+          isOpen={showAddFileModal}
+          onClose={() => setShowAddFileModal(false)}
+          onUpload={handleFileUpload}
+        />
+
+        <DeleteFileModal
+          isOpen={showDeleteModal}
+          onClose={() => {
+            setShowDeleteModal(false);
+            setItemToDelete(null);
+          }}
+          fileName={itemToDelete?.name ?? ''}
+          onDelete={handleConfirmDelete}
+        />
+
+        <RenameModal
+          isOpen={showRenameModal}
+          onClose={() => {
+            setShowRenameModal(false);
+            setItemToRename(null);
+          }}
+          currentName={itemToRename?.name ?? ''}
+          onRename={handleConfirmRename}
+        />
+      </>
+    );
+  };
 
   // Sample data
   const examQuestions: ExamQuestion[] = [
@@ -174,19 +253,31 @@ const ExamQuestions: React.FC = () => {
   // Render detail view if a subject is selected
   if (selectedSubject) {
     return (
-      <ExamQuestionDetail 
-        subject={selectedSubject}
-        onBack={handleBackToGrid}
-      />
+      <>
+        <ExamQuestionDetail 
+          subject={selectedSubject}
+          onBack={handleBackToGrid}
+          onCreateNewFolder={handleOpenCreateModal}
+          onDeleteFolder={handleDeleteItem}
+          onRenameFolder={handleRenameItem}
+        />
+        {renderModals()}
+      </>
     );
   }
 
   // Render grid view
   return (
-    <ExamQuestionsGrid 
-      examQuestions={examQuestions}
-      onViewDetails={handleViewDetails}
-    />
+    <>
+      <ExamQuestionsGrid 
+        examQuestions={examQuestions}
+        onViewDetails={handleViewDetails}
+        onCreateNewFolder={handleOpenCreateModal}
+        onDeleteFolder={handleDeleteItem}
+        onRenameFolder={handleRenameItem}
+      />
+      {renderModals()}
+    </>
   );
 };
 

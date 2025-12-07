@@ -4,7 +4,7 @@ import { Trash2, CheckCircle } from 'lucide-react';
 interface DeleteAccountModalProps {
   isOpen: boolean;
   onClose: () => void;
-  studentName: string;
+  studentName?: string;
 }
 
 const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({

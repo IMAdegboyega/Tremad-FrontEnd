@@ -211,7 +211,7 @@ export default function LandingPage() {
                 Tremad Schools
               </h2>
               <p className="text-gray-600 leading-relaxed">
-                Tredema schools is a learner based environment powered by modern technology. 
+                Tremad schools is a learner based environment powered by modern technology. 
                 Without mincing words, the graduating set of 2023 will definitely fit in 
                 perfectly well into the digital system populated they have been groomed and 
                 I am so confident that they will show forth the light. Many thanks to our 

@@ -9,11 +9,17 @@ import { ExamQuestion } from '@/app/SuperAdmin/(root)/[section]/sections/ExamQue
 interface ExamQuestionsGridProps {
   examQuestions: ExamQuestion[];
   onViewDetails: (subjectId: string) => void;
+  onCreateNewFolder: () => void;
+  onDeleteFolder: (folderId: string, folderName: string) => void;
+  onRenameFolder: (folderId: string, folderName: string) => void;
 }
 
 const ExamQuestionsGrid: React.FC<ExamQuestionsGridProps> = ({ 
   examQuestions, 
-  onViewDetails 
+  onViewDetails,
+  onCreateNewFolder,
+  onDeleteFolder, 
+  onRenameFolder,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterBy, setFilterBy] = useState<'status' | 'grade' | null>(null);
@@ -31,7 +37,10 @@ const ExamQuestionsGrid: React.FC<ExamQuestionsGridProps> = ({
             <h1 className="text-2xl font-semibold text-gray-900">Exam questions</h1>
             <p className="text-sm text-gray-500 mt-1">Manage your exam questions effectively</p>
           </div>
-          <button className="px-4 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+          <button 
+            onClick={onCreateNewFolder} 
+            className="px-4 py-3 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+          >
             <Plus className="w-4 h-4" />
             Create new folder
           </button>
@@ -110,10 +119,13 @@ const ExamQuestionsGrid: React.FC<ExamQuestionsGridProps> = ({
                         <DropdownMenuItem>
                           Upload File
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => onRenameFolder(question.id, question.subject)}>
                           Rename Folder
                         </DropdownMenuItem>
-                        <DropdownMenuItem className='text-red-600'>
+                        <DropdownMenuItem 
+                          onClick={() => onDeleteFolder(question.id, question.subject)} 
+                          className='text-red-600'
+                        >
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuGroup>

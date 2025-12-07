@@ -10,11 +10,17 @@ import StatsCard from '../PortalLogin/StatsCard';
 interface ExamQuestionDetailProps {
   subject: ExamQuestion;
   onBack: () => void;
+  onCreateNewFolder: () => void;
+  onDeleteFolder: (folderId: string, folderName: string) => void;
+  onRenameFolder: (folderId: string, folderName: string) => void;
 }
 
 const ExamQuestionDetail: React.FC<ExamQuestionDetailProps> = ({ 
   subject, 
-  onBack 
+  onBack, 
+  onCreateNewFolder,
+  onDeleteFolder,
+  onRenameFolder,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -47,7 +53,9 @@ const ExamQuestionDetail: React.FC<ExamQuestionDetailProps> = ({
             <p className="text-sm text-gray-500">Manage subjects and view progress</p>
           </div>
           <div className='ml-auto'>
-            <button className="px-4 py-3 bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+            <button
+              onClick={onCreateNewFolder}
+              className="px-4 py-3 bg-green-700 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
               <Plus className="w-4 h-4" />
               Create new folder
             </button>
@@ -147,8 +155,15 @@ const ExamQuestionDetail: React.FC<ExamQuestionDetailProps> = ({
                         <DropdownMenuItem>
                           <span className='cursor-pointer'>Share</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <span className="text-red-600 cursor-pointer">Delete</span>
+                        <DropdownMenuItem onClick={() => onRenameFolder(file.id, file.fileName)}>
+                          <span className='cursor-pointer'>Rename</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => onDeleteFolder(file.id, file.fileName)}
+                        >
+                          <span 
+                            className="text-red-600 cursor-pointer"
+                          >Delete</span>
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
