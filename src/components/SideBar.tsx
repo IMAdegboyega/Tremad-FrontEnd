@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react'
+import LogoutButton from './LogoutButton';
 
 type NavItem = {
   name: string;
@@ -40,27 +41,7 @@ export default function SideBar({ navItems }: SidebarProps) {
           </Link>
         ))}
 
-        <div className='bg-green-900 flex flex-col rounded-3xl gap-1 p-6 text-white'>
-          <h1 className='font-bold text-lg'>
-            Need Help?
-          </h1>
-
-          <p>
-            We&apos;re here for you. Just reach out
-          </p>
-
-          <button className='bg-green-700 rounded-lg p-2 cursor-pointer'>
-            Contact Us
-          </button>
-        </div>
-
-        <Link
-          href={'/logout'}
-          className="flex items-center gap-2 p-2 space-x-2 space-y-2 pt-4"
-        >
-          <Image src={'/icon/logout.svg'} alt='Logout' width={24} height={24} />
-          <span className='text-gray-700'>LogOut</span>
-        </Link>
+        <LogoutButton />
       </nav>
     </aside>
   )

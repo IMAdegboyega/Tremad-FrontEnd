@@ -25,11 +25,11 @@ const SubjectManagement = () => {
 
         {/* Actions: term filter and report download */}
         <div className="flex items-center gap-3">
-          <button className="flex items-center gap-1 text-gray-600 text-sm border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50">
+          <button className="flex items-center justify-center gap-2 w-full text-gray-600 text-sm border border-gray-200 px-4 py-2 rounded-lg hover:bg-gray-50">
             <ListFilter size={16} />
             Current term
           </button>
-          <button className="flex items-center gap-2 bg-green-700 text-white px-4 py-2 rounded-lg hover:bg-green-800">
+          <button className="flex items-center justify-center gap-2 w-full bg-primary-green text-sm text-white px-4 py-2 rounded-lg hover:bg-primary-green-hover md:whitespace-nowrap">
             <Download size={16} /> Download report
           </button>
         </div>
@@ -41,10 +41,6 @@ const SubjectManagement = () => {
       {/* Search + Filter */}
       <div className="flex flex-col sm:flex-row items-center gap-3">
         <SearchBar />
-        <button className="flex items-center gap-1 text-sm border border-gray-200 px-3 py-2 rounded-lg hover:bg-gray-50">
-          <ListFilter size={16} />
-          Filter
-        </button>
       </div>
 
       {/* Subject list */}

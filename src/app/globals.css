@@ -41,9 +41,12 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --color-primary-green: #FF9C00;
+  /* Tremad brand green — used by the primary action buttons in the top-right
+     of every SuperAdmin page (Download report, Add new student, etc). The
+     hover variant is noticeably deeper so the press feels tactile. */
+  --color-primary-green: #006437;
+  --color-primary-green-hover: #004526;
   --color-secondary-green: #231F1F;
-  --color-green-gradient:
 }
 
 :root {
@@ -123,6 +126,7 @@
     @apply bg-background text-foreground;
   }
 }
+
 
 /* Hide scrollbar for Chrome, Safari, Opera */
 ::-webkit-scrollbar {

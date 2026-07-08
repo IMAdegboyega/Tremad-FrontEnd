@@ -1,149 +1,189 @@
-'use client'
+'use client';
 
-import { TimeSchedule, timeSlots } from '@/Constants/TimeTable';
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { Calendar } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { TimetableEntry } from '@/lib/api/student.service';
+import { WEEKDAYS, normalizeTime } from './utils';
+
+interface DayViewProps {
+  entries: TimetableEntry[];
+  isLoading: boolean;
+}
 
 /**
- * DayView Component
- * 
- * Displays a detailed daily schedule view showing all time slots for a selected day.
- * Features both desktop table format and mobile card layout for optimal user experience.
- * 
- * Features:
- * - Responsive design with desktop table and mobile card layouts
- * - Time slot display with different slot types (classes, breaks, free periods)
- * - Color-coded slot types (breaks in yellow, classes in white)
- * - Clean, accessible design with proper spacing and typography
- * - Integration with TimeSchedule data and timeSlots constants
+ * DayView
+ *
+ * Vertical list of a single day's classes. Defaults to today when the
+ * timetable includes today; otherwise falls back to the earliest weekday
+ * that has classes.
  */
-const DayView = () => {
-  // State management for selected day (defaults to Tuesday - index 1)
-  const [selectedDayIndex, setSelectedDayIndex] = useState(1); // Tuesday
-  const selectedDay = TimeSchedule[selectedDayIndex];
+const DayView: React.FC<DayViewProps> = ({ entries, isLoading }) => {
+  // Pick the default day once from the incoming entries.
+  const defaultDay = useMemo(() => {
+    const today = new Date()
+      .toLocaleDateString('en-US', { weekday: 'long' })
+      .toLowerCase();
+    const daysWithClasses = WEEKDAYS.filter((d) =>
+      entries.some((e) => (e.day || '').toLowerCase() === d.toLowerCase())
+    );
+    if (!daysWithClasses.length) return 'Monday';
+    const match = daysWithClasses.find((d) => d.toLowerCase() === today);
+    return match || daysWithClasses[0];
+  }, [entries]);
+
+  const [selectedDay, setSelectedDay] = useState<string>(defaultDay);
+
+  // Keep the selected day in sync when the default changes (e.g. after fetch)
+  React.useEffect(() => {
+    setSelectedDay(defaultDay);
+  }, [defaultDay]);
+
+  if (isLoading) {
+    return (
+      <div className='bg-white rounded-2xl shadow-sm overflow-hidden'>
+        <div className='p-6 space-y-3'>
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div key={i} className='flex items-center gap-4'>
+              <Skeleton className='h-4 w-16' />
+              <Skeleton className='h-12 flex-1' />
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!entries.length) {
+    return (
+      <div className='bg-white rounded-2xl shadow-sm py-16'>
+        <div className='flex flex-col items-center'>
+          <div className='w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4'>
+            <Calendar className='w-8 h-8 text-gray-400' />
+          </div>
+          <p className='text-gray-900 font-medium mb-1'>No timetable available yet</p>
+          <p className='text-sm text-gray-500'>
+            Your schedule will appear here once published.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const dayEntries = entries
+    .filter((e) => (e.day || '').toLowerCase() === selectedDay.toLowerCase())
+    .sort((a, b) =>
+      normalizeTime(a.startTime).localeCompare(normalizeTime(b.startTime))
+    );
 
   return (
     <div>
-      {/* Desktop Table View - Hidden on mobile screens (lg:hidden) */}
+      {/* Day selector — lets the student pivot through the week */}
+      <div className='flex flex-wrap gap-2 mb-4'>
+        {WEEKDAYS.map((day) => (
+          <button
+            key={day}
+            onClick={() => setSelectedDay(day)}
+            className={`px-3 py-1.5 text-sm rounded-lg border transition-colors ${
+              selectedDay.toLowerCase() === day.toLowerCase()
+                ? 'bg-green-700 text-white border-green-700'
+                : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            {day}
+          </button>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
       <div className='bg-white rounded-2xl shadow-sm overflow-hidden hidden lg:block'>
         <table className='w-full'>
           <thead>
             <tr>
-              {/* Time Column Header */}
               <th className='text-left py-4 px-6 text-sm font-medium text-gray-600 border-b border-gray-200 bg-gray-50 w-24'>
                 Time
               </th>
-              {/* Selected Day Header with green background */}
               <th className='text-left py-4 px-6 border-b border-gray-200 bg-green-500 text-white'>
-                <div className='font-semibold'>{selectedDay.day}</div>
-                <div className='text-xs font-normal opacity-90'>({selectedDay.date})</div>
+                <div className='font-semibold'>{selectedDay}</div>
               </th>
             </tr>
           </thead>
           <tbody>
-            {/* Map through time slots to create table rows */}
-            {selectedDay.slots.map((slot, index) => {
-              if (!slot) return null;
-              
-              return (
-                <tr key={slot.id}>
-                  {/* Time Column */}
-                  <td className={`py-4 px-6 text-sm text-gray-600 font-medium border-r border-gray-200 ${
-                    index < selectedDay.slots.length - 1 ? 'border-b' : ''
-                  }`}>
-                    {timeSlots[index]}
+            {dayEntries.length === 0 ? (
+              <tr>
+                <td colSpan={2} className='py-8 px-6 text-center text-sm text-gray-500'>
+                  No classes scheduled for {selectedDay}.
+                </td>
+              </tr>
+            ) : (
+              dayEntries.map((slot, index) => (
+                <tr key={slot._id}>
+                  <td
+                    className={`py-4 px-6 text-sm text-gray-600 font-medium border-r border-gray-200 ${
+                      index < dayEntries.length - 1 ? 'border-b' : ''
+                    }`}
+                  >
+                    {normalizeTime(slot.startTime)}
+                    {slot.endTime ? ` – ${normalizeTime(slot.endTime)}` : ''}
                   </td>
-                  {/* Schedule Content Column with conditional styling */}
-                  <td className={`py-4 px-6 ${
-                    index < selectedDay.slots.length - 1 ? 'border-b border-gray-200' : ''
-                  } ${
-                    slot.type === 'break' ? 'bg-yellow-50' : 'bg-white'
-                  }`}>
-                    {/* Conditional rendering based on slot type */}
-                    {slot.type === 'break' ? (
-                      // Break period styling
-                      <div className='text-center py-2'>
-                        <span className='text-yellow-600 font-semibold text-lg'>
-                          {slot.subject}
-                        </span>
-                      </div>
-                    ) : slot.type === 'free' ? (
-                      // Free period styling
-                      <div className='text-center py-2'>
-                        <span className='text-gray-500 font-medium text-sm'>
-                          {slot.subject}
-                        </span>
-                      </div>
-                    ) : (
-                      // Regular class styling with subject, teacher, and room
-                      <div className='space-y-1'>
-                        <p className='font-semibold text-gray-900'>{slot.subject}</p>
-                        <p className='text-sm text-gray-600'>{slot.teacher}</p>
+                  <td
+                    className={`py-4 px-6 bg-white ${
+                      index < dayEntries.length - 1
+                        ? 'border-b border-gray-200'
+                        : ''
+                    }`}
+                  >
+                    <div className='space-y-1'>
+                      <p className='font-semibold text-gray-900'>{slot.subject}</p>
+                      <p className='text-sm text-gray-600'>
+                        {slot.teacher || '—'}
+                      </p>
+                      {slot.room && (
                         <p className='text-xs text-gray-500'>{slot.room}</p>
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </td>
                 </tr>
-              );
-            })}
+              ))
+            )}
           </tbody>
         </table>
       </div>
 
-      {/* Mobile Card View - Only visible on mobile screens (lg:hidden) */}
+      {/* Mobile Card View */}
       <div className='lg:hidden bg-white rounded-xl overflow-hidden'>
-        {/* Mobile Header with selected day info */}
         <div className='bg-green-500 text-white p-4'>
-          <h3 className='font-semibold'>{selectedDay.day}</h3>
-          <p className='text-sm opacity-90'>({selectedDay.date})</p>
+          <h3 className='font-semibold'>{selectedDay}</h3>
         </div>
-        {/* Mobile Content Area */}
         <div className='p-4'>
-          <div className='space-y-3'>
-            {/* Map through time slots to create mobile cards */}
-            {selectedDay.slots.map((slot, index) => {
-              if (!slot) return null;
-              
-              const time = timeSlots[index];
-              
-              return (
-                <div 
-                  key={slot.id} 
-                  className={`border-l-4 pl-4 ${
-                    slot.type === 'break' ? 'border-yellow-400' : 'border-gray-200'
-                  }`}
-                >
+          {dayEntries.length === 0 ? (
+            <p className='text-sm text-gray-500 py-8 text-center'>
+              No classes scheduled for {selectedDay}.
+            </p>
+          ) : (
+            <div className='space-y-3'>
+              {dayEntries.map((slot) => (
+                <div key={slot._id} className='border-l-4 pl-4 border-gray-200'>
                   <div className='flex justify-between items-start'>
-                    {/* Schedule Content */}
                     <div className='flex-1'>
-                      {/* Conditional rendering based on slot type */}
-                      {slot.type === 'break' ? (
-                        // Break period with yellow background
-                        <div className='py-3 bg-yellow-50 -ml-4 pl-4 pr-4 -mr-4'>
-                          <p className='text-yellow-600 font-semibold text-lg'>{slot.subject}</p>
-                        </div>
-                      ) : slot.type === 'free' ? (
-                        // Free period styling
-                        <div className='py-2'>
-                          <p className='text-gray-500 font-medium'>{slot.subject}</p>
-                        </div>
-                      ) : (
-                        // Regular class with subject, teacher, and room details
-                        <div className='space-y-1'>
-                          <p className='font-semibold text-gray-900'>{slot.subject}</p>
-                          <p className='text-sm text-gray-600'>{slot.teacher}</p>
+                      <div className='space-y-1'>
+                        <p className='font-semibold text-gray-900'>{slot.subject}</p>
+                        <p className='text-sm text-gray-600'>
+                          {slot.teacher || '—'}
+                        </p>
+                        {slot.room && (
                           <p className='text-xs text-gray-500'>{slot.room}</p>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
-                    {/* Time Display */}
                     <div className='text-sm text-gray-500 font-medium ml-4'>
-                      {time}
+                      {normalizeTime(slot.startTime)}
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>

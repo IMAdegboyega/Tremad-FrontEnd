@@ -1,89 +1,49 @@
-export interface Notification {
+import type { Notification as ApiNotification } from '@/lib/api/student.service';
+
+/**
+ * UI-side notification shape. Keeps the older field names the components
+ * were built around (`description`, `date`, `iconBg`, `read`) but is now
+ * derived from the API's Notification contract instead of mock data.
+ */
+export interface UiNotification {
   id: string;
   title: string;
   description: string;
   date: Date;
-  type: 'project' | 'assignment' | 'announcement' | 'grade' | 'attendance';
+  type: 'info' | 'warning' | 'success' | 'system' | 'project' | 'assignment' | 'announcement' | 'grade' | 'attendance';
   read: boolean;
   iconBg?: string;
 }
 
-export const notifications: Notification[] = [
-  {
-    id: '1',
-    title: 'You received a proposal on project 2',
-    description: 'Check your project dashboard for the new proposal from your team member.',
-    date: new Date('2023-03-15T09:30:00'),
-    type: 'project',
-    read: false,
-    iconBg: 'bg-blue-100'
-  },
-  {
-    id: '2',
-    title: 'You received a proposal on project 2',
-    description: 'New updates available for review in your project workspace.',
-    date: new Date('2023-03-15T08:45:00'),
-    type: 'project',
-    read: false,
-    iconBg: 'bg-blue-100'
-  },
-  {
-    id: '3',
-    title: 'You received a proposal on project 2',
-    description: 'Team collaboration request pending your approval.',
-    date: new Date('2023-03-15T07:20:00'),
-    type: 'project',
-    read: true,
-    iconBg: 'bg-blue-100'
-  },
-  {
-    id: '4',
-    title: 'You received a proposal on project 2',
-    description: 'Important deadline reminder for your ongoing project.',
-    date: new Date('2023-03-15T06:15:00'),
-    type: 'project',
-    read: true,
-    iconBg: 'bg-blue-100'
-  },
-  {
-    id: '5',
-    title: 'You received a proposal on project 2',
-    description: 'New resources have been added to your project folder.',
-    date: new Date('2023-03-14T16:30:00'),
-    type: 'project',
-    read: true,
-    iconBg: 'bg-blue-100'
-  },
-  {
-    id: '6',
-    title: 'Assignment Due: Mathematics Homework',
-    description: 'Your mathematics assignment is due tomorrow at 11:59 PM.',
-    date: new Date('2023-03-14T14:00:00'),
-    type: 'assignment',
-    read: true,
-    iconBg: 'bg-orange-100'
-  },
-  {
-    id: '7',
-    title: 'Grade Posted: Science Mid-term',
-    description: 'Your science mid-term exam has been graded. View your results.',
-    date: new Date('2023-03-14T10:30:00'),
-    type: 'grade',
-    read: true,
-    iconBg: 'bg-green-100'
-  },
-  {
-    id: '8',
-    title: 'School Announcement: Parent-Teacher Meeting',
-    description: 'Reminder: Parent-teacher meeting scheduled for next Friday.',
-    date: new Date('2023-03-13T09:00:00'),
-    type: 'announcement',
-    read: true,
-    iconBg: 'bg-purple-100'
-  }
-];
+const typeToIconBg: Record<string, string> = {
+  info: 'bg-blue-100',
+  warning: 'bg-orange-100',
+  success: 'bg-green-100',
+  system: 'bg-gray-100',
+  project: 'bg-blue-100',
+  assignment: 'bg-orange-100',
+  announcement: 'bg-purple-100',
+  grade: 'bg-green-100',
+  attendance: 'bg-pink-100',
+};
 
-// Helper function to format notification dates
+/**
+ * Normalize an API Notification into the UI shape. Safe to call with partial
+ * data; missing fields collapse to sensible defaults.
+ */
+export const toUiNotification = (n: ApiNotification): UiNotification => ({
+  id: n._id,
+  title: n.title || '(Untitled)',
+  description: n.message || '',
+  date: n.createdAt ? new Date(n.createdAt) : new Date(),
+  type: (n.type as UiNotification['type']) || 'info',
+  read: !!n.read,
+  iconBg: typeToIconBg[n.type] || 'bg-gray-100',
+});
+
+/**
+ * Human-friendly relative date label, e.g. "5 minutes ago", "Yesterday".
+ */
 export const formatNotificationDate = (date: Date): string => {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -91,34 +51,31 @@ export const formatNotificationDate = (date: Date): string => {
   const diffHours = Math.floor(diffMs / 3600000);
   const diffDays = Math.floor(diffMs / 86400000);
 
-  if (diffMins < 60) {
-    return `${diffMins} minutes ago`;
-  } else if (diffHours < 24) {
-    return `${diffHours} hours ago`;
-  } else if (diffDays === 1) {
-    return 'Yesterday';
-  } else if (diffDays < 7) {
-    return `${diffDays} days ago`;
-  } else {
-    return date.toLocaleDateString('en-US', { 
-      day: 'numeric', 
-      month: 'short', 
-      year: 'numeric' 
-    });
-  }
+  if (diffMins < 1) return 'Just now';
+  if (diffMins < 60) return `${diffMins} minute${diffMins === 1 ? '' : 's'} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours === 1 ? '' : 's'} ago`;
+  if (diffDays === 1) return 'Yesterday';
+  if (diffDays < 7) return `${diffDays} days ago`;
+  return date.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
 };
 
-// Helper to get grouped notifications
-export const getGroupedNotifications = () => {
+/**
+ * Bucket notifications into today / yesterday / older for sectioned rendering.
+ */
+export const groupNotifications = (items: UiNotification[]) => {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  
+
   const yesterday = new Date(today);
   yesterday.setDate(yesterday.getDate() - 1);
-  
+
   return {
-    today: notifications.filter(n => n.date >= today),
-    yesterday: notifications.filter(n => n.date >= yesterday && n.date < today),
-    older: notifications.filter(n => n.date < yesterday)
+    today: items.filter((n) => n.date >= today),
+    yesterday: items.filter((n) => n.date >= yesterday && n.date < today),
+    older: items.filter((n) => n.date < yesterday),
   };
 };

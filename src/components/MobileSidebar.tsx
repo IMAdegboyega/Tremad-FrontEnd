@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import ProfileCard from './ProfileCard'
+import LogoutButton from './LogoutButton'
 
 /**
  * Navigation item structure for the mobile sidebar
@@ -97,7 +98,7 @@ const MobileSidebar = ({ isOpen, onClose, navItems }: MobileSidebarProps) => {
                     onClick={onClose} // Close sidebar when navigating
                     className={`relative flex items-center gap-3 px-3 py-3 rounded-lg transition-colors ${
                       isActive 
-                        ? 'bg-green-50 text-green-700'  // Active state styling
+                        ? 'text-black'  // Active state styling
                         : 'text-gray-700 hover:bg-gray-50' // Default and hover states
                     }`}
                   >
@@ -108,7 +109,7 @@ const MobileSidebar = ({ isOpen, onClose, navItems }: MobileSidebarProps) => {
                       - Positioned at the right edge
                     */}
                     {isActive && (
-                      <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1.5 h-6 bg-green-700 rounded-r-full' />
+                      <div className='absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-green-700 rounded-r-full' />
                     )}
 
                     {/* 
@@ -116,7 +117,7 @@ const MobileSidebar = ({ isOpen, onClose, navItems }: MobileSidebarProps) => {
                       - Active items have full opacity
                       - Inactive items are slightly transparent
                     */}
-                    <div className={`${isActive ? '' : 'opacity-60'}`}>
+                    <div className={`${isActive ? '' : 'opacity-80'}`}>
                       <Image 
                         src={item.icon} 
                         alt={item.name} 
@@ -144,19 +145,10 @@ const MobileSidebar = ({ isOpen, onClose, navItems }: MobileSidebarProps) => {
             - Contains logout functionality
           */}
           <div className='p-4 border-t border-gray-100'>
-            <Link
-              href='/logout'
-              onClick={onClose} // Close sidebar when logging out
-              className='flex items-center gap-3 px-3 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors'
-            >
-              <Image 
-                src='/icon/logout.svg' 
-                alt='Logout' 
-                width={20} 
-                height={20} 
-              />
-              <span className='text-sm'>Logout</span>
-            </Link>
+            <LogoutButton 
+              className='flex items-center gap-3 px-3 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer w-full'
+              iconSize={20}
+            />
           </div>
         </div>
       </aside>

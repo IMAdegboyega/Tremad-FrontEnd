@@ -1,9 +1,5 @@
-import React from 'react'
+import { redirect } from 'next/navigation'
 
-const layout = () => {
-  return (
-    <div>Super-Admin</div>
-  )
+export default function AdminIndexPage() {
+  return redirect('/Admin/home')
 }
-
-export default layout

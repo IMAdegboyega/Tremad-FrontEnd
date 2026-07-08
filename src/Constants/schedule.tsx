@@ -1,5 +1,6 @@
 // Constants/scheduleConstants.tsx
 import { BookOpen, FlaskConical, Calculator, Laptop, PenTool, Globe,  Palette } from 'lucide-react';
+import type { TimetableEntry } from '@/lib/api/student.service';
 
 // Schedule event type
 export interface ScheduleEvent {
@@ -140,6 +141,88 @@ export const generateScheduleEvents = (courses: Course[]): ScheduleEvent[] => {
   });
   
   return events.sort((a, b) => a.date.getTime() - b.date.getTime());
+};
+
+// Palette cycled by subject so the same subject keeps its colour.
+const SUBJECT_PALETTE = [
+  'bg-blue-100 text-blue-700',
+  'bg-purple-100 text-purple-700',
+  'bg-green-100 text-green-700',
+  'bg-pink-100 text-pink-700',
+  'bg-orange-100 text-orange-700',
+  'bg-yellow-100 text-yellow-700',
+];
+
+const colorForSubject = (subject: string): string => {
+  let hash = 0;
+  for (let i = 0; i < subject.length; i++) {
+    hash = (hash * 31 + subject.charCodeAt(i)) >>> 0;
+  }
+  return SUBJECT_PALETTE[hash % SUBJECT_PALETTE.length];
+};
+
+const WEEKDAY_INDEX: Record<string, number> = {
+  Sunday: 0,
+  Monday: 1,
+  Tuesday: 2,
+  Wednesday: 3,
+  Thursday: 4,
+  Friday: 5,
+  Saturday: 6,
+};
+
+/** "14:30" (24h) -> "2:30 PM" for display. */
+const to12Hour = (hhmm: string): string => {
+  const [h, m] = (hhmm || '').split(':').map((n) => parseInt(n, 10));
+  if (Number.isNaN(h) || Number.isNaN(m)) return hhmm || '';
+  const period = h >= 12 ? 'PM' : 'AM';
+  const hr = h % 12 === 0 ? 12 : h % 12;
+  return `${hr}:${String(m).padStart(2, '0')} ${period}`;
+};
+
+/**
+ * Turn a student's weekly timetable into concrete dated events for the next 7
+ * days, so the Home "Upcoming Activities" widget shows their real upcoming
+ * classes (replacing the old mock schedule).
+ */
+export const timetableToScheduleEvents = (
+  entries: TimetableEntry[]
+): ScheduleEvent[] => {
+  if (!entries || entries.length === 0) return [];
+
+  const events: ScheduleEvent[] = [];
+  const today = new Date();
+
+  for (let offset = 0; offset < 7; offset++) {
+    const date = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate() + offset
+    );
+    const weekdayIndex = date.getDay();
+
+    entries.forEach((entry, i) => {
+      if (WEEKDAY_INDEX[entry.day] !== weekdayIndex) return;
+      const color = colorForSubject(entry.subject || '');
+      events.push({
+        id: `${entry._id || `${entry.subject}-${i}`}-${date.toDateString()}`,
+        courseId: 0,
+        subject: entry.subject,
+        teacher: entry.teacher,
+        date,
+        startTime: to12Hour(entry.startTime),
+        endTime: to12Hour(entry.endTime),
+        color,
+        bgColor: color.split(' ')[0],
+        icon: ACTIVITY_TYPES.class.icon,
+        type: 'class',
+      });
+    });
+  }
+
+  // Already chronological: outer loop advances by day, and the API returns each
+  // day's entries pre-sorted by start time.
+  return events;
 };
 
 // Helper function to get color for a specific date based on events

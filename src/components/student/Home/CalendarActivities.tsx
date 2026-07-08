@@ -1,45 +1,65 @@
 import React from 'react'
 import { Calendar } from '@/components/ui/calendar';
 import { useUser } from '@/Constants/UserContext';
-import { formatEventDate, generateScheduleEvents, isEventToday, ScheduleEvent } from '@/Constants/schedule';
+import { formatEventDate, isEventToday, ScheduleEvent, timetableToScheduleEvents } from '@/Constants/schedule';
+import { getTimetable, type TimetableEntry } from '@/lib/api/student.service';
 
 const CalendarActivities = () => {
   // ALL hooks must be at the top, before any conditional returns
   const [date, setDate] = React.useState<Date | undefined>(new Date())
   const [selectedEvent, setSelectedEvent] = React.useState<ScheduleEvent | null>(null)
+  const [entries, setEntries] = React.useState<TimetableEntry[]>([])
   const user = useUser();
+
+  // Load the student's real timetable and derive the next 7 days of events.
+  React.useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getTimetable();
+        if (cancelled) return;
+        if (res?.success && Array.isArray(res.data)) {
+          setEntries(res.data);
+        }
+      } catch {
+        // Non-fatal — the widget just shows no upcoming activities.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const scheduleEvents = React.useMemo(
+    () => timetableToScheduleEvents(entries),
+    [entries]
+  );
 
   // Define getEventsForDate before using it in useMemo
   const getEventsForDate = React.useCallback((date: Date) => {
-    if (!user) return [];
-    const scheduleEvents = generateScheduleEvents(user.courses);
-    return scheduleEvents.filter(event => 
+    return scheduleEvents.filter(event =>
       event.date.getDate() === date.getDate() &&
       event.date.getMonth() === date.getMonth() &&
       event.date.getFullYear() === date.getFullYear()
     );
-  }, [user]);
-
-  const scheduleEvents = React.useMemo(() => {
-    if (!user) return [];
-    return generateScheduleEvents(user.courses);
-  }, [user]);
+  }, [scheduleEvents]);
 
   const upcomingEvents = React.useMemo(() => {
-    const today = new Date();
-    
+    // Start of today so classes happening later today are still "upcoming".
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
     // If a specific date is selected and has events, show those events
     if (date && selectedEvent) {
       const dateEvents = getEventsForDate(date);
       return dateEvents.length > 0 ? dateEvents : [selectedEvent];
     }
-    
+
     // Otherwise show upcoming events
     const upcoming = scheduleEvents
-      .filter(event => event.date >= today)
-      .sort((a, b) => a.date.getTime() - b.date.getTime())
+      .filter(event => event.date >= startOfToday)
       .slice(0, 2); // Show 2 upcoming events by default
-    
+
     return upcoming;
   }, [scheduleEvents, selectedEvent, date, getEventsForDate]);
 

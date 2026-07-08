@@ -17,42 +17,30 @@ const StudentPaymentDetail: React.FC<StudentPaymentDetailProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
+  /**
+   * Pill styling shared by both tables on this page. Returns the pill
+   * background + text classes together with the dot color, so the row
+   * cells stay one-liner declarative.
+   *
+   * Green:  All Paid / Success
+   * Yellow: Due Today / Pending
+   * Red:    Failed + any "Over due" variant (1 / 2 / 5 days, regex-matched)
+   */
   const getStatusStyle = (status: string) => {
-    switch (status) {
-      case 'All Paid':
-      case 'Success':
-        return 'text-green-600';
-      case 'Due Today':
-      case 'Pending':
-        return 'text-yellow-600';
-      case '2 Over due':
-      case '3 Over due':
-      case 'Failed':
-        return 'text-red-600';
-      default:
-        return 'text-gray-600';
+    if (status === 'All Paid' || status === 'Success') {
+      return { pill: 'bg-green-50 text-green-700', dot: 'bg-green-500' };
     }
-  };
-
-  const getStatusDot = (status: string) => {
-    switch (status) {
-      case 'All Paid':
-      case 'Success':
-        return 'bg-green-600';
-      case 'Due Today':
-      case 'Pending':
-        return 'bg-yellow-600';
-      case '2 Over due':
-      case '3 Over due':
-      case 'Failed':
-        return 'bg-red-600';
-      default:
-        return 'bg-gray-600';
+    if (status === 'Due Today' || status === 'Pending') {
+      return { pill: 'bg-yellow-50 text-yellow-700', dot: 'bg-yellow-500' };
     }
+    if (status === 'Failed' || /over due/i.test(status)) {
+      return { pill: 'bg-red-50 text-red-700', dot: 'bg-red-500' };
+    }
+    return { pill: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' };
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-full bg-gray-50 p-6">
       {/* Header */}
       <div className="mb-6">
         <button 
@@ -69,7 +57,7 @@ const StudentPaymentDetail: React.FC<StudentPaymentDetailProps> = ({
             </h1>
             <p className="text-sm text-gray-500 mt-1">Manage your exam questions effectively.</p>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2.5 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700">
+          <button className="flex items-center gap-2 px-4 py-2.5 text-sm text-white bg-primary-green rounded-lg hover:bg-primary-green-hover">
             <Download className="w-4 h-4" />
             Download report
           </button>
@@ -115,13 +103,17 @@ const StudentPaymentDetail: React.FC<StudentPaymentDetailProps> = ({
 
       {/* What's Due Section */}
       <div className="bg-white rounded-xl border border-gray-100 mb-6">
-        <div className="p-4 border-b border-gray-100">
+        <div className="p-4">
           <h2 className="text-base font-semibold text-gray-900">What's Due</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
+        {/* Inner rounded wrapper — gives the table its own framed look with the
+            gray header strip clipped to rounded corners. Matches the Receipts
+            page styling. */}
+        <div className="overflow-x-auto p-4 pt-0">
+          <div className="rounded-xl overflow-hidden border border-gray-100">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Item</th>
                 <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Amount</th>
                 <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
@@ -130,13 +122,15 @@ const StudentPaymentDetail: React.FC<StudentPaymentDetailProps> = ({
               </tr>
             </thead>
             <tbody>
-              {student.dueItems.map((item) => (
+              {student.dueItems.map((item) => {
+                const styles = getStatusStyle(item.status);
+                return (
                 <tr key={item.id} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-900">{item.item}</td>
                   <td className="px-6 py-4 text-sm text-gray-900">{item.amount}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${getStatusStyle(item.status)}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${getStatusDot(item.status)}`} />
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${styles.pill}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${styles.dot}`} />
                       {item.status}
                     </span>
                   </td>
@@ -162,21 +156,24 @@ const StudentPaymentDetail: React.FC<StudentPaymentDetailProps> = ({
                     </DropdownMenu>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
 
       {/* Payment History Section */}
       <div className="bg-white rounded-xl border border-gray-100">
-        <div className="p-4 border-b border-gray-100">
+        <div className="p-4">
           <h2 className="text-base font-semibold text-gray-900">Payment History</h2>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
+        <div className="overflow-x-auto p-4 pt-0">
+          <div className="rounded-xl overflow-hidden border border-gray-100">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
                 <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Item</th>
                 <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Amount</th>
                 <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
@@ -185,22 +182,28 @@ const StudentPaymentDetail: React.FC<StudentPaymentDetailProps> = ({
               </tr>
             </thead>
             <tbody>
-              {student.paymentHistory.map((payment) => (
+              {student.paymentHistory.map((payment) => {
+                const styles = getStatusStyle(payment.status);
+                return (
                 <tr key={payment.id} className="border-b border-gray-50 hover:bg-gray-50">
                   <td className="px-6 py-4 text-sm text-gray-900">{payment.item}</td>
                   <td className="px-6 py-4 text-sm text-gray-900">{payment.amount}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${getStatusStyle(payment.status)}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${getStatusDot(payment.status)}`} />
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${styles.pill}`}>
+                      <span className={`w-1.5 h-1.5 rounded-full ${styles.dot}`} />
                       {payment.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-500">{payment.referenceNumber}</td>
+                  <td className="px-6 py-4">
+                    <span className="inline-block px-2.5 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-600 truncate max-w-[160px]">{payment.referenceNumber}</span>
+                  </td>
                   <td className="px-6 py-4 text-sm text-gray-900">{payment.paymentMethod}</td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </div>

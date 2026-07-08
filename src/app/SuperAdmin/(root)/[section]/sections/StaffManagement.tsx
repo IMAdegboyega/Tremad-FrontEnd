@@ -137,29 +137,31 @@ const StaffManagement: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 space-y-3 p-2">
+    <div className="min-h-screen bg-gray-50 space-y-3 p-2 sm:p-4 md:p-6">
       {/* Header */}
       <header>
-        <div className="flex justify-between items-start mb-4">
+        <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-3 mb-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Staff management</h1>
-            <p className="text-sm text-gray-500 mt-1">Manage subjects and view progress</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Staff management</h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage subjects and view progress</p>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {/* Could be connected to a term/semester selector in future */}
-            <button className="px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-            <ListFilter size={20} />
-              Current term
+            <button className="px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 min-h-[44px]">
+            <ListFilter size={18} />
+              <span className="hidden sm:inline">Current term</span>
+              <span className="sm:hidden">Term</span>
             </button>
             {/* Trigger a create-staff modal or navigate to a creation form */}
-            <button onClick={() => setShowAddStaffModal(true)} className="px-4 py-2 text-sm text-white bg-green-600 rounded-lg hover:bg-green-700 flex items-center gap-2">
+            <button onClick={() => setShowAddStaffModal(true)} className="px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-white bg-primary-green rounded-lg hover:bg-primary-green-hover flex items-center gap-2 min-h-[44px]">
               <span className="text-lg">+</span>
-              Add new staff 
+              <span className="hidden sm:inline">Add new staff</span>
+              <span className="sm:hidden">Add staff</span>
             </button>
           </div>
         </div>
 
-        <div className='grid grid-cols-1 md:grid-cols-3 gap-6 mb-8'>
+        <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-4 md:mb-8'>
           <StatsCard
             title="Total Students" 
             count={allStaffData.length} 
@@ -190,20 +192,20 @@ const StaffManagement: React.FC = () => {
       */}
       <main>
         {/* Search and Filters */}
-        <div className="bg-white rounded-lg border border-gray-100 mb-6">
-          <div className="p-4 flex items-center gap-4">
+        <div className="bg-white rounded-lg border border-gray-100 mb-4 md:mb-6">
+          <div className="p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
             <div className="flex-1 relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by student name, email or ID..."
+                placeholder="Search by name, email or ID..."
                 value={searchQuery}
                 onChange={(e) => {
                   setSearchQuery(e.target.value);
                   // Reset to first page whenever the search query changes
                   setCurrentPage(1);
                 }}
-                className="w-full pl-10 pr-4 py-2 text-sm border-0 focus:outline-none"
+                className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 sm:border-0 rounded-lg sm:rounded-none focus:outline-none focus:ring-2 sm:focus:ring-0 focus:ring-green-500 min-h-[44px]"
               />
             </div>
 
@@ -211,9 +213,10 @@ const StaffManagement: React.FC = () => {
                 UX: Chip next to label shows active selection when not 'all'. */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50">
-                <ListFilter size={20} />
-                  Filter by status
+                <button className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 min-h-[44px]">
+                <ListFilter size={18} />
+                  <span className="hidden sm:inline">Filter by status</span>
+                  <span className="sm:hidden">Status</span>
                   {statusFilter !== 'all' && (
                     <span className="ml-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
                       {statusFilter}
@@ -245,86 +248,87 @@ const StaffManagement: React.FC = () => {
             Consider adding scope="col" to <th> for improved screen reader support.
             For very large datasets, consider virtualization (e.g., react-window). */}
         <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Name</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Student ID</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Class</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentStaff.length > 0 ? (
-                currentStaff.map((staff) => (
-                  <tr key={staff.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-600">
-                            {/* Render up to two-letter initials (first letters of name parts).
-                               Edge cases: single-word names -> first letter only; names with punctuation are taken literally. */}
-                            {staff.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                          </span>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[600px]">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">Name</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">Staff ID</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">Dept</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">Status</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentStaff.length > 0 ? (
+                  currentStaff.map((staff) => (
+                    <tr key={staff.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                            <span className="text-xs sm:text-sm font-medium text-gray-600">
+                              {/* Render up to two-letter initials (first letters of name parts).
+                                 Edge cases: single-word names -> first letter only; names with punctuation are taken literally. */}
+                              {staff.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </span>
+                          </div>
+                          <div className="min-w-0">
+                            <div className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[100px] sm:max-w-none">{staff.fullName}</div>
+                            {staff.email && (
+                              <div className="text-[10px] sm:text-xs text-gray-500 truncate max-w-[100px] sm:max-w-none">{staff.email}</div>
+                            )}
+                          </div>
                         </div>
-                        <div>
-                          <div className="text-sm font-medium text-gray-900">{staff.fullName}</div>
-                          {staff.email && (
-                            <div className="text-xs text-gray-500">{staff.email}</div>
-                          )}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{staff.staffId}</td>
-                    <td className="px-6 py-4 text-sm text-gray-600">{staff.department}</td>
-                    <td className="px-6 py-4">
-                      {/* Status badge with color coding per status */}
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                        staff.status === 'Active' 
-                          ? 'bg-green-50 text-green-700' 
-                          : staff.status === 'Suspended'
-                          ? 'bg-yellow-50 text-yellow-700'
-                          : 'bg-red-50 text-red-700'
-                      }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{staff.staffId}</td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{staff.department}</td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        {/* Status badge with color coding per status */}
+                        <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
                           staff.status === 'Active' 
-                            ? 'bg-green-600' 
+                            ? 'bg-green-50 text-green-700' 
                             : staff.status === 'Suspended'
-                            ? 'bg-yellow-600'
-                            : 'bg-red-600'
-                        }`} />
-                        {staff.status}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                            </svg>
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {/* Wire these to route navigations or modals as required */}
-                          <DropdownMenuItem>
-                            <span className='cursor-pointer'>View Details</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <span className='cursor-pointer'>Edit Profile</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                            ? 'bg-yellow-50 text-yellow-700'
+                            : 'bg-red-50 text-red-700'
+                        }`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${
+                            staff.status === 'Active' 
+                              ? 'bg-green-600' 
+                              : staff.status === 'Suspended'
+                              ? 'bg-yellow-600'
+                              : 'bg-red-600'
+                          }`} />
+                          {staff.status}
+                        </span>
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="text-gray-400 hover:text-gray-600 min-w-[44px] min-h-[44px] flex items-center justify-center">
+                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                              </svg>
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {/* Wire these to route navigations or modals as required */}
+                            <DropdownMenuItem>
+                              <span className='cursor-pointer'>View Details</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <span className='cursor-pointer'>Edit Profile</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={5} className="px-3 sm:px-6 py-12 text-center text-sm text-gray-500">
+                      No staff found matching your criteria
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={5} className="px-6 py-12 text-center text-sm text-gray-500">
-                    No staff found matching your criteria
-                  </td>
-                </tr>
               )}
             </tbody>
           </table>
@@ -335,19 +339,38 @@ const StaffManagement: React.FC = () => {
               - Page number list collapses with ellipses when totalPages > 7
               - Non-numeric ellipsis elements are non-interactive */}
           {filteredStaff.length > 0 && totalPages > 1 && (
-            <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
-              {/* Previous Button */}
-              <button 
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={currentPage === 1}
-                onClick={() => handlePageChange(currentPage - 1)}
-              >
-                <ChevronLeft className="w-4 h-4" />
-                Previous
-              </button>
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
+              {/* Mobile: stacked layout */}
+              <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+                {/* Previous Button */}
+                <button 
+                  className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="hidden sm:inline">Previous</span>
+                  <span className="sm:hidden">Prev</span>
+                </button>
 
-              {/* Page Numbers */}
-              <div className="flex items-center gap-2">
+                {/* Page indicator for mobile */}
+                <span className="text-xs sm:hidden text-gray-500">
+                  {currentPage} / {totalPages}
+                </span>
+
+                {/* Next Button - visible on mobile */}
+                <button 
+                  className="flex sm:hidden items-center gap-1 px-3 py-2.5 text-xs text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                  disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                >
+                  Next
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Page Numbers - hidden on mobile */}
+              <div className="hidden sm:flex items-center gap-2">
                 {generatePageNumbers().map((page, index) => (
                   <button
                     key={index}
@@ -367,9 +390,9 @@ const StaffManagement: React.FC = () => {
                 ))}
               </div>
 
-              {/* Next Button */}
+              {/* Next Button - desktop only */}
               <button 
-                className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                 disabled={currentPage === totalPages}
                 onClick={() => handlePageChange(currentPage + 1)}
               >
@@ -378,6 +401,7 @@ const StaffManagement: React.FC = () => {
               </button>
             </div>
           )}
+          </div>
         </div>
       </main>
       {renderModals()}

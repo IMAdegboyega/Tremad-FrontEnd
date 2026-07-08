@@ -12,15 +12,17 @@ const adminSections: Record<SuperAdminSectionSlug, ComponentType<any>> = {
   "result-management": dynamic(() => import("./sections/ResultManagement")),
   receipts: dynamic(() => import("./sections/Receipts")),
   "payment-management": dynamic(() => import("./sections/PaymentManagement")),
-  analyticsandinsights: dynamic(() => import("./sections/Analytics&Insights")),
+  timetable: dynamic(() => import("./sections/Timetable")),
+  approvals: dynamic(() => import("./sections/Approvals")),
+  analyticsandinsights: dynamic(() => import("./sections/AnalyticsAndInsights")),
   notification: dynamic(() => import("./sections/Notification")),
 };
 
-type Props = { params: { section: string } };
+type Props = { params: Promise<{ section: string }> };
 
 export default async function SuperAdminSectionPage({ params }: Props) {
   const { section } = await params;
-  const slug = params.section as SuperAdminSectionSlug;
+  const slug = section as SuperAdminSectionSlug;
   const SectionComponent = adminSections[slug];
 
   if (!SectionComponent) {

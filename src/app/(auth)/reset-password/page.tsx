@@ -5,12 +5,15 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 import Image from 'next/image';
+import { studentChangePassword } from '@/lib/api';
 
 export default function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const passwordRequirements = [
@@ -19,10 +22,48 @@ export default function ResetPassword() {
     { label: '1 number', met: /\d/.test(password) }
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === confirmPassword && passwordRequirements.every(req => req.met)) {
-      router.push('/reset-success');
+    setError('');
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match.');
+      return;
+    }
+    if (!passwordRequirements.every(req => req.met)) {
+      setError('Password does not meet all requirements.');
+      return;
+    }
+
+    const userId =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('tremad_password_change_userId')
+        : null;
+
+    if (!userId) {
+      setError('Session expired. Please sign in again.');
+      router.push('/sign-in');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // currentPassword is optional for first-login per the backend validator/controller,
+      // so we pass an empty string.
+      const result: any = await studentChangePassword(userId, '', password);
+
+      if (result?.success) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('tremad_password_change_userId');
+        }
+        router.push('/reset-success');
+      } else {
+        setError(result?.message || 'Failed to change password. Please try again.');
+      }
+    } catch (err: any) {
+      setError(err?.message || 'Failed to change password. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -47,6 +88,12 @@ export default function ResetPassword() {
       <p className="text-center text-gray-600 mb-8">
         Your new password must have at least 8 characters, 1 symbol, and 1 number.
       </p>
+
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+          <p className="text-sm text-red-600">{error}</p>
+        </div>
+      )}
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -114,9 +161,10 @@ export default function ResetPassword() {
 
         <button
           type="submit"
-          className="w-full py-3 bg-green-700 text-white rounded-lg font-medium hover:bg-green-800 transition-colors"
+          disabled={loading}
+          className="w-full py-3 bg-green-700 text-white rounded-lg font-medium hover:bg-green-800 transition-colors disabled:opacity-50"
         >
-          Create password
+          {loading ? 'Saving...' : 'Create password'}
         </button>
       </form>
     </div>

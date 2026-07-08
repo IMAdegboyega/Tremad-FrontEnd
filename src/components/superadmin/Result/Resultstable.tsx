@@ -13,6 +13,7 @@ interface ResultsTableProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
+  onViewDetails: (student: StudentResult) => void;
 }
 
 const ResultsTable: React.FC<ResultsTableProps> = ({
@@ -22,6 +23,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
   currentPage,
   totalPages,
   onPageChange,
+  onViewDetails,
 }) => {
   const getStatusStyles = (status: StudentResult['status']) => {
     switch (status) {
@@ -144,7 +146,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => onViewDetails(student)}>
                         <span className="cursor-pointer">View Details</span>
                       </DropdownMenuItem>
                       <DropdownMenuItem>

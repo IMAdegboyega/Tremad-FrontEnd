@@ -4,6 +4,9 @@ import React, { useRef } from 'react';
 import { ChevronLeft, Printer, Download, Mail } from 'lucide-react';
 import Image from 'next/image';
 import { Receipt } from '@/app/SuperAdmin/(root)/[section]/sections/Receipts';
+import { SCHOOL_INFO } from '@/Constants/SchoolInfo';
+import { useUser } from '@/Constants/UserContext';
+import { toTitleCase } from '@/lib/utils';
 
 interface ReceiptDetailProps {
   receipt: Receipt;
@@ -12,6 +15,14 @@ interface ReceiptDetailProps {
 
 const ReceiptDetail: React.FC<ReceiptDetailProps> = ({ receipt, onBack }) => {
   const receiptRef = useRef<HTMLDivElement>(null);
+
+  // Used for the "Received by" line at the bottom of the receipt — it's the
+  // logged-in super admin who's looking at / handing over this receipt.
+  const user = useUser();
+  const receivedByName =
+    `${toTitleCase(user?.firstName)} ${toTitleCase(user?.lastName)}`.trim() ||
+    user?.email ||
+    'Admin';
 
   const handlePrint = () => {
     window.print();
@@ -46,7 +57,7 @@ const ReceiptDetail: React.FC<ReceiptDetailProps> = ({ receipt, onBack }) => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-full bg-gray-50 p-6">
       {/* Header */}
       <div className="mb-6">
         <button 
@@ -190,8 +201,8 @@ const ReceiptDetail: React.FC<ReceiptDetailProps> = ({ receipt, onBack }) => {
 
                     {/* Footer — pushed down */}
                     <div className="ml-auto text-end text-xs text-gray-500 border-t border-gray-100 flex flex-col justify-center">
-                        <p className="font-medium">Received by: Admin User</p>
-                        <p>Contact: finance@tremadschools.edu</p>
+                        <p className="font-medium">Received by: {receivedByName}</p>
+                        <p>Contact: {SCHOOL_INFO.financeEmail}</p>
                     </div>
 
                     <div className="mt-auto border-t border-gray-100 py-2">
@@ -205,8 +216,9 @@ const ReceiptDetail: React.FC<ReceiptDetailProps> = ({ receipt, onBack }) => {
                                     height={16}
                                 />
                                 <div className="flex flex-col">
-                                    <span>08061178024</span>
-                                    <span>08061178024</span>
+                                    {SCHOOL_INFO.phones.map((phone, i) => (
+                                        <span key={i}>{phone}</span>
+                                    ))}
                                 </div>
                             </div>
 
@@ -219,8 +231,9 @@ const ReceiptDetail: React.FC<ReceiptDetailProps> = ({ receipt, onBack }) => {
                                     height={16}
                                 />
                                 <div className="flex flex-col text-center">
-                                    <span>lorem ipsum</span>
-                                    <span>address lorem</span>
+                                    {SCHOOL_INFO.address.map((line, i) => (
+                                        <span key={i}>{line}</span>
+                                    ))}
                                 </div>
                             </div>
 
@@ -233,8 +246,7 @@ const ReceiptDetail: React.FC<ReceiptDetailProps> = ({ receipt, onBack }) => {
                                     height={16}
                                 />
                                 <div className="flex flex-col">
-                                    <span>info@tremad.</span>
-                                    <span>comksn</span>
+                                    <span>{SCHOOL_INFO.email}</span>
                                 </div>
                             </div>
                         </div>

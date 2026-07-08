@@ -1,90 +1,117 @@
-import React from 'react'
-import { TrendingUp, TrendingDown, MoveRight } from 'lucide-react'
-import Image from 'next/image'
+'use client';
 
-interface StatData {
-  value: string | number
-  change: string
-  changeValue: number
-  isPositive: boolean
-}
+import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { TrendingUp, TrendingDown, MoveRight } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  getDashboardOverview,
+  type DashboardOverview,
+} from '@/lib/api/superAdmin.service';
 
 interface StatCardConfig {
-  title: string
-  icon: string // Path to icon
-  dotColor: string
+  key: keyof Omit<DashboardOverview, 'generated_at'>;
+  title: string;
+  icon: string;
+  /** Where the card navigates when clicked. */
+  href: string;
+  /** Format the raw value for display (e.g. comma separator vs currency). */
+  format: (value: number) => string;
 }
 
-// Constant configuration for each stat card
+// Static visual config; the dynamic numbers come from the API.
 const STAT_CARDS_CONFIG: StatCardConfig[] = [
   {
+    key: 'totalStudents',
     title: 'Total student',
     icon: '/icon/TotalStudent.svg',
-    dotColor: 'bg-purple-500'
+    href: '/SuperAdmin/student-management',
+    format: (v) => new Intl.NumberFormat('en-NG').format(v),
   },
   {
+    key: 'activeTeachers',
     title: 'Active teachers',
     icon: '/icon/ActiveTeachers.svg',
-    dotColor: 'bg-green-500'
+    href: '/SuperAdmin/staff-management',
+    format: (v) => new Intl.NumberFormat('en-NG').format(v),
   },
   {
+    key: 'monthlyRevenue',
     title: 'Monthly revenue',
     icon: '/icon/MonthlyRevenue.svg',
-    dotColor: 'bg-blue-500'
+    href: '/SuperAdmin/payment-management',
+    // Naira symbol + thousands separator. We round to whole nairas because the
+    // backend stores amounts as integers.
+    format: (v) =>
+      `₦${new Intl.NumberFormat('en-NG', {
+        maximumFractionDigits: 0,
+      }).format(v)}`,
   },
   {
+    key: 'pendingApprovals',
     title: 'Pending approvals',
     icon: '/icon/PendingApprovals.svg',
-    dotColor: 'bg-orange-500'
-  }
-]
+    href: '/SuperAdmin/approvals',
+    format: (v) => new Intl.NumberFormat('en-NG').format(v),
+  },
+];
 
+/**
+ * SuperAdmin headline numbers grid.
+ *
+ * Pulls totals + month-over-month deltas from /super-admin/analytics/overview.
+ * Renders Skeleton placeholders during the initial fetch and a soft empty state
+ * if the request fails — we never want stale mock numbers misleading admins.
+ */
 const StatsCards = () => {
-  // This would come from your API/props - only the dynamic data
-  const statsData: StatData[] = [
-    {
-      value: '1,247',
-      change: 'from last term',
-      changeValue: 12,
-      isPositive: true
-    },
-    {
-      value: '89',
-      change: 'from last term',
-      changeValue: 5,
-      isPositive: true
-    },
-    {
-      value: '#847,200',
-      change: 'from last term',
-      changeValue: 8,
-      isPositive: true
-    },
-    {
-      value: '20',
-      change: 'from last term',
-      changeValue: 3,
-      isPositive: false
-    }
-  ]
+  const [overview, setOverview] = useState<DashboardOverview | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [errored, setErrored] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await getDashboardOverview();
+        if (cancelled) return;
+        if (res?.success && res.data) {
+          setOverview(res.data);
+          setErrored(false);
+        } else {
+          setErrored(true);
+        }
+      } catch {
+        if (!cancelled) setErrored(true);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4'>
-      {STAT_CARDS_CONFIG.map((config, index) => {
-        const data = statsData[index]
-        
+      {STAT_CARDS_CONFIG.map((config) => {
+        const stat = overview?.[config.key];
+        const value = stat?.value ?? 0;
+        const changeValue = stat?.changePercent ?? 0;
+        const isPositive = changeValue >= 0;
+
         return (
-          <div 
-            key={config.title} 
-            className='bg-white rounded-xl p-4 lg:p-5 shadow-sm hover:shadow-md transition-all duration-200 group'
+          <Link
+            href={config.href}
+            key={config.title}
+            className='block bg-white rounded-xl p-4 lg:p-5 shadow-sm hover:shadow-md transition-all duration-200 group cursor-pointer'
           >
             {/* Header with icon and title */}
             <div className='flex items-center justify-between mb-3'>
-              {/* Title */}
               <p className='text-sm text-gray-600'>{config.title}</p>
               <div className='flex items-center gap-3'>
-                <div className={`w-10 h-10 rounded-lg flex items-center justify-center`}>
-                  <Image 
+                <div className='w-10 h-10 rounded-lg flex items-center justify-center'>
+                  <Image
                     src={config.icon}
                     alt={config.title}
                     width={30}
@@ -96,28 +123,50 @@ const StatsCards = () => {
             </div>
 
             {/* Value */}
-            <p className='text-2xl font-bold text-gray-900 mb-2'>{data.value}</p>
+            {loading ? (
+              <Skeleton className='h-7 w-24 mb-2' />
+            ) : (
+              <p className='text-2xl font-bold text-gray-900 mb-2'>
+                {errored ? '—' : config.format(value)}
+              </p>
+            )}
 
             {/* Change indicator */}
-            <div className='flex items-center gap-1.5'>
-              {data.isPositive ? (
-                <TrendingUp className='w-4 h-4 text-green-500' />
-              ) : (
-                <TrendingDown className='w-4 h-4 text-red-500' />
-              )}
-              <span className={`text-sm font-medium ${data.isPositive ? 'text-green-500' : 'text-red-500'}`}>
-                {data.isPositive ? '+' : '-'}{data.changeValue}%
+            {loading ? (
+              <Skeleton className='h-4 w-32' />
+            ) : errored ? (
+              <span className='text-sm text-gray-400'>
+                Couldn&apos;t load stats
               </span>
-              <span className='text-sm text-gray-500'>{data.change}</span>
-            <span className='ml-auto'>
-                <MoveRight size={20} className='text-green-800 cursor-pointer' />
-            </span>
-            </div>
-          </div>
-        )
+            ) : (
+              <div className='flex items-center gap-1.5'>
+                {isPositive ? (
+                  <TrendingUp className='w-4 h-4 text-green-500' />
+                ) : (
+                  <TrendingDown className='w-4 h-4 text-red-500' />
+                )}
+                <span
+                  className={`text-sm font-medium ${
+                    isPositive ? 'text-green-500' : 'text-red-500'
+                  }`}
+                >
+                  {isPositive ? '+' : ''}
+                  {changeValue}%
+                </span>
+                <span className='text-sm text-gray-500'>from last month</span>
+                <span className='ml-auto'>
+                  <MoveRight
+                    size={20}
+                    className='text-green-800 cursor-pointer'
+                  />
+                </span>
+              </div>
+            )}
+          </Link>
+        );
       })}
     </div>
-  )
-}
+  );
+};
 
-export default StatsCards
+export default StatsCards;

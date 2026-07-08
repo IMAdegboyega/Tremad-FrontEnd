@@ -1,44 +1,60 @@
-'use client'
+'use client';
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react';
 import StatsCard from '@/components/student/TimeTable/StatsCard';
 import WeekView from '@/components/student/TimeTable/WeekView';
 import DayView from '@/components/student/TimeTable/DayView';
+import { getTimetable, type TimetableEntry } from '@/lib/api/student.service';
 
 /**
- * TimeTable Page Component
- * 
- * Main timetable page that displays student's class schedule and academic calendar.
- * Features two viewing modes: Week view and Day view for different levels of detail.
- * 
- * Features:
- * - Toggle between Week view and Day view modes
- * - Statistics cards showing schedule overview
- * - Responsive design with mobile-optimized layout
- * - Clean, accessible interface with smooth transitions
- * - Integration with child components for different view types
+ * TimeTable page
+ *
+ * Fetches /student/academic/timetable and renders Week/Day views plus stats.
+ * Views share the same `entries` array; they each derive their own layout.
  */
 const TimeTable = () => {
-  // State management for view mode selection
   const [viewMode, setViewMode] = useState<'Week view' | 'Day view'>('Week view');
+  const [entries, setEntries] = useState<TimetableEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    getTimetable()
+      .then((res) => {
+        if (cancelled) return;
+        if (res?.success && Array.isArray(res.data)) {
+          setEntries(res.data);
+        } else {
+          setEntries([]);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setEntries([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <div className='space-y-4 lg:space-y-6'>
-      {/* Page header with view toggle */}
       <div className='p-0'>
         <div className='flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between'>
-          {/* Title and Description */}
           <div>
             <h1 className='text-2xl font-semibold text-gray-900'>Timetable</h1>
-            <p className='text-sm text-gray-500 mt-1'>Stay up to date with what is going on.</p>
+            <p className='text-sm text-gray-500 mt-1'>
+              Stay up to date with what is going on.
+            </p>
           </div>
-          
-          {/* View mode toggle buttons */}
+
           <div className='flex'>
-            {/* Week View Button */}
             <button
               onClick={() => setViewMode('Week view')}
-              className={`px-3 lg:px-5 py-2 lg:py-2.5 text-xs lg:text-sm font-medium transition-all ${
+              className={`px-3 lg:px-5 py-2 lg:py-2.5 text-xs w-full lg:text-sm font-medium transition-all ${
                 viewMode === 'Week view'
                   ? 'bg-green-700 text-white rounded-l-lg'
                   : 'bg-white text-gray-600 border border-gray-200 rounded-l-lg border-r-0 hover:bg-gray-50'
@@ -46,10 +62,9 @@ const TimeTable = () => {
             >
               Week view
             </button>
-            {/* Day View Button */}
             <button
               onClick={() => setViewMode('Day view')}
-              className={`px-3 lg:px-5 py-2 lg:py-2.5 text-xs lg:text-sm font-medium transition-all ${
+              className={`px-3 lg:px-5 py-2 lg:py-2.5 text-xs w-full lg:text-sm font-medium transition-all ${
                 viewMode === 'Day view'
                   ? 'bg-green-700 text-white rounded-r-lg'
                   : 'bg-white text-gray-600 border border-gray-200 rounded-r-lg hover:bg-gray-50'
@@ -61,13 +76,15 @@ const TimeTable = () => {
         </div>
       </div>
 
-      {/* Statistics overview cards */}
-      <StatsCard/>
+      <StatsCard entries={entries} isLoading={loading} />
 
-      {/* Conditional rendering: Week view or Day view */}
-      {viewMode === 'Week view' ? <WeekView /> : <DayView />}
+      {viewMode === 'Week view' ? (
+        <WeekView entries={entries} isLoading={loading} />
+      ) : (
+        <DayView entries={entries} isLoading={loading} />
+      )}
     </div>
-  )
-}
+  );
+};
 
-export default TimeTable
+export default TimeTable;

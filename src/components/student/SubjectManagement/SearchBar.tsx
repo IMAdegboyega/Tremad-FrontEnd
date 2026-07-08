@@ -7,7 +7,7 @@ const SearchBar = () => {
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
 
   return (
-    <div className='flex bg-white rounded-lg px-4 py-3 items-center'>
+    <div className='flex bg-white rounded-lg w-full px-4 py-3 items-center'>
         {/* Search Input Section */}
         <div className='flex items-center flex-1 gap-3'>
             <Search className='text-gray-400' size={20}/>
@@ -27,7 +27,7 @@ const SearchBar = () => {
             </button>
 
             {/* View Toggle Buttons */}
-            <div className='flex items-center pl-2 gap-1'>
+            <div className='items-center pl-2 gap-1 hidden md:flex'>
                 <button 
                     onClick={() => setViewMode('list')}
                     className={`p-2 rounded-md transition-colors border border-gray-300 ${
