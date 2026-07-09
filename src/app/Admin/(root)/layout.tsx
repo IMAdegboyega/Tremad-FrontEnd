@@ -30,7 +30,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         <div className="flex h-full overflow-hidden p-2 sm:p-4 md:p-6 md:space-x-4">
           {/* Sidebar — desktop only */}
           <aside className="hidden md:block flex-shrink-0 h-full overflow-y-auto no-scrollbar">
-            <SideBar navItems={sidebarNavItems} />
+            <SideBar navItems={sidebarNavItems} showHelpCard />
           </aside>
 
           {/* Mobile drawer */}

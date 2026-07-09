@@ -47,7 +47,7 @@ export default function Home({ children }: HomeProps) {
           {/* Sidebar — desktop only. Scrolls internally if its content is taller
               than the viewport so it never pushes the shell taller. */}
           <aside className="hidden md:block flex-shrink-0 h-full overflow-y-auto no-scrollbar">
-            <SideBar navItems={sidebarNavItems}/>
+            <SideBar navItems={sidebarNavItems} showHelpCard/>
           </aside>
 
           {/* Mobile drawer */}
