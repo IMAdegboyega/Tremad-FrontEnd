@@ -43,18 +43,30 @@ export default function LandingNav() {
     history.replaceState(null, '', `#${id}`);
   };
 
+  /** Logo click → smooth scroll all the way back to the top of the page. */
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Clear any leftover hash so the URL reads clean at the top.
+    history.replaceState(null, '', window.location.pathname);
+  };
+
   return (
     <nav className="bg-primary-green sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center py-4">
-          <div className="flex items-center">
+          <button
+            type="button"
+            onClick={scrollToTop}
+            aria-label="Back to top"
+            className="flex items-center cursor-pointer bg-transparent border-0 p-0"
+          >
             <Image
               src="/icon/logo.svg"
               alt="Tremad Schools"
               width={50}
               height={50}
             />
-          </div>
+          </button>
           <ul className="hidden md:flex space-x-8 text-white">
             {NAV_LINKS.map((link) => (
               <li key={link.id}>

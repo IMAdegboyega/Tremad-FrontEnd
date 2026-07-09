@@ -58,6 +58,19 @@ export default function LandingPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          {/* Government-approved sticker — hero placement, sits to the right of
+              the "Building Future Leaders" heading. Hidden on mobile since the
+              hero content is center-aligned and there's no side room; on md+
+              it floats in the top-right of the content area with a subtle
+              stamp tilt. */}
+          <Image
+            src="/icon/govt-approved.png"
+            alt="Government approved"
+            width={140}
+            height={140}
+            className="hidden md:block absolute top-[70px] right-4 lg:top-[120px] lg:right-8 z-20 drop-shadow-2xl pointer-events-none"
+          />
+
           {/* Hero content */}
           <div className="text-center mb-12">
             <div className="w-full flex justify-center">
@@ -162,8 +175,8 @@ export default function LandingPage() {
             <h3 className="text-3xl font-bold">100+</h3>
             <p className="font-medium text-lg">Students</p>
             <small className="text-gray-600 text-sm">
-              Nurturing minds, shaping futures, a vibrant community of learners
-              dedicated to growth and success
+              A vibrant community of learners from Nursery through Senior
+              Secondary, shaping their futures together.
             </small>
           </div>
           <div className="text-center text-gray-800">
@@ -178,8 +191,8 @@ export default function LandingPage() {
             <h3 className="text-3xl font-bold">30+</h3>
             <p className="font-medium text-lg">Qualified Teachers</p>
             <small className="text-gray-600 text-sm">
-              Harvested from organic farms, ensuring the highest quality of
-              natural sweetness without
+              Trained, patient educators working closely with parents to
+              nurture every child&apos;s progress.
             </small>
           </div>
           <div className="text-center text-gray-800">
@@ -194,8 +207,8 @@ export default function LandingPage() {
             <h3 className="text-3xl font-bold">97%</h3>
             <p className="font-medium text-lg">Success Rate</p>
             <small className="text-gray-600 text-sm">
-              A delightful mix of nations from wallflowers, offering a unique
-              flavor profile and a life is
+              Consistent results in BECE, WAEC, and NECO — the outcome of
+              steady teaching and personal attention.
             </small>
           </div>
         </div>
@@ -754,17 +767,6 @@ export default function LandingPage() {
 
       {/* Footer */}
       <footer className="relative overflow-hidden bg-[#001E11] text-white py-20">
-        {/* Government-approved sticker — sits in the empty top-right of the
-            footer with a subtle stamp-style tilt. Absolutely positioned so
-            it doesn't touch the 4-column grid or the background watermark
-            below. Drop the real asset at /public/icon/govt-approved.svg. */}
-        <Image
-          src="/icon/govt-approved.png"
-          alt="Government approved"
-          width={110}
-          height={110}
-          className="absolute top-6 right-6 md:top-8 md:right-8 z-20 pointer-events-none opacity-95"
-        />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 z-10">
           <div className="grid md:grid-cols-4 gap-8">
             <div className="md:col-span-1">
