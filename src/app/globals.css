@@ -125,6 +125,12 @@
   body {
     @apply bg-background text-foreground;
   }
+  /* Smooth scrolling for the landing page's #hash nav links. Each target
+     section on the landing page also sets scroll-mt-20 md:scroll-mt-24 so
+     the section header doesn't hide behind the sticky top nav. */
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 
