@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 /**
  * StudentManagement — wired to real data.
@@ -14,7 +14,7 @@
  * fetch, friendly empty states, soft error fallback.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Search,
   ChevronLeft,
@@ -26,20 +26,20 @@ import {
   Copy,
   Check,
   KeyRound,
-} from 'lucide-react';
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import StatsCard from '@/components/superadmin/PortalLogin/StatsCard';
-import DeleteAccountModal from '@/components/modals/DeleteAcount';
-import AddStudentModal from '@/components/modals/AddStudent';
-import DeactivateAccountModal from '@/components/modals/Deactivate';
-import ResetPasswordModal from '@/components/modals/ResetPassword';
-import SendCredentialsModal from '@/components/modals/SendCredentials';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/dropdown-menu";
+import StatsCard from "@/components/superadmin/PortalLogin/StatsCard";
+import DeleteAccountModal from "@/components/modals/DeleteAcount";
+import AddStudentModal from "@/components/modals/AddStudent";
+import DeactivateAccountModal from "@/components/modals/Deactivate";
+import ResetPasswordModal from "@/components/modals/ResetPassword";
+import SendCredentialsModal from "@/components/modals/SendCredentials";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   getStudents,
   getStudent,
@@ -50,33 +50,33 @@ import {
   type Student,
   type AuditLog,
   type DashboardOverview,
-} from '@/lib/api/superAdmin.service';
-import { toTitleCase, getStudentAvatarUrl } from '@/lib/utils';
+} from "@/lib/api/superAdmin.service";
+import { toTitleCase, getStudentAvatarUrl } from "@/lib/utils";
 
 // ============================================================================
 // HELPERS
 // ============================================================================
 
-type StatusFilter = 'all' | 'active' | 'inactive';
+type StatusFilter = "all" | "active" | "inactive";
 
 const PAGE_SIZE = 10;
 
-function fullName(s: Pick<Student, 'firstName' | 'lastName'>): string {
+function fullName(s: Pick<Student, "firstName" | "lastName">): string {
   return `${toTitleCase(s.firstName)} ${toTitleCase(s.lastName)}`.trim();
 }
 
-function initials(s: Pick<Student, 'firstName' | 'lastName'>): string {
-  const f = (s.firstName || '').charAt(0);
-  const l = (s.lastName || '').charAt(0);
-  return `${f}${l}`.toUpperCase() || '?';
+function initials(s: Pick<Student, "firstName" | "lastName">): string {
+  const f = (s.firstName || "").charAt(0);
+  const l = (s.lastName || "").charAt(0);
+  return `${f}${l}`.toUpperCase() || "?";
 }
 
 function relativeTime(iso?: string): string {
-  if (!iso) return 'never';
+  if (!iso) return "never";
   const t = new Date(iso).getTime();
-  if (Number.isNaN(t)) return 'never';
+  if (Number.isNaN(t)) return "never";
   const diff = Math.floor((Date.now() - t) / 1000);
-  if (diff < 60) return 'just now';
+  if (diff < 60) return "just now";
   if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
   if (diff < 604800) return `${Math.floor(diff / 86400)} day(s) ago`;
@@ -101,11 +101,11 @@ function buildPageNumbers(current: number, total: number): (number | string)[] {
     return pages;
   }
   pages.push(1);
-  if (current > 3) pages.push('…');
+  if (current > 3) pages.push("…");
   const start = Math.max(2, current - 1);
   const end = Math.min(total - 1, current + 1);
   for (let i = start; i <= end; i++) pages.push(i);
-  if (current < total - 2) pages.push('…');
+  if (current < total - 2) pages.push("…");
   pages.push(total);
   return pages;
 }
@@ -116,10 +116,10 @@ function buildPageNumbers(current: number, total: number): (number | string)[] {
 
 const StudentManagement: React.FC = () => {
   // --- Filters / search ---
-  const [searchInput, setSearchInput] = useState('');
+  const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
-  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
-  const [classFilter, setClassFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
+  const [classFilter, setClassFilter] = useState<string>("all");
   const [currentPage, setCurrentPage] = useState(1);
 
   // --- Data ---
@@ -127,7 +127,7 @@ const StudentManagement: React.FC = () => {
   const [totalCount, setTotalCount] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [listLoading, setListLoading] = useState(true);
-  const [listError, setListError] = useState('');
+  const [listError, setListError] = useState("");
 
   // --- Header stats ---
   const [overview, setOverview] = useState<DashboardOverview | null>(null);
@@ -137,7 +137,7 @@ const StudentManagement: React.FC = () => {
   const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [modalAction, setModalAction] = useState<
-    'reset' | 'deactivate' | 'delete' | 'send-credentials' | null
+    "reset" | "deactivate" | "delete" | "send-credentials" | null
   >(null);
 
   // --- Detail view ---
@@ -174,14 +174,14 @@ const StudentManagement: React.FC = () => {
   // Fetch the student page (refetched on any filter/search/page change)
   const refetchList = useCallback(async () => {
     setListLoading(true);
-    setListError('');
+    setListError("");
     try {
       const res = await getStudents({
         page: currentPage,
         limit: PAGE_SIZE,
         search: debouncedSearch || undefined,
-        className: classFilter !== 'all' ? classFilter : undefined,
-        status: statusFilter !== 'all' ? statusFilter : undefined,
+        className: classFilter !== "all" ? classFilter : undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
       });
       if (res?.success && res.data) {
         // Backend may use `items` or `students` depending on the controller.
@@ -202,10 +202,10 @@ const StudentManagement: React.FC = () => {
           setCurrentPage(newTotalPages);
         }
       } else {
-        setListError(res?.message || 'Failed to load students.');
+        setListError(res?.message || "Failed to load students.");
       }
     } catch (err: any) {
-      setListError(err?.message || 'Network error. Please try again.');
+      setListError(err?.message || "Network error. Please try again.");
     } finally {
       setListLoading(false);
     }
@@ -243,7 +243,7 @@ const StudentManagement: React.FC = () => {
         // care if the controller is updated later.
         const raw = detailRes.data as any;
         const next: Student | null = raw.student ?? raw;
-        if (next && typeof next === 'object' && next._id) {
+        if (next && typeof next === "object" && next._id) {
           setDetailStudent(next);
         }
       }
@@ -277,7 +277,8 @@ const StudentManagement: React.FC = () => {
       if (refreshed?.success && refreshed.data) {
         const raw = refreshed.data as any;
         const next: Student | null = raw.student ?? raw;
-        if (next && typeof next === 'object' && next._id) setDetailStudent(next);
+        if (next && typeof next === "object" && next._id)
+          setDetailStudent(next);
       } else {
         // Detail student was removed — bail back to the list so we're not
         // sitting on a 404'd row.
@@ -289,7 +290,7 @@ const StudentManagement: React.FC = () => {
 
   const openModal = (
     student: Student,
-    action: 'reset' | 'deactivate' | 'delete' | 'send-credentials'
+    action: "reset" | "deactivate" | "delete" | "send-credentials",
   ) => {
     setSelectedStudent(student);
     setModalAction(action);
@@ -322,31 +323,31 @@ const StudentManagement: React.FC = () => {
   const renderModals = () => (
     <>
       <ResetPasswordModal
-        isOpen={modalAction === 'reset'}
+        isOpen={modalAction === "reset"}
         onClose={closeModal}
-        studentId={selectedStudent?._id ?? ''}
-        studentName={selectedStudent ? fullName(selectedStudent) : ''}
-        studentEmail={selectedStudent?.email ?? ''}
+        studentId={selectedStudent?._id ?? ""}
+        studentName={selectedStudent ? fullName(selectedStudent) : ""}
+        studentEmail={selectedStudent?.email ?? ""}
       />
       <DeactivateAccountModal
-        isOpen={modalAction === 'deactivate'}
+        isOpen={modalAction === "deactivate"}
         onClose={closeModal}
-        studentId={selectedStudent?._id ?? ''}
-        studentName={selectedStudent ? fullName(selectedStudent) : ''}
+        studentId={selectedStudent?._id ?? ""}
+        studentName={selectedStudent ? fullName(selectedStudent) : ""}
         onDeactivated={handleAfterMutation}
       />
       <DeleteAccountModal
-        isOpen={modalAction === 'delete'}
+        isOpen={modalAction === "delete"}
         onClose={closeModal}
-        studentId={selectedStudent?._id ?? ''}
-        studentName={selectedStudent ? fullName(selectedStudent) : ''}
+        studentId={selectedStudent?._id ?? ""}
+        studentName={selectedStudent ? fullName(selectedStudent) : ""}
         onDeleted={handleAfterMutation}
       />
       <SendCredentialsModal
-        isOpen={modalAction === 'send-credentials'}
+        isOpen={modalAction === "send-credentials"}
         onClose={closeModal}
-        studentId={selectedStudent?._id ?? ''}
-        studentName={selectedStudent ? fullName(selectedStudent) : ''}
+        studentId={selectedStudent?._id ?? ""}
+        studentName={selectedStudent ? fullName(selectedStudent) : ""}
         studentEmail={selectedStudent?.email}
       />
       <AddStudentModal
@@ -364,20 +365,20 @@ const StudentManagement: React.FC = () => {
   // ============================================================================
   if (isHistoryView && detailStudent) {
     return (
-      <div className='min-h-full bg-gray-50 p-2 sm:p-4 md:p-8'>
-        <div className='mb-4 md:mb-6'>
+      <div className="min-h-full bg-gray-50 p-2 sm:p-4 md:p-8">
+        <div className="mb-4 md:mb-6">
           <button
             onClick={() => setIsHistoryView(false)}
-            className='flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3 md:mb-4 min-h-[44px]'
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3 md:mb-4 min-h-[44px]"
           >
-            <ArrowLeft className='w-5 h-5' />
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <h1 className='text-xl sm:text-2xl font-semibold text-gray-900'>
+          <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
             Recent History — {fullName(detailStudent)}
           </h1>
         </div>
 
-        <div className='bg-white rounded-lg border border-gray-200'>
+        <div className="bg-white rounded-lg border border-gray-200">
           <ActivityTable
             activities={activities}
             loading={activityLoading}
@@ -393,32 +394,31 @@ const StudentManagement: React.FC = () => {
   // ============================================================================
   if (isDetailView && detailStudent) {
     return (
-      <div className='min-h-full bg-gray-50 p-2 sm:p-4 md:p-8'>
-        <div className='mb-4 md:mb-6'>
+      <div className="min-h-full bg-gray-50 p-2 sm:p-4 md:p-8">
+        <div className="mb-4 md:mb-6">
           <button
             onClick={() => {
               setIsDetailView(false);
               setDetailStudent(null);
             }}
-            className='flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3 md:mb-4 min-h-[44px]'
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3 md:mb-4 min-h-[44px]"
           >
-            <ArrowLeft className='w-5 h-5' />
+            <ArrowLeft className="w-5 h-5" />
           </button>
         </div>
 
         {/* Student profile card */}
-        <div className='bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-4 md:mb-6'>
-          <div className='flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6'>
-            <StudentAvatar student={detailStudent} size='lg' />
+        <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 mb-4 md:mb-6">
+          <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 sm:gap-6">
+            <StudentAvatar student={detailStudent} size="lg" />
 
-
-            <div className='flex-1 w-full text-center sm:text-left'>
-              <div className='flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4'>
+            <div className="flex-1 w-full text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                 <div>
-                  <h2 className='text-lg sm:text-xl font-semibold text-gray-900'>
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
                     {fullName(detailStudent)}
                   </h2>
-                  <p className='text-xs sm:text-sm text-gray-500 mt-1'>
+                  <p className="text-xs sm:text-sm text-gray-500 mt-1">
                     {detailStudent.admissionNumber}
                     {detailStudent.className && ` • ${detailStudent.className}`}
                     {detailStudent.email && ` • ${detailStudent.email}`}
@@ -427,24 +427,24 @@ const StudentManagement: React.FC = () => {
                 <span
                   className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium ${
                     detailStudent.isActive
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-red-50 text-red-700'
+                      ? "bg-green-50 text-green-700"
+                      : "bg-red-50 text-red-700"
                   }`}
                 >
                   <span
                     className={`w-2 h-2 rounded-full ${
-                      detailStudent.isActive ? 'bg-green-600' : 'bg-red-600'
+                      detailStudent.isActive ? "bg-green-600" : "bg-red-600"
                     }`}
                   />
-                  {detailStudent.isActive ? 'Active' : 'Inactive'} Account
+                  {detailStudent.isActive ? "Active" : "Inactive"} Account
                 </span>
               </div>
 
               {/* Demographics block — only renders fields that actually have data */}
               {detailLoading ? (
-                <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4'>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                   {Array.from({ length: 6 }).map((_, i) => (
-                    <Skeleton key={i} className='h-5 w-full' />
+                    <Skeleton key={i} className="h-5 w-full" />
                   ))}
                 </div>
               ) : (
@@ -454,37 +454,37 @@ const StudentManagement: React.FC = () => {
               {/* Temporary password reveal — blind by default */}
               <TempPasswordReveal studentId={detailStudent._id} />
 
-              <div className='grid grid-cols-1 sm:grid-cols-2 lg:flex gap-2 sm:gap-3'>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-2 sm:gap-3">
                 <ActionButton
-                  color='green'
-                  onClick={() => openModal(detailStudent, 'reset')}
+                  color="green"
+                  onClick={() => openModal(detailStudent, "reset")}
                 >
                   Reset password
                 </ActionButton>
                 {detailStudent.isActive ? (
                   <ActionButton
-                    color='yellow'
-                    onClick={() => openModal(detailStudent, 'deactivate')}
+                    color="yellow"
+                    onClick={() => openModal(detailStudent, "deactivate")}
                   >
                     Deactivate
                   </ActionButton>
                 ) : (
                   <ActionButton
-                    color='green'
+                    color="green"
                     onClick={() => handleReactivate(detailStudent)}
                   >
                     Reactivate
                   </ActionButton>
                 )}
                 <ActionButton
-                  color='yellow'
-                  onClick={() => openModal(detailStudent, 'send-credentials')}
+                  color="yellow"
+                  onClick={() => openModal(detailStudent, "send-credentials")}
                 >
                   Send credentials
                 </ActionButton>
                 <ActionButton
-                  color='red'
-                  onClick={() => openModal(detailStudent, 'delete')}
+                  color="red"
+                  onClick={() => openModal(detailStudent, "delete")}
                 >
                   Delete
                 </ActionButton>
@@ -494,15 +494,15 @@ const StudentManagement: React.FC = () => {
         </div>
 
         {/* Recent activity */}
-        <div className='bg-white rounded-lg border border-gray-200'>
-          <div className='flex items-center justify-between p-3 sm:p-4 border-b border-gray-200'>
-            <h3 className='text-base sm:text-lg font-semibold text-gray-900'>
+        <div className="bg-white rounded-lg border border-gray-200">
+          <div className="flex items-center justify-between p-3 sm:p-4 border-b border-gray-200">
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900">
               Recent History
             </h3>
             {activities.length > 5 && (
               <button
                 onClick={() => setIsHistoryView(true)}
-                className='text-xs sm:text-sm cursor-pointer text-green-700 hover:text-green-900 min-h-[44px] flex items-center'
+                className="text-xs sm:text-sm cursor-pointer text-green-700 hover:text-green-900 min-h-[44px] flex items-center"
               >
                 View all ››
               </button>
@@ -529,58 +529,62 @@ const StudentManagement: React.FC = () => {
 
   return (
     <>
-      <div className='min-h-full bg-gray-50 space-y-3 p-0 sm:p-2'>
+      <div className="min-h-full bg-gray-50 space-y-3 p-0 sm:p-2">
         {/* Header */}
         <header>
-          <div className='flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4'>
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 mb-4">
             <div>
-              <h1 className='text-xl sm:text-2xl font-semibold text-gray-900'>
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
                 Student management
               </h1>
-              <p className='text-xs sm:text-sm text-gray-500 mt-1'>
+              <p className="text-xs sm:text-sm text-gray-500 mt-1">
                 Manage students, view profiles, reset access
               </p>
             </div>
-            <div className='flex items-center gap-2 sm:gap-3'>
+            <div className="flex items-center gap-2 sm:gap-3">
               <button
                 onClick={() => setShowAddStudentModal(true)}
-                className='flex-1 sm:flex-none px-3 py-2.5 text-xs sm:text-sm text-white bg-primary-green rounded-lg hover:bg-primary-green-hover flex items-center justify-center gap-2 min-h-[44px]'
+                className="flex-1 sm:flex-none px-3 py-2.5 text-xs sm:text-sm text-white bg-primary-green rounded-lg hover:bg-primary-green-hover flex items-center justify-center gap-2 min-h-[44px]"
               >
-                <span className='text-lg'>+</span>
-                <span className='hidden sm:inline'>Add new student</span>
-                <span className='sm:hidden'>Add</span>
+                <span className="text-lg">+</span>
+                <span className="hidden sm:inline">Add new student</span>
+                <span className="sm:hidden">Add</span>
               </button>
             </div>
           </div>
 
-          <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-4 md:mb-8'>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6 mb-4 md:mb-8">
             <StatsCard
-              title='Total Students'
+              title="Total Students"
               count={overviewLoading ? undefined : totalStudentsStat}
-              icon='/icon/message.svg'
+              icon="/icon/message.svg"
               change={
                 overviewLoading
-                  ? 'Loading…'
+                  ? "Loading…"
                   : `${
-                      totalStudentsChange >= 0 ? '+' : ''
+                      totalStudentsChange >= 0 ? "+" : ""
                     }${totalStudentsChange}% from last month`
               }
               isPositive={totalStudentsChange >= 0}
             />
             <StatsCard
-              title='Active on this page'
-              count={listLoading ? undefined : students.filter((s) => s.isActive).length}
-              icon='/icon/activity.svg'
-              change={listLoading ? 'Loading…' : `of ${students.length} shown`}
+              title="Active on this page"
+              count={
+                listLoading
+                  ? undefined
+                  : students.filter((s) => s.isActive).length
+              }
+              icon="/icon/activity.svg"
+              change={listLoading ? "Loading…" : `of ${students.length} shown`}
               isPositive={true}
             />
             <StatsCard
-              title='Showing'
+              title="Showing"
               count={listLoading ? undefined : students.length}
-              icon='/icon/activity.svg'
+              icon="/icon/activity.svg"
               change={
                 listLoading
-                  ? 'Loading…'
+                  ? "Loading…"
                   : `Page ${currentPage} of ${Math.max(1, totalPages)} (${totalCount} total)`
               }
               isPositive={true}
@@ -590,67 +594,69 @@ const StudentManagement: React.FC = () => {
 
         <main>
           {/* Search + filters */}
-          <div className='bg-white rounded-lg border border-gray-100 mb-4 md:mb-6'>
-            <div className='p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4'>
-              <div className='flex-1 relative'>
-                <Search className='w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400' />
+          <div className="bg-white rounded-lg border border-gray-100 mb-4 md:mb-6">
+            <div className="p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+              <div className="flex-1 relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
-                  type='text'
-                  placeholder='Search by name, email or admission #...'
+                  type="text"
+                  placeholder="Search by name, email or admission #..."
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  className='w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 sm:border-0 rounded-lg sm:rounded-none focus:outline-none focus:ring-2 focus:ring-green-500 sm:focus:ring-0 min-h-[44px]'
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 sm:border-0 rounded-lg sm:rounded-none focus:outline-none focus:ring-2 focus:ring-green-500 sm:focus:ring-0 min-h-[44px]"
                 />
               </div>
 
-              <div className='flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0'>
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className='flex-shrink-0 flex items-center gap-2 px-3 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 min-h-[44px] whitespace-nowrap'>
+                    <button className="flex-shrink-0 flex items-center gap-2 px-3 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 min-h-[44px] whitespace-nowrap">
                       <ListFilter size={16} />
-                      <span className='hidden sm:inline'>Status</span>
-                      {statusFilter !== 'all' && (
-                        <span className='ml-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs capitalize'>
+                      <span className="hidden sm:inline">Status</span>
+                      {statusFilter !== "all" && (
+                        <span className="ml-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs capitalize">
                           {statusFilter}
                         </span>
                       )}
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align='end'>
-                    <DropdownMenuItem onClick={() => setStatusFilter('all')}>
-                      <span className='cursor-pointer'>All Status</span>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setStatusFilter("all")}>
+                      <span className="cursor-pointer">All Status</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setStatusFilter('active')}>
-                      <span className='cursor-pointer'>Active</span>
+                    <DropdownMenuItem onClick={() => setStatusFilter("active")}>
+                      <span className="cursor-pointer">Active</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setStatusFilter('inactive')}>
-                      <span className='cursor-pointer'>Inactive</span>
+                    <DropdownMenuItem
+                      onClick={() => setStatusFilter("inactive")}
+                    >
+                      <span className="cursor-pointer">Inactive</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
 
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className='flex-shrink-0 flex items-center gap-2 px-3 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 min-h-[44px] whitespace-nowrap'>
+                    <button className="flex-shrink-0 flex items-center gap-2 px-3 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 min-h-[44px] whitespace-nowrap">
                       <ListFilter size={16} />
-                      <span className='hidden sm:inline'>Class</span>
-                      {classFilter !== 'all' && (
-                        <span className='ml-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs'>
+                      <span className="hidden sm:inline">Class</span>
+                      {classFilter !== "all" && (
+                        <span className="ml-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
                           {classFilter}
                         </span>
                       )}
                     </button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align='end'>
-                    <DropdownMenuItem onClick={() => setClassFilter('all')}>
-                      <span className='cursor-pointer'>All classes</span>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setClassFilter("all")}>
+                      <span className="cursor-pointer">All classes</span>
                     </DropdownMenuItem>
                     {classOptions.map((c) => (
                       <DropdownMenuItem
                         key={c}
                         onClick={() => setClassFilter(c)}
                       >
-                        <span className='cursor-pointer'>{c}</span>
+                        <span className="cursor-pointer">{c}</span>
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
@@ -660,27 +666,27 @@ const StudentManagement: React.FC = () => {
           </div>
 
           {/* Table */}
-          <div className='bg-white rounded-lg border border-gray-100 overflow-hidden'>
-            <div className='overflow-x-auto'>
-              <table className='w-full min-w-[600px]'>
+          <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
                 <thead>
-                  <tr className='bg-gray-50 border-b border-gray-100'>
-                    <th className='text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3'>
+                  <tr className="bg-gray-50 border-b border-gray-100">
+                    <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
                       Name
                     </th>
-                    <th className='text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3'>
+                    <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
                       Student ID
                     </th>
-                    <th className='text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3'>
+                    <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
                       Class
                     </th>
-                    <th className='text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3'>
+                    <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
                       Status
                     </th>
-                    <th className='text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3'>
+                    <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
                       Last login
                     </th>
-                    <th className='text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3'>
+                    <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
                       Actions
                     </th>
                   </tr>
@@ -688,30 +694,30 @@ const StudentManagement: React.FC = () => {
                 <tbody>
                   {listLoading ? (
                     Array.from({ length: 6 }).map((_, i) => (
-                      <tr key={i} className='border-b border-gray-100'>
-                        <td className='px-3 sm:px-6 py-3 sm:py-4'>
-                          <div className='flex items-center gap-2 sm:gap-3'>
-                            <Skeleton className='w-8 h-8 sm:w-10 sm:h-10 rounded-full' />
-                            <div className='space-y-2'>
-                              <Skeleton className='h-3 w-24 sm:w-32' />
-                              <Skeleton className='h-3 w-32 sm:w-40' />
+                      <tr key={i} className="border-b border-gray-100">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <Skeleton className="w-8 h-8 sm:w-10 sm:h-10 rounded-full" />
+                            <div className="space-y-2">
+                              <Skeleton className="h-3 w-24 sm:w-32" />
+                              <Skeleton className="h-3 w-32 sm:w-40" />
                             </div>
                           </div>
                         </td>
-                        <td className='px-3 sm:px-6 py-3 sm:py-4'>
-                          <Skeleton className='h-3 w-24' />
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <Skeleton className="h-3 w-24" />
                         </td>
-                        <td className='px-3 sm:px-6 py-3 sm:py-4'>
-                          <Skeleton className='h-3 w-16' />
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <Skeleton className="h-3 w-16" />
                         </td>
-                        <td className='px-3 sm:px-6 py-3 sm:py-4'>
-                          <Skeleton className='h-5 w-16 rounded-full' />
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <Skeleton className="h-5 w-16 rounded-full" />
                         </td>
-                        <td className='px-3 sm:px-6 py-3 sm:py-4'>
-                          <Skeleton className='h-3 w-20' />
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <Skeleton className="h-3 w-20" />
                         </td>
-                        <td className='px-3 sm:px-6 py-3 sm:py-4'>
-                          <Skeleton className='h-5 w-5' />
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <Skeleton className="h-5 w-5" />
                         </td>
                       </tr>
                     ))
@@ -719,13 +725,13 @@ const StudentManagement: React.FC = () => {
                     <tr>
                       <td
                         colSpan={6}
-                        className='px-3 sm:px-6 py-12 text-center text-sm text-gray-500'
+                        className="px-3 sm:px-6 py-12 text-center text-sm text-gray-500"
                       >
                         {listError}
-                        <div className='mt-2'>
+                        <div className="mt-2">
                           <button
                             onClick={refetchList}
-                            className='text-green-600 hover:text-green-700 text-sm font-medium'
+                            className="text-green-600 hover:text-green-700 text-sm font-medium"
                           >
                             Retry
                           </button>
@@ -736,108 +742,108 @@ const StudentManagement: React.FC = () => {
                     <tr>
                       <td
                         colSpan={6}
-                        className='px-3 sm:px-6 py-12 text-center text-sm text-gray-500'
+                        className="px-3 sm:px-6 py-12 text-center text-sm text-gray-500"
                       >
                         {debouncedSearch ||
-                        statusFilter !== 'all' ||
-                        classFilter !== 'all'
-                          ? 'No students match your filters.'
-                          : 'No students yet. Click “Add new student” to create one.'}
+                        statusFilter !== "all" ||
+                        classFilter !== "all"
+                          ? "No students match your filters."
+                          : "No students yet. Click “Add new student” to create one."}
                       </td>
                     </tr>
                   ) : (
                     students.map((student) => (
                       <tr
                         key={student._id}
-                        className='border-b border-gray-100 hover:bg-gray-50'
+                        className="border-b border-gray-100 hover:bg-gray-50"
                       >
-                        <td className='px-3 sm:px-6 py-3 sm:py-4'>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
                           <button
                             onClick={() => openDetail(student)}
-                            className='flex items-center gap-2 sm:gap-3 text-left w-full'
+                            className="flex items-center gap-2 sm:gap-3 text-left w-full"
                           >
-                            <StudentAvatar student={student} size='sm' />
-                            <div className='min-w-0'>
-                              <div className='text-xs sm:text-sm font-medium text-gray-900 truncate'>
+                            <StudentAvatar student={student} size="sm" />
+                            <div className="min-w-0">
+                              <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
                                 {fullName(student)}
                               </div>
                               {student.email && (
-                                <div className='text-xs text-gray-500 truncate max-w-[140px] sm:max-w-none'>
+                                <div className="text-xs text-gray-500 truncate max-w-[140px] sm:max-w-none">
                                   {student.email}
                                 </div>
                               )}
                             </div>
                           </button>
                         </td>
-                        <td className='px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 font-mono'>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 font-mono">
                           {student.admissionNumber}
                         </td>
-                        <td className='px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600'>
-                          {student.className || '—'}
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">
+                          {student.className || "—"}
                         </td>
-                        <td className='px-3 sm:px-6 py-3 sm:py-4'>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
                           <span
                             className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-xs font-medium ${
                               student.isActive
-                                ? 'bg-green-50 text-green-700'
-                                : 'bg-red-50 text-red-700'
+                                ? "bg-green-50 text-green-700"
+                                : "bg-red-50 text-red-700"
                             }`}
                           >
                             <span
                               className={`w-1.5 h-1.5 rounded-full ${
-                                student.isActive ? 'bg-green-600' : 'bg-red-600'
+                                student.isActive ? "bg-green-600" : "bg-red-600"
                               }`}
                             />
-                            {student.isActive ? 'Active' : 'Inactive'}
+                            {student.isActive ? "Active" : "Inactive"}
                           </span>
                         </td>
-                        <td className='px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500'>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500">
                           {relativeTime(student.lastLogin)}
                         </td>
-                        <td className='px-3 sm:px-6 py-3 sm:py-4'>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <button className='text-gray-400 hover:text-gray-600 min-w-[44px] min-h-[44px] flex items-center justify-center'>
+                              <button className="text-gray-400 hover:text-gray-600 min-w-[44px] min-h-[44px] flex items-center justify-center">
                                 <svg
-                                  className='w-5 h-5'
-                                  fill='currentColor'
-                                  viewBox='0 0 24 24'
+                                  className="w-5 h-5"
+                                  fill="currentColor"
+                                  viewBox="0 0 24 24"
                                 >
-                                  <path d='M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z' />
+                                  <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
                                 </svg>
                               </button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align='end'>
+                            <DropdownMenuContent align="end">
                               <DropdownMenuItem
                                 onClick={() => openDetail(student)}
                               >
-                                <span className='cursor-pointer'>
+                                <span className="cursor-pointer">
                                   View details
                                 </span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
-                                onClick={() => openModal(student, 'reset')}
+                                onClick={() => openModal(student, "reset")}
                               >
-                                <span className='cursor-pointer'>
+                                <span className="cursor-pointer">
                                   Reset password
                                 </span>
                               </DropdownMenuItem>
                               <DropdownMenuItem
                                 onClick={() =>
-                                  openModal(student, 'send-credentials')
+                                  openModal(student, "send-credentials")
                                 }
                               >
-                                <span className='cursor-pointer'>
+                                <span className="cursor-pointer">
                                   Send credentials
                                 </span>
                               </DropdownMenuItem>
                               {student.isActive ? (
                                 <DropdownMenuItem
                                   onClick={() =>
-                                    openModal(student, 'deactivate')
+                                    openModal(student, "deactivate")
                                   }
                                 >
-                                  <span className='cursor-pointer text-yellow-700'>
+                                  <span className="cursor-pointer text-yellow-700">
                                     Deactivate
                                   </span>
                                 </DropdownMenuItem>
@@ -845,15 +851,15 @@ const StudentManagement: React.FC = () => {
                                 <DropdownMenuItem
                                   onClick={() => handleReactivate(student)}
                                 >
-                                  <span className='cursor-pointer text-green-700'>
+                                  <span className="cursor-pointer text-green-700">
                                     Reactivate
                                   </span>
                                 </DropdownMenuItem>
                               )}
                               <DropdownMenuItem
-                                onClick={() => openModal(student, 'delete')}
+                                onClick={() => openModal(student, "delete")}
                               >
-                                <span className='text-red-600 cursor-pointer'>
+                                <span className="text-red-600 cursor-pointer">
                                   Delete user
                                 </span>
                               </DropdownMenuItem>
@@ -869,30 +875,30 @@ const StudentManagement: React.FC = () => {
 
             {/* Pagination */}
             {!listLoading && totalPages > 1 && (
-              <div className='flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-4 border-t border-gray-200'>
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-4 border-t border-gray-200">
                 <button
-                  className='w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]'
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                   disabled={currentPage === 1}
                   onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                 >
-                  <ChevronLeft className='w-4 h-4' />
+                  <ChevronLeft className="w-4 h-4" />
                   Previous
                 </button>
 
-                <div className='hidden sm:flex items-center gap-2'>
+                <div className="hidden sm:flex items-center gap-2">
                   {buildPageNumbers(currentPage, totalPages).map((page, i) => (
                     <button
                       key={i}
                       onClick={() =>
-                        typeof page === 'number' && setCurrentPage(page)
+                        typeof page === "number" && setCurrentPage(page)
                       }
-                      disabled={typeof page !== 'number'}
+                      disabled={typeof page !== "number"}
                       className={`min-w-[32px] h-8 flex items-center justify-center text-sm rounded-lg transition-colors ${
                         page === currentPage
-                          ? 'bg-green-600 text-white font-medium'
-                          : typeof page === 'number'
-                          ? 'text-gray-700 hover:bg-gray-100'
-                          : 'text-gray-400 cursor-default'
+                          ? "bg-green-600 text-white font-medium"
+                          : typeof page === "number"
+                            ? "text-gray-700 hover:bg-gray-100"
+                            : "text-gray-400 cursor-default"
                       }`}
                     >
                       {page}
@@ -900,19 +906,19 @@ const StudentManagement: React.FC = () => {
                   ))}
                 </div>
 
-                <div className='sm:hidden text-sm text-gray-600'>
+                <div className="sm:hidden text-sm text-gray-600">
                   Page {currentPage} of {totalPages}
                 </div>
 
                 <button
-                  className='w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]'
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                   disabled={currentPage === totalPages}
                   onClick={() =>
                     setCurrentPage((p) => Math.min(totalPages, p + 1))
                   }
                 >
                   Next
-                  <ChevronRight className='w-4 h-4' />
+                  <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
             )}
@@ -938,13 +944,15 @@ export default StudentManagement;
  */
 const StudentAvatar: React.FC<{
   student: Student;
-  size?: 'sm' | 'lg';
-}> = ({ student, size = 'sm' }) => {
+  size?: "sm" | "lg";
+}> = ({ student, size = "sm" }) => {
   const url = getStudentAvatarUrl(student);
   const [errored, setErrored] = useState(false);
 
   const sizeClasses =
-    size === 'lg' ? 'w-16 h-16 text-base' : 'w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm';
+    size === "lg"
+      ? "w-16 h-16 text-base"
+      : "w-8 h-8 sm:w-10 sm:h-10 text-xs sm:text-sm";
 
   if (url && !errored) {
     return (
@@ -957,10 +965,13 @@ const StudentAvatar: React.FC<{
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={url}
-          alt={`${student.firstName} ${student.lastName}`.trim() || 'Student avatar'}
-          className='w-full h-full object-cover'
+          alt={
+            `${student.firstName} ${student.lastName}`.trim() ||
+            "Student avatar"
+          }
+          className="w-full h-full object-cover"
           onError={() => setErrored(true)}
-          loading='lazy'
+          loading="lazy"
         />
       </div>
     );
@@ -971,33 +982,33 @@ const StudentAvatar: React.FC<{
     <div
       className={`${sizeClasses} rounded-full bg-gradient-to-br from-lime-400 to-green-500 flex-shrink-0 flex items-center justify-center`}
     >
-      <span className='text-white font-semibold'>{initials(student)}</span>
+      <span className="text-white font-semibold">{initials(student)}</span>
     </div>
   );
 };
 
 const DemographicsGrid: React.FC<{ student: Student }> = ({ student }) => {
   const rows: Array<{ label: string; value?: string }> = [
-    { label: 'Phone', value: student.phoneNumber },
+    { label: "Phone", value: student.phoneNumber },
     {
-      label: 'Date of birth',
+      label: "Date of birth",
       value: student.dateOfBirth
         ? new Date(student.dateOfBirth).toLocaleDateString()
         : undefined,
     },
-    { label: 'Gender', value: student.gender },
-    { label: 'Address', value: student.address },
-    { label: 'City', value: student.city },
-    { label: 'State', value: student.state },
-    { label: 'Country', value: student.country },
-    { label: 'Guardian', value: student.guardianName },
-    { label: 'Guardian phone', value: student.guardianPhone },
-    { label: 'Emergency contact', value: student.emergencyContact },
+    { label: "Gender", value: student.gender },
+    { label: "Address", value: student.address },
+    { label: "City", value: student.city },
+    { label: "State", value: student.state },
+    { label: "Country", value: student.country },
+    { label: "Guardian", value: student.guardianName },
+    { label: "Guardian phone", value: student.guardianPhone },
+    { label: "Emergency contact", value: student.emergencyContact },
   ].filter((r) => r.value);
 
   if (rows.length === 0) {
     return (
-      <p className='text-xs text-gray-400 mb-4'>
+      <p className="text-xs text-gray-400 mb-4">
         No demographic information on file. Edit the student profile to add
         details.
       </p>
@@ -1005,11 +1016,11 @@ const DemographicsGrid: React.FC<{ student: Student }> = ({ student }) => {
   }
 
   return (
-    <div className='grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 mb-4 text-xs sm:text-sm'>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 mb-4 text-xs sm:text-sm">
       {rows.map((r) => (
-        <div key={r.label} className='flex justify-between sm:block'>
-          <span className='text-gray-500'>{r.label}: </span>
-          <span className='text-gray-900 capitalize'>{r.value}</span>
+        <div key={r.label} className="flex justify-between sm:block">
+          <span className="text-gray-500">{r.label}: </span>
+          <span className="text-gray-900 capitalize">{r.value}</span>
         </div>
       ))}
     </div>
@@ -1031,7 +1042,7 @@ const TempPasswordReveal: React.FC<{ studentId: string }> = ({ studentId }) => {
   const [fetched, setFetched] = useState(false);
   const [password, setPassword] = useState<string | null>(null);
   const [unavailableMsg, setUnavailableMsg] = useState<string | null>(null);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
 
   // Reset when switching to a different student.
@@ -1040,7 +1051,7 @@ const TempPasswordReveal: React.FC<{ studentId: string }> = ({ studentId }) => {
     setFetched(false);
     setPassword(null);
     setUnavailableMsg(null);
-    setError('');
+    setError("");
     setCopied(false);
   }, [studentId]);
 
@@ -1053,7 +1064,7 @@ const TempPasswordReveal: React.FC<{ studentId: string }> = ({ studentId }) => {
     // First reveal → fetch from the server.
     if (!fetched) {
       setLoading(true);
-      setError('');
+      setError("");
       try {
         const res = await getStudentTempPassword(studentId);
         if (res?.success && res.data) {
@@ -1061,16 +1072,15 @@ const TempPasswordReveal: React.FC<{ studentId: string }> = ({ studentId }) => {
             setPassword(res.data.tempPassword);
           } else {
             setUnavailableMsg(
-              res.data.message ||
-                'This student has set their own password — nothing to display.'
+              res.data.message || "This student has set their own password.",
             );
           }
         } else {
-          setError(res?.message || 'Could not fetch password.');
+          setError(res?.message || "Could not fetch password.");
         }
         setFetched(true);
       } catch (err: any) {
-        setError(err?.message || 'Network error. Please try again.');
+        setError(err?.message || "Network error. Please try again.");
       } finally {
         setLoading(false);
       }
@@ -1090,26 +1100,26 @@ const TempPasswordReveal: React.FC<{ studentId: string }> = ({ studentId }) => {
   };
 
   return (
-    <div className='mb-4 rounded-lg border border-gray-100 bg-gray-50 p-3'>
-      <div className='flex items-center gap-3'>
-        <div className='w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center flex-shrink-0'>
-          <KeyRound className='w-4 h-4 text-gray-500' />
+    <div className="mb-4 rounded-lg border border-gray-100 bg-gray-50 p-3">
+      <div className="flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center flex-shrink-0">
+          <KeyRound className="w-4 h-4 text-gray-500" />
         </div>
 
-        <div className='min-w-0 flex-1'>
-          <p className='text-xs text-gray-500'>Temporary password</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs text-gray-500">Temporary password</p>
           {loading ? (
-            <p className='text-sm text-gray-400'>Loading…</p>
+            <p className="text-sm text-gray-400">Loading…</p>
           ) : error ? (
-            <p className='text-sm text-red-600'>{error}</p>
+            <p className="text-sm text-red-600">{error}</p>
           ) : revealed && unavailableMsg ? (
-            <p className='text-xs text-gray-500'>{unavailableMsg}</p>
+            <p className="text-xs text-gray-500">{unavailableMsg}</p>
           ) : revealed && password ? (
-            <p className='font-mono text-sm font-semibold text-gray-900 break-all'>
+            <p className="font-mono text-sm font-semibold text-gray-900 break-all">
               {password}
             </p>
           ) : (
-            <p className='font-mono text-sm text-gray-400 tracking-widest select-none'>
+            <p className="font-mono text-sm text-gray-400 tracking-widest select-none">
               ••••••••••
             </p>
           )}
@@ -1119,16 +1129,16 @@ const TempPasswordReveal: React.FC<{ studentId: string }> = ({ studentId }) => {
         {revealed && password && (
           <button
             onClick={handleCopy}
-            className='flex-shrink-0 px-2.5 py-1.5 rounded-md text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 flex items-center gap-1'
-            type='button'
+            className="flex-shrink-0 px-2.5 py-1.5 rounded-md text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 flex items-center gap-1"
+            type="button"
           >
             {copied ? (
               <>
-                <Check className='w-3.5 h-3.5' /> Copied
+                <Check className="w-3.5 h-3.5" /> Copied
               </>
             ) : (
               <>
-                <Copy className='w-3.5 h-3.5' /> Copy
+                <Copy className="w-3.5 h-3.5" /> Copy
               </>
             )}
           </button>
@@ -1138,14 +1148,14 @@ const TempPasswordReveal: React.FC<{ studentId: string }> = ({ studentId }) => {
         <button
           onClick={handleToggle}
           disabled={loading}
-          type='button'
-          aria-label={revealed ? 'Hide password' : 'Show password'}
-          className='flex-shrink-0 p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-50'
+          type="button"
+          aria-label={revealed ? "Hide password" : "Show password"}
+          className="flex-shrink-0 p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-50"
         >
           {revealed ? (
-            <EyeOff className='w-4 h-4' />
+            <EyeOff className="w-4 h-4" />
           ) : (
-            <Eye className='w-4 h-4' />
+            <Eye className="w-4 h-4" />
           )}
         </button>
       </div>
@@ -1154,15 +1164,15 @@ const TempPasswordReveal: React.FC<{ studentId: string }> = ({ studentId }) => {
 };
 
 const ActionButton: React.FC<{
-  color: 'green' | 'yellow' | 'red';
+  color: "green" | "yellow" | "red";
   onClick: () => void;
   disabled?: boolean;
   children: React.ReactNode;
 }> = ({ color, onClick, disabled, children }) => {
   const classes = {
-    green: 'bg-green-50 text-green-700 hover:bg-green-100',
-    yellow: 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100',
-    red: 'bg-red-50 text-red-700 hover:bg-red-100',
+    green: "bg-green-50 text-green-700 hover:bg-green-100",
+    yellow: "bg-yellow-50 text-yellow-700 hover:bg-yellow-100",
+    red: "bg-red-50 text-red-700 hover:bg-red-100",
   }[color];
   return (
     <button
@@ -1186,20 +1196,20 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
   loading,
   rowsShown,
 }) => (
-  <div className='overflow-x-auto'>
-    <table className='w-full min-w-[640px]'>
+  <div className="overflow-x-auto">
+    <table className="w-full min-w-[640px]">
       <thead>
-        <tr className='bg-gray-50 border-b border-gray-200'>
-          <th className='text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3'>
+        <tr className="bg-gray-50 border-b border-gray-200">
+          <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
             Date &amp; Time
           </th>
-          <th className='text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3'>
+          <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
             Action
           </th>
-          <th className='text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3'>
+          <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
             Status
           </th>
-          <th className='text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3'>
+          <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
             IP Address
           </th>
         </tr>
@@ -1207,18 +1217,18 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
       <tbody>
         {loading ? (
           Array.from({ length: Math.max(3, rowsShown) }).map((_, i) => (
-            <tr key={i} className='border-b border-gray-100'>
-              <td className='px-3 sm:px-6 py-3 sm:py-4'>
-                <Skeleton className='h-3 w-32' />
+            <tr key={i} className="border-b border-gray-100">
+              <td className="px-3 sm:px-6 py-3 sm:py-4">
+                <Skeleton className="h-3 w-32" />
               </td>
-              <td className='px-3 sm:px-6 py-3 sm:py-4'>
-                <Skeleton className='h-3 w-40' />
+              <td className="px-3 sm:px-6 py-3 sm:py-4">
+                <Skeleton className="h-3 w-40" />
               </td>
-              <td className='px-3 sm:px-6 py-3 sm:py-4'>
-                <Skeleton className='h-5 w-16 rounded-full' />
+              <td className="px-3 sm:px-6 py-3 sm:py-4">
+                <Skeleton className="h-5 w-16 rounded-full" />
               </td>
-              <td className='px-3 sm:px-6 py-3 sm:py-4'>
-                <Skeleton className='h-3 w-24' />
+              <td className="px-3 sm:px-6 py-3 sm:py-4">
+                <Skeleton className="h-3 w-24" />
               </td>
             </tr>
           ))
@@ -1226,7 +1236,7 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
           <tr>
             <td
               colSpan={4}
-              className='px-3 sm:px-6 py-8 text-center text-sm text-gray-500'
+              className="px-3 sm:px-6 py-8 text-center text-sm text-gray-500"
             >
               No activity recorded yet.
             </td>
@@ -1237,32 +1247,32 @@ const ActivityTable: React.FC<ActivityTableProps> = ({
             return (
               <tr
                 key={a._id}
-                className='border-b border-gray-100 hover:bg-gray-50'
+                className="border-b border-gray-100 hover:bg-gray-50"
               >
-                <td className='px-3 sm:px-6 py-3 sm:py-4'>
-                  <div className='text-xs sm:text-sm text-gray-900'>
+                <td className="px-3 sm:px-6 py-3 sm:py-4">
+                  <div className="text-xs sm:text-sm text-gray-900">
                     {ts.toLocaleDateString()}
                   </div>
-                  <div className='text-xs text-gray-500'>
+                  <div className="text-xs text-gray-500">
                     {ts.toLocaleTimeString()}
                   </div>
                 </td>
-                <td className='px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 capitalize'>
-                  {a.action.replace(/_/g, ' ').toLowerCase()}
+                <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 capitalize">
+                  {a.action.replace(/_/g, " ").toLowerCase()}
                 </td>
-                <td className='px-3 sm:px-6 py-3 sm:py-4'>
+                <td className="px-3 sm:px-6 py-3 sm:py-4">
                   <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                       a.success
-                        ? 'bg-green-50 text-green-700'
-                        : 'bg-red-50 text-red-700'
+                        ? "bg-green-50 text-green-700"
+                        : "bg-red-50 text-red-700"
                     }`}
                   >
-                    {a.success ? 'Success' : 'Failed'}
+                    {a.success ? "Success" : "Failed"}
                   </span>
                 </td>
-                <td className='px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 font-mono'>
-                  {a.ip || '—'}
+                <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600 font-mono">
+                  {a.ip || "—"}
                 </td>
               </tr>
             );
