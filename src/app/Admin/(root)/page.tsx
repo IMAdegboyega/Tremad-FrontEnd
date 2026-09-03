@@ -1,5 +1,7 @@
 import { redirect } from 'next/navigation'
 
-export default function AdminIndexPage() {
-  return redirect('/Admin/home')
+export default function SuperAdminIndexPage() {
+  return (
+    redirect('/SuperAdmin/home')
+  )
 }

@@ -1,4 +1,4 @@
-export default function SuperAdminLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;

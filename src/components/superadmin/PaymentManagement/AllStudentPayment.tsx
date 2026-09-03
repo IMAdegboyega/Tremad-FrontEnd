@@ -1,9 +1,20 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react';
-import { Search, ListFilter, Download, EllipsisVertical, ArrowLeft } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { StudentPayment } from '@/app/SuperAdmin/(root)/[section]/sections/PaymentManagement';
+import React, { useState } from "react";
+import {
+  Search,
+  ListFilter,
+  Download,
+  EllipsisVertical,
+  ArrowLeft,
+} from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { StudentPayment } from "@/app/admin/(root)/[section]/sections/PaymentManagement";
 
 interface AllStudentsPaymentProps {
   students: StudentPayment[];
@@ -14,16 +25,18 @@ interface AllStudentsPaymentProps {
 const AllStudentsPayment: React.FC<AllStudentsPaymentProps> = ({
   students,
   onBack,
-  onViewDetails
+  onViewDetails,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Filter students
-  const filteredStudents = students.filter(student => {
-    const matchesSearch = student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          student.referenceNumber.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || student.status === statusFilter;
+  const filteredStudents = students.filter((student) => {
+    const matchesSearch =
+      student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      student.referenceNumber.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesStatus =
+      statusFilter === "all" || student.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -37,23 +50,23 @@ const AllStudentsPayment: React.FC<AllStudentsPaymentProps> = ({
    * cell can stay declarative.
    */
   const getStatusStyle = (status: string) => {
-    if (status === 'All Paid') {
-      return { pill: 'bg-green-50 text-green-700', dot: 'bg-green-500' };
+    if (status === "All Paid") {
+      return { pill: "bg-green-50 text-green-700", dot: "bg-green-500" };
     }
-    if (status === 'Due Today') {
-      return { pill: 'bg-yellow-50 text-yellow-700', dot: 'bg-yellow-500' };
+    if (status === "Due Today") {
+      return { pill: "bg-yellow-50 text-yellow-700", dot: "bg-yellow-500" };
     }
     if (/over due/i.test(status)) {
-      return { pill: 'bg-red-50 text-red-700', dot: 'bg-red-500' };
+      return { pill: "bg-red-50 text-red-700", dot: "bg-red-500" };
     }
-    return { pill: 'bg-gray-100 text-gray-600', dot: 'bg-gray-400' };
+    return { pill: "bg-gray-100 text-gray-600", dot: "bg-gray-400" };
   };
 
   return (
     <div className="min-h-full bg-gray-50 p-2 sm:p-4 md:p-6">
       {/* Header */}
       <div className="mb-4 md:mb-6">
-        <button 
+        <button
           onClick={onBack}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-3 md:mb-4 min-h-[44px]"
         >
@@ -62,8 +75,12 @@ const AllStudentsPayment: React.FC<AllStudentsPaymentProps> = ({
 
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">All Students Payment Status</h1>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage your exam questions effectively.</p>
+            <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
+              All Students Payment Status
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">
+              Manage your exam questions effectively.
+            </p>
           </div>
           <button className="flex items-center justify-center gap-2 px-3 py-2.5 text-xs sm:text-sm text-white bg-primary-green rounded-lg hover:bg-primary-green-hover min-h-[44px]">
             <Download className="w-4 h-4" />
@@ -94,16 +111,16 @@ const AllStudentsPayment: React.FC<AllStudentsPaymentProps> = ({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setStatusFilter('all')}>
+            <DropdownMenuItem onClick={() => setStatusFilter("all")}>
               <span className="cursor-pointer">All Status</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('All Paid')}>
+            <DropdownMenuItem onClick={() => setStatusFilter("All Paid")}>
               <span className="cursor-pointer">All Paid</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('Due Today')}>
+            <DropdownMenuItem onClick={() => setStatusFilter("Due Today")}>
               <span className="cursor-pointer">Due Today</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setStatusFilter('2 Over due')}>
+            <DropdownMenuItem onClick={() => setStatusFilter("2 Over due")}>
               <span className="cursor-pointer">Over Due</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
@@ -116,11 +133,21 @@ const AllStudentsPayment: React.FC<AllStudentsPaymentProps> = ({
           <table className="w-full min-w-[600px]">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-100">
-                <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">Name</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">Balance</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">Status</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">Reference number</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">Payment method</th>
+                <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
+                  Name
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
+                  Balance
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
+                  Status
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
+                  Reference number
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 px-3 sm:px-6 py-3">
+                  Payment method
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -128,50 +155,74 @@ const AllStudentsPayment: React.FC<AllStudentsPaymentProps> = ({
                 filteredStudents.map((student) => {
                   const statusStyles = getStatusStyle(student.status);
                   return (
-                  <tr key={student.id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900">{student.name}</td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900">{student.balance}</td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4">
-                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusStyles.pill}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${statusStyles.dot}`} />
-                        {student.status}
-                      </span>
-                    </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4">
-                      <span className="inline-block px-2.5 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-600 truncate max-w-[160px]">{student.referenceNumber}</span>
-                    </td>
-                    <td className="px-3 sm:px-6 py-3 sm:py-4">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="text-gray-400 hover:text-gray-600 min-w-[44px] min-h-[44px] flex items-center justify-center">
-                            <EllipsisVertical size={20} />
-                          </button>
-                        </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => onViewDetails(student.id)}>
-                          <span className="cursor-pointer">View Details</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <span className="cursor-pointer">Send Reminder</span>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <span className="cursor-pointer">Download Receipt</span>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </td>
-                </tr>
+                    <tr
+                      key={student.id}
+                      className="border-b border-gray-50 hover:bg-gray-50"
+                    >
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900">
+                        {student.name}
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900">
+                        {student.balance}
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${statusStyles.pill}`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${statusStyles.dot}`}
+                          />
+                          {student.status}
+                        </span>
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <span className="inline-block px-2.5 py-1 rounded-full bg-gray-100 text-xs font-medium text-gray-600 truncate max-w-[160px]">
+                          {student.referenceNumber}
+                        </span>
+                      </td>
+                      <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="text-gray-400 hover:text-gray-600 min-w-[44px] min-h-[44px] flex items-center justify-center">
+                              <EllipsisVertical size={20} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() => onViewDetails(student.id)}
+                            >
+                              <span className="cursor-pointer">
+                                View Details
+                              </span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <span className="cursor-pointer">
+                                Send Reminder
+                              </span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem>
+                              <span className="cursor-pointer">
+                                Download Receipt
+                              </span>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-3 sm:px-6 py-12 text-center text-sm text-gray-500">
+                  <td
+                    colSpan={5}
+                    className="px-3 sm:px-6 py-12 text-center text-sm text-gray-500"
+                  >
                     No students found
                   </td>
                 </tr>
               )}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

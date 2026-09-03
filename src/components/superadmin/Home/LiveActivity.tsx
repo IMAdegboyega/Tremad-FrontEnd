@@ -177,7 +177,7 @@ function mapAuditLog(log: AuditLog): DisplayActivity {
     return {
       id: log._id,
       type: 'teacher-login',
-      title: `Super admin login: ${actor}`,
+      title: `Admin login: ${actor}`,
       subtitle: log.ip ? `From ${log.ip}` : undefined,
       timestamp: log.timestamp,
     };

@@ -27,7 +27,7 @@ const DATE_RANGES = [
 
 const ROLE_FILTERS = [
   { label: 'All roles', value: '' },
-  { label: 'Super Admin', value: 'super_admin' },
+  { label: 'Admin', value: 'super_admin' },
   { label: 'Staff', value: 'admin' },
   { label: 'Student', value: 'student' },
 ];

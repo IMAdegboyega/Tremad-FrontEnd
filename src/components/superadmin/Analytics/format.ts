@@ -44,7 +44,7 @@ export const roleBadgeClass = (role?: string): string => {
 export const roleLabel = (role?: string): string => {
   switch (role) {
     case 'super_admin':
-      return 'Super Admin';
+      return 'Admin';
     case 'admin':
       return 'Staff';
     case 'student':

@@ -1,10 +1,21 @@
-'use client'
+"use client";
 
-import React from 'react';
-import { Search, ListFilter, ChevronLeft, ChevronRight, MoreVertical } from 'lucide-react';
-import Image from 'next/image';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { StudentResult } from '@/app/SuperAdmin/(root)/[section]/sections/ResultManagement';
+import React from "react";
+import {
+  Search,
+  ListFilter,
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+} from "lucide-react";
+import Image from "next/image";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { StudentResult } from "@/app/admin/(root)/[section]/sections/ResultManagement";
 
 interface ResultsTableProps {
   students: StudentResult[];
@@ -25,36 +36,36 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
   onPageChange,
   onViewDetails,
 }) => {
-  const getStatusStyles = (status: StudentResult['status']) => {
+  const getStatusStyles = (status: StudentResult["status"]) => {
     switch (status) {
-      case 'Active':
-        return 'text-green-700 px-2 py-1 rounded-full bg-green-100';
-      case 'Inactive':
-        return 'text-gray-500 px-2 py-1 rounded-full bg-gray-100';
-      case 'Suspended':
-        return 'text-red-500 px-2 py-1 rounded-full bg-red-100';
+      case "Active":
+        return "text-green-700 px-2 py-1 rounded-full bg-green-100";
+      case "Inactive":
+        return "text-gray-500 px-2 py-1 rounded-full bg-gray-100";
+      case "Suspended":
+        return "text-red-500 px-2 py-1 rounded-full bg-red-100";
       default:
-        return 'text-gray-600';
+        return "text-gray-600";
     }
   };
 
   const getInitials = (name: string) => {
     return name
-      .split(' ')
+      .split(" ")
       .map((n) => n[0])
-      .join('')
+      .join("")
       .slice(0, 2)
       .toUpperCase();
   };
 
   const getAvatarColor = (name: string) => {
     const colors = [
-      'bg-blue-100 text-blue-600',
-      'bg-green-100 text-green-600',
-      'bg-purple-100 text-purple-600',
-      'bg-yellow-100 text-yellow-600',
-      'bg-pink-100 text-pink-600',
-      'bg-indigo-100 text-indigo-600',
+      "bg-blue-100 text-blue-600",
+      "bg-green-100 text-green-600",
+      "bg-purple-100 text-purple-600",
+      "bg-yellow-100 text-yellow-600",
+      "bg-pink-100 text-pink-600",
+      "bg-indigo-100 text-indigo-600",
     ];
     const index = name.charCodeAt(0) % colors.length;
     return colors[index];
@@ -72,7 +83,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
       pages.push(1);
 
       if (currentPage > 3) {
-        pages.push('...');
+        pages.push("...");
       }
 
       const start = Math.max(2, currentPage - 1);
@@ -83,7 +94,7 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
       }
 
       if (currentPage < totalPages - 2) {
-        pages.push('...');
+        pages.push("...");
       }
 
       pages.push(totalPages);
@@ -94,34 +105,50 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
 
   return (
     <div className="bg-white rounded-lg border border-gray-200">
-
       {/* Table */}
       <table className="w-full">
         <thead>
           <tr className="border-b border-gray-200 bg-gray-100">
-            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Name</th>
-            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Class</th>
-            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Total Score</th>
-            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Position</th>
-            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Status</th>
-            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">Actions</th>
+            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">
+              Name
+            </th>
+            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">
+              Class
+            </th>
+            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">
+              Total Score
+            </th>
+            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">
+              Position
+            </th>
+            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">
+              Status
+            </th>
+            <th className="text-left text-xs font-medium text-gray-500 px-6 py-3">
+              Actions
+            </th>
           </tr>
         </thead>
         <tbody>
           {students.length > 0 ? (
             students.map((student) => (
-              <tr key={student.id} className="border-b border-gray-100 hover:bg-gray-50">
+              <tr
+                key={student.id}
+                className="border-b border-gray-100 hover:bg-gray-50"
+              >
                 <td className="px-6 py-4">
                   <div className="flex items-center gap-3">
                     <div
                       className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${getAvatarColor(
-                        student.name
+                        student.name,
                       )}`}
                     >
                       {getInitials(student.name)}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{student.name}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {student.name}
+                      </p>
                       <p className="text-xs text-gray-500">{student.email}</p>
                     </div>
                   </div>
@@ -131,10 +158,16 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
                     {student.class}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-900">{student.totalScore}</td>
-                <td className="px-6 py-4 text-sm text-gray-600">{student.position}</td>
+                <td className="px-6 py-4 text-sm text-gray-900">
+                  {student.totalScore}
+                </td>
+                <td className="px-6 py-4 text-sm text-gray-600">
+                  {student.position}
+                </td>
                 <td className="px-6 py-4">
-                  <span className={`text-sm font-medium  ${getStatusStyles(student.status)}`}>
+                  <span
+                    className={`text-sm font-medium  ${getStatusStyles(student.status)}`}
+                  >
                     • {student.status}
                   </span>
                 </td>
@@ -162,7 +195,10 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
             ))
           ) : (
             <tr>
-              <td colSpan={6} className="px-6 py-12 text-center text-sm text-gray-500">
+              <td
+                colSpan={6}
+                className="px-6 py-12 text-center text-sm text-gray-500"
+              >
                 No students found
               </td>
             </tr>
@@ -186,14 +222,14 @@ const ResultsTable: React.FC<ResultsTableProps> = ({
             {generatePageNumbers().map((page, index) => (
               <button
                 key={index}
-                onClick={() => typeof page === 'number' && onPageChange(page)}
-                disabled={typeof page !== 'number'}
+                onClick={() => typeof page === "number" && onPageChange(page)}
+                disabled={typeof page !== "number"}
                 className={`min-w-[32px] h-8 flex items-center justify-center text-sm rounded-lg transition-colors ${
                   page === currentPage
-                    ? 'bg-gray-900 text-white font-medium'
-                    : typeof page === 'number'
-                    ? 'text-gray-700 hover:bg-gray-100'
-                    : 'text-gray-400 cursor-default'
+                    ? "bg-gray-900 text-white font-medium"
+                    : typeof page === "number"
+                      ? "text-gray-700 hover:bg-gray-100"
+                      : "text-gray-400 cursor-default"
                 }`}
               >
                 {page}

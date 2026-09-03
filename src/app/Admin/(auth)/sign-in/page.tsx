@@ -1,51 +1,104 @@
-// src/app/Admin/(auth)/sign-in/page.tsx
+// src/app/SuperAdmin/(auth)/sign-in/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
-import { Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { teacherLogin } from '@/lib/api';
+import { superAdminGoogleLogin } from '@/lib/api';
 
-export default function AdminSignIn() {
-  const [showPassword, setShowPassword] = useState(false);
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          renderButton: (element: HTMLElement, config: any) => void;
+          prompt: () => void;
+        };
+      };
+    };
+  }
+}
+
+export default function SuperAdminSignIn() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    teacherId: '',
-    password: '',
-  });
+  const [googleReady, setGoogleReady] = useState(false);
   const router = useRouter();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+
+  const handleGoogleResponse = useCallback(async (response: any) => {
     setError('');
     setLoading(true);
 
     try {
-      const result: any = await teacherLogin(formData.teacherId, formData.password);
+      const result = await superAdminGoogleLogin(response.credential);
 
-      if (result.success) {
-        // First-login: backend returns requiresPasswordChange + userId and does
-        // NOT issue a session yet. Mirror the student flow → reset-password.
-        if (result.requiresPasswordChange || result.data?.requiresPasswordChange) {
-          const userId = result.userId || result.data?.userId;
-          if (userId && typeof window !== 'undefined') {
-            localStorage.setItem('tremad_password_change_userId', userId);
-          }
-          router.push('/Admin/reset-password');
-          return;
-        }
-        router.push('/Admin/home');
+      if (result.success && result.data) {
+        router.push('/SuperAdmin/home');
       } else {
         setError(result.message || 'Login failed');
       }
     } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again.');
+      if (err.status === 403) {
+        setError('This Google account is not authorized for admin access.');
+      } else if (err.status === 401) {
+        setError('Google authentication failed. Please try again.');
+      } else if (err.isNetworkError) {
+        setError('Unable to reach the server. Check your connection.');
+      } else if (err.isTimeout) {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError(err.message || 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  }, [router]);
+
+  useEffect(() => {
+    if (!GOOGLE_CLIENT_ID) {
+      setError('Google Sign-In is not configured. Contact your administrator.');
+      return;
+    }
+
+    // Load the Google Identity Services script
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      if (window.google) {
+        window.google.accounts.id.initialize({
+          client_id: GOOGLE_CLIENT_ID,
+          callback: handleGoogleResponse,
+          auto_select: false,
+          cancel_on_tap_outside: true,
+        });
+
+        const buttonDiv = document.getElementById('google-signin-button');
+        if (buttonDiv) {
+          window.google.accounts.id.renderButton(buttonDiv, {
+            theme: 'outline',
+            size: 'large',
+            width: 400,
+            text: 'signin_with',
+            shape: 'rectangular',
+            logo_alignment: 'left',
+          });
+        }
+        setGoogleReady(true);
+      }
+    };
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup
+      const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+      if (existing) existing.remove();
+    };
+  }, [GOOGLE_CLIENT_ID, handleGoogleResponse]);
 
   return (
     <div className="w-full">
@@ -62,9 +115,12 @@ export default function AdminSignIn() {
       </div>
 
       {/* Welcome Text */}
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-semibold text-gray-900">Staff Portal</h2>
+      <div className="text-center mb-2">
+        <h2 className="text-2xl font-semibold text-gray-900">Admin Portal</h2>
       </div>
+      <p className="text-center text-gray-500 mb-10">
+        Sign in with your authorized Google account
+      </p>
 
       {/* Error Message */}
       {error && (
@@ -73,53 +129,34 @@ export default function AdminSignIn() {
         </div>
       )}
 
-      {/* Login Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">
-            Teacher ID
-          </label>
-          <input
-            type="text"
-            value={formData.teacherId}
-            onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
-            placeholder="Enter your teacher ID"
-            className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white"
-            required
-          />
+      {/* Loading State */}
+      {loading && (
+        <div className="mb-6 flex items-center justify-center gap-3">
+          <div className="w-5 h-5 border-2 border-green-700 border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-gray-600">Verifying your account...</p>
         </div>
+      )}
 
-        <div>
-          <label className="block text-sm text-gray-600 mb-1">
-            Password
-          </label>
-          <div className="relative">
-            <input
-              type={showPassword ? 'text' : 'password'}
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              placeholder="••••••••"
-              className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white pr-12"
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
-            >
-              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-            </button>
-          </div>
+      {/* Google Sign-In Button */}
+      <div className="flex justify-center">
+        <div id="google-signin-button" />
+      </div>
+
+      {/* Fallback if Google button hasn't loaded */}
+      {!googleReady && !error && (
+        <div className="flex justify-center">
+          <div className="w-[400px] h-[44px] bg-gray-100 rounded-md animate-pulse" />
         </div>
+      )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-3 bg-green-700 text-white rounded-lg font-medium hover:bg-green-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading ? 'Signing in...' : 'Login'}
-        </button>
-      </form>
+      {/* Info text */}
+      <div className="mt-10 text-center">
+        <p className="text-xs text-gray-400">
+          Only whitelisted Google accounts can access this portal.
+          <br />
+          Contact the system administrator if you need access.
+        </p>
+      </div>
     </div>
   );
 }

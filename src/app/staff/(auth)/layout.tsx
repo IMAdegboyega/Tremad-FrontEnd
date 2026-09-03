@@ -1,7 +1,7 @@
-// src/app/SuperAdmin/(auth)/layout.tsx
+// src/app/Admin/(auth)/layout.tsx
 import Image from 'next/image';
 
-export default function SuperAdminAuthLayout({
+export default function AdminAuthLayout({
   children,
 }: {
   children: React.ReactNode;

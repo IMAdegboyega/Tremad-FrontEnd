@@ -23,7 +23,7 @@ const ProfileCard = () => {
   // read as "Iretomiwa Adegboyega".
   const displayName =
     toTitleCase(user.name) ||
-    (user.role === 'super_admin' ? 'Super Admin' : user.email || '—');
+    (user.role === 'super_admin' ? 'Admin' : user.email || '—');
   const secondaryLine = user.id || user.email || '';
   const initials = getInitials(user.firstName, user.lastName, user.email);
   // Suppress the static /img/avatar.jpg fallback so we render initials instead.
