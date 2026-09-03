@@ -741,6 +741,21 @@ export const updateStudent = async (
   return apiClient.put(API.SUPER_ADMIN.STUDENTS.UPDATE(studentId), data);
 };
 
+/**
+ * Fetch a student's temporary password (the auto-generated one, viewable only
+ * until the student sets their own). `available: false` means they've already
+ * chosen their own password — nothing to show.
+ *
+ * Never returns the student's real self-chosen password (bcrypt-only).
+ */
+export const getStudentTempPassword = async (
+  studentId: string
+): Promise<
+  ApiResponse<{ available: boolean; tempPassword?: string; message?: string }>
+> => {
+  return apiClient.get(API.SUPER_ADMIN.STUDENTS.TEMP_PASSWORD(studentId));
+};
+
 // ============================================================================
 // STAFF MANAGEMENT
 // ============================================================================
@@ -1246,6 +1261,7 @@ const superAdminService = {
   getStudents,
   getStudent,
   updateStudent,
+  getStudentTempPassword,
 
   // Staff Management
   getAllStaff,

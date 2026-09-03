@@ -21,6 +21,11 @@ import {
   ChevronRight,
   ListFilter,
   ArrowLeft,
+  Eye,
+  EyeOff,
+  Copy,
+  Check,
+  KeyRound,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -41,6 +46,7 @@ import {
   getDashboardOverview,
   getAuditLogs,
   reactivateUser,
+  getStudentTempPassword,
   type Student,
   type AuditLog,
   type DashboardOverview,
@@ -444,6 +450,9 @@ const StudentManagement: React.FC = () => {
               ) : (
                 <DemographicsGrid student={detailStudent} />
               )}
+
+              {/* Temporary password reveal — blind by default */}
+              <TempPasswordReveal studentId={detailStudent._id} />
 
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:flex gap-2 sm:gap-3'>
                 <ActionButton
@@ -1003,6 +1012,143 @@ const DemographicsGrid: React.FC<{ student: Student }> = ({ student }) => {
           <span className='text-gray-900 capitalize'>{r.value}</span>
         </div>
       ))}
+    </div>
+  );
+};
+
+/**
+ * TempPasswordReveal — shows the student's temporary password, blind by
+ * default. Clicking the eye fetches + reveals it; clicking again hides it.
+ *
+ * Only the auto-generated temp password is retrievable (and only until the
+ * student sets their own). Once they've chosen their own password, the API
+ * returns `available: false` and we show a "student set their own password"
+ * note instead — the real password is never viewable.
+ */
+const TempPasswordReveal: React.FC<{ studentId: string }> = ({ studentId }) => {
+  const [revealed, setRevealed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fetched, setFetched] = useState(false);
+  const [password, setPassword] = useState<string | null>(null);
+  const [unavailableMsg, setUnavailableMsg] = useState<string | null>(null);
+  const [error, setError] = useState('');
+  const [copied, setCopied] = useState(false);
+
+  // Reset when switching to a different student.
+  useEffect(() => {
+    setRevealed(false);
+    setFetched(false);
+    setPassword(null);
+    setUnavailableMsg(null);
+    setError('');
+    setCopied(false);
+  }, [studentId]);
+
+  const handleToggle = async () => {
+    // Hiding is instant.
+    if (revealed) {
+      setRevealed(false);
+      return;
+    }
+    // First reveal → fetch from the server.
+    if (!fetched) {
+      setLoading(true);
+      setError('');
+      try {
+        const res = await getStudentTempPassword(studentId);
+        if (res?.success && res.data) {
+          if (res.data.available && res.data.tempPassword) {
+            setPassword(res.data.tempPassword);
+          } else {
+            setUnavailableMsg(
+              res.data.message ||
+                'This student has set their own password — nothing to display.'
+            );
+          }
+        } else {
+          setError(res?.message || 'Could not fetch password.');
+        }
+        setFetched(true);
+      } catch (err: any) {
+        setError(err?.message || 'Network error. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    }
+    setRevealed(true);
+  };
+
+  const handleCopy = async () => {
+    if (!password) return;
+    try {
+      await navigator.clipboard.writeText(password);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignore clipboard failures */
+    }
+  };
+
+  return (
+    <div className='mb-4 rounded-lg border border-gray-100 bg-gray-50 p-3'>
+      <div className='flex items-center gap-3'>
+        <div className='w-8 h-8 rounded-lg bg-white border border-gray-100 flex items-center justify-center flex-shrink-0'>
+          <KeyRound className='w-4 h-4 text-gray-500' />
+        </div>
+
+        <div className='min-w-0 flex-1'>
+          <p className='text-xs text-gray-500'>Temporary password</p>
+          {loading ? (
+            <p className='text-sm text-gray-400'>Loading…</p>
+          ) : error ? (
+            <p className='text-sm text-red-600'>{error}</p>
+          ) : revealed && unavailableMsg ? (
+            <p className='text-xs text-gray-500'>{unavailableMsg}</p>
+          ) : revealed && password ? (
+            <p className='font-mono text-sm font-semibold text-gray-900 break-all'>
+              {password}
+            </p>
+          ) : (
+            <p className='font-mono text-sm text-gray-400 tracking-widest select-none'>
+              ••••••••••
+            </p>
+          )}
+        </div>
+
+        {/* Copy — only meaningful when a real password is revealed */}
+        {revealed && password && (
+          <button
+            onClick={handleCopy}
+            className='flex-shrink-0 px-2.5 py-1.5 rounded-md text-xs font-medium text-green-700 bg-green-50 hover:bg-green-100 flex items-center gap-1'
+            type='button'
+          >
+            {copied ? (
+              <>
+                <Check className='w-3.5 h-3.5' /> Copied
+              </>
+            ) : (
+              <>
+                <Copy className='w-3.5 h-3.5' /> Copy
+              </>
+            )}
+          </button>
+        )}
+
+        {/* Blind toggle */}
+        <button
+          onClick={handleToggle}
+          disabled={loading}
+          type='button'
+          aria-label={revealed ? 'Hide password' : 'Show password'}
+          className='flex-shrink-0 p-2 rounded-md text-gray-500 hover:text-gray-800 hover:bg-gray-100 disabled:opacity-50'
+        >
+          {revealed ? (
+            <EyeOff className='w-4 h-4' />
+          ) : (
+            <Eye className='w-4 h-4' />
+          )}
+        </button>
+      </div>
     </div>
   );
 };

@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { X, CheckCircle, Copy, Check } from 'lucide-react';
 import { createStudent } from '@/lib/api';
+import { NIGERIAN_STATES, getLGAsForState } from '@/Constants/NigeriaStates';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -73,13 +74,10 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
   const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState<StudentFormData>(INITIAL_FORM);
 
-  const nigerianStates = [
-    'Abia', 'Adamawa', 'Akwa Ibom', 'Anambra', 'Bauchi', 'Bayelsa', 'Benue', 'Borno',
-    'Cross River', 'Delta', 'Ebonyi', 'Edo', 'Ekiti', 'Enugu', 'Gombe', 'Imo',
-    'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Kogi', 'Kwara', 'Lagos',
-    'Nasarawa', 'Niger', 'Ogun', 'Ondo', 'Osun', 'Oyo', 'Plateau', 'Rivers',
-    'Sokoto', 'Taraba', 'Yobe', 'Zamfara', 'FCT',
-  ];
+  // Full 36 states + FCT, sourced from the shared NigeriaStates dataset.
+  const nigerianStates = NIGERIAN_STATES;
+  // LGAs for whichever state is currently selected (empty until one is picked).
+  const availableLGAs = getLGAsForState(formData.state);
 
   const gradeLevels = [
     'Primary 1', 'Primary 2', 'Primary 3', 'Primary 4', 'Primary 5', 'Primary 6',
@@ -93,6 +91,13 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
 
   const handleInputChange = (field: keyof StudentFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+    if (error) setError('');
+  };
+
+  // Selecting a state also clears the Local Government (`city`) — an LGA from a
+  // previously-chosen state would be meaningless under the new one.
+  const handleStateChange = (state: string) => {
+    setFormData((prev) => ({ ...prev, state, city: '' }));
     if (error) setError('');
   };
 
@@ -353,23 +358,14 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                  {/* State Of Origin — drives the Local Government dropdown below */}
                   <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">City</label>
-                    <input
-                      type="text"
-                      value={formData.city}
-                      onChange={(e) => handleInputChange('city', e.target.value)}
-                      placeholder="Enter city"
-                      className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent min-h-[44px]"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">State</label>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">State Of Origin</label>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <button className="w-full px-3 py-2.5 text-sm text-left border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent flex justify-between items-center min-h-[44px]">
                           <span className={formData.state ? 'text-gray-900' : 'text-gray-400'}>
-                            {formData.state || 'Select state'}
+                            {formData.state || 'Select state of origin'}
                           </span>
                           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -378,8 +374,37 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="max-h-60 overflow-y-auto">
                         {nigerianStates.map((s) => (
-                          <DropdownMenuItem key={s} onClick={() => handleInputChange('state', s)}>
+                          <DropdownMenuItem key={s} onClick={() => handleStateChange(s)}>
                             {s}
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Local Government — depends on the selected state. Disabled
+                      until a state is chosen; its options come from that state's
+                      LGA list. */}
+                  <div>
+                    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Local Government</label>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild disabled={!formData.state}>
+                        <button
+                          disabled={!formData.state}
+                          className="w-full px-3 py-2.5 text-sm text-left border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent flex justify-between items-center min-h-[44px] disabled:bg-gray-50 disabled:cursor-not-allowed"
+                        >
+                          <span className={formData.city ? 'text-gray-900' : 'text-gray-400'}>
+                            {formData.city || (formData.state ? 'Select local government' : 'Select a state first')}
+                          </span>
+                          <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="max-h-60 overflow-y-auto">
+                        {availableLGAs.map((lga) => (
+                          <DropdownMenuItem key={lga} onClick={() => handleInputChange('city', lga)}>
+                            {lga}
                           </DropdownMenuItem>
                         ))}
                       </DropdownMenuContent>

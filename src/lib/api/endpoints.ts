@@ -67,6 +67,8 @@ export const API = {
       GET_ONE: (studentId: string) => `/super-admin/students/${studentId}`,
       UPDATE: (studentId: string) => `/super-admin/students/${studentId}`,
       CHANGE_ADMISSION: (studentId: string) => `/super-admin/students/${studentId}/change-admission-number`,
+      TEMP_PASSWORD: (studentId: string) =>
+        `/super-admin/students/${studentId}/temp-password`,
     },
 
     // Staff Management (teachers / admins)
