@@ -9,6 +9,7 @@ import {
   type BroadsheetResponse,
   type BroadsheetScores,
 } from '@/lib/api/superAdmin.service';
+import { getAcademicYearOptions, withAcademicYear } from '@/Constants/academicYears';
 
 const TERMS = ['First Term', 'Second Term', 'Third Term'] as const;
 
@@ -182,13 +183,15 @@ const PrintBroadsheet: React.FC<PrintBroadsheetProps> = ({
             <label className='block text-xs font-medium text-gray-600 mb-1'>
               Academic Year <span className='text-red-500'>*</span>
             </label>
-            <input
-              type='text'
-              placeholder='e.g. 2025/2026'
+            <select
               value={academicYear}
               onChange={(e) => setAcademicYear(e.target.value)}
-              className='w-36 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500'
-            />
+              className='w-36 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white'
+            >
+              {withAcademicYear(getAcademicYearOptions(), academicYear).map((y) => (
+                <option key={y} value={y}>{y}</option>
+              ))}
+            </select>
           </div>
 
           {/* Term */}

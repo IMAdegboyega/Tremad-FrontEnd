@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import { ChevronLeft, Edit2, Eye, Loader2, Save, X } from 'lucide-react';
+import { ChevronLeft, Edit2, Eye, Loader2, Plus, Save, Trash2, X } from 'lucide-react';
 import type { Result } from '@/lib/api/student.service';
 import DownloadResult from '@/components/student/Results/DownloadResult';
 import {
@@ -45,9 +45,16 @@ interface ResultCardProps {
   result: StudentFullResult;
   onRefresh: () => void;
   onPreview: (result: StudentFullResult) => void;
+  /** Lets the parent lock the year/term tabs while an edit is in progress. */
+  onEditingChange?: (editing: boolean) => void;
 }
 
-const ResultCard: React.FC<ResultCardProps> = ({ result, onRefresh, onPreview }) => {
+const ResultCard: React.FC<ResultCardProps> = ({
+  result,
+  onRefresh,
+  onPreview,
+  onEditingChange,
+}) => {
   const [editing, setEditing] = useState(false);
   const [subjects, setSubjects] = useState(() =>
     result.subjects.map((s) => ({ ...s, scores: { ...s.scores } }))
@@ -68,6 +75,15 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onRefresh, onPreview })
     }
   }, [result, editing]);
 
+  // Tell the parent so it can disable the year/term tabs mid-edit.
+  useEffect(() => {
+    onEditingChange?.(editing);
+  }, [editing, onEditingChange]);
+
+  // If the card unmounts while editing (e.g. the result was just wiped), make
+  // sure the parent unlocks its tabs again.
+  useEffect(() => () => onEditingChange?.(false), [onEditingChange]);
+
   const resetEdit = () => {
     setSubjects(result.subjects.map((s) => ({ ...s, scores: { ...s.scores } })));
     setPrincipalComment(result.summary?.principalComment || '');
@@ -84,7 +100,33 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onRefresh, onPreview })
     );
   };
 
+  const updateSubjectName = (idx: number, name: string) => {
+    setSubjects((prev) => prev.map((s, i) => (i === idx ? { ...s, name } : s)));
+  };
+
+  /** Append a blank subject row. Scores default to 0 so totals stay valid. */
+  const addSubject = () => {
+    setSubjects((prev) => [
+      ...prev,
+      { name: '', scores: { firstCA: 0, secondCA: 0, exam: 0 } } as typeof prev[number],
+    ]);
+  };
+
+  const removeSubject = (idx: number) => {
+    setSubjects((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  // Removing every subject and saving wipes the whole result for this term.
+  const isWipe = subjects.length === 0;
+
   const handleSave = async () => {
+    // Guard against blank rows — the backend keys results by subject name.
+    // (Skipped on a wipe, since there are no rows left to name.)
+    if (!isWipe && subjects.some((s) => !s.name.trim())) {
+      setError('Every subject needs a name.');
+      return;
+    }
+
     setSaving(true);
     setError('');
     try {
@@ -158,14 +200,27 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onRefresh, onPreview })
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className='flex items-center gap-1.5 px-3 py-1.5 text-xs text-white bg-primary-green rounded-lg hover:bg-primary-green-hover transition-colors disabled:opacity-60'
+                title={
+                  isWipe
+                    ? 'No subjects left — saving removes this term’s result entirely'
+                    : undefined
+                }
+                className={`flex items-center gap-1.5 px-3 py-1.5 text-xs text-white rounded-lg transition-colors disabled:opacity-60 ${
+                  isWipe
+                    ? 'bg-red-600 hover:bg-red-700'
+                    : 'bg-primary-green hover:bg-primary-green-hover'
+                }`}
               >
                 {saving ? (
                   <Loader2 className='w-3.5 h-3.5 animate-spin' />
+                ) : isWipe ? (
+                  <Trash2 className='w-3.5 h-3.5' />
                 ) : (
                   <Save className='w-3.5 h-3.5' />
                 )}
-                {saving ? 'Saving…' : 'Save Changes'}
+                {saving
+                  ? (isWipe ? 'Deleting…' : 'Saving…')
+                  : (isWipe ? 'Delete result' : 'Save Changes')}
               </button>
             </>
           ) : (
@@ -216,7 +271,29 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onRefresh, onPreview })
           <tbody>
             {subjects.map((sub, i) => (
               <tr key={i} className='border-b border-gray-50 last:border-0 hover:bg-gray-50/50'>
-                <td className='py-3 px-6 text-sm font-medium text-gray-800'>{sub.name}</td>
+                <td className='py-3 px-6 text-sm font-medium text-gray-800'>
+                  {editing ? (
+                    <div className='flex items-center gap-2'>
+                      <button
+                        type='button'
+                        onClick={() => removeSubject(i)}
+                        title='Remove subject'
+                        className='text-gray-400 hover:text-red-600 shrink-0'
+                      >
+                        <Trash2 className='w-4 h-4' />
+                      </button>
+                      <input
+                        type='text'
+                        value={sub.name}
+                        placeholder='Subject name'
+                        onChange={(e) => updateSubjectName(i, e.target.value)}
+                        className='w-full min-w-[9rem] px-2 py-1.5 border border-gray-200 rounded text-sm focus:outline-none focus:ring-2 focus:ring-green-500'
+                      />
+                    </div>
+                  ) : (
+                    sub.name
+                  )}
+                </td>
                 {editing ? (
                   <>
                     <td className='py-2 px-3 text-center'>
@@ -290,6 +367,20 @@ const ResultCard: React.FC<ResultCardProps> = ({ result, onRefresh, onPreview })
           </tbody>
         </table>
       </div>
+
+      {/* Add a subject row — only while editing */}
+      {editing && (
+        <div className='px-6 py-3 border-t border-gray-100'>
+          <button
+            type='button'
+            onClick={addSubject}
+            className='inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-700 border border-dashed border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400'
+          >
+            <Plus className='w-4 h-4' />
+            Add subject
+          </button>
+        </div>
+      )}
 
       {/* Comments */}
       {editing ? (
@@ -374,6 +465,9 @@ const StudentResultDetail: React.FC<StudentResultDetailProps> = ({
 
   // Preview overlay state
   const [previewResult, setPreviewResult] = useState<StudentFullResult | null>(null);
+  // True while the result card below is in edit mode — locks the year/term tabs
+  // so you can't navigate away and lose unsaved score changes.
+  const [cardEditing, setCardEditing] = useState(false);
 
   const fetchResults = useCallback(async () => {
     setLoading(true);
@@ -403,16 +497,24 @@ const StudentResultDetail: React.FC<StudentResultDetailProps> = ({
 
   // ─── Helpers ───────────────────────────────────────────────────────────────
 
+  /**
+   * Year tabs — only proper sessions ("2026/2027"). Older records were entered
+   * through a free-text box, so some hold a bare year like "2026"; those are
+   * filtered out so the tab strip doesn't show both forms side by side.
+   */
+  const SESSION_FORMAT = /^\d{4}\/\d{4}$/;
+
   const getUniqueYears = (results: StudentFullResult[]) => {
     const seen = new Set<string>();
     const out: string[] = [];
     for (const r of results) {
+      if (!SESSION_FORMAT.test(r.academicYear)) continue;
       if (!seen.has(r.academicYear)) {
         seen.add(r.academicYear);
         out.push(r.academicYear);
       }
     }
-    return out;
+    return out.sort().reverse(); // newest session first
   };
 
   const getResultForYearTerm = (
@@ -478,6 +580,7 @@ const StudentResultDetail: React.FC<StudentResultDetailProps> = ({
   if (!data) return null;
 
   const years = getUniqueYears(data.results);
+
   const currentYear = activeYear || years[0] || '';
   const currentResult = currentYear
     ? getResultForYearTerm(data.results, currentYear, activeTerm)
@@ -564,6 +667,8 @@ const StudentResultDetail: React.FC<StudentResultDetailProps> = ({
               {years.map((year) => (
                 <button
                   key={year}
+                  disabled={cardEditing}
+                  title={cardEditing ? 'Finish or cancel your edit first' : undefined}
                   onClick={() => {
                     setActiveYear(year);
                     setActiveTerm('First Term');
@@ -572,7 +677,7 @@ const StudentResultDetail: React.FC<StudentResultDetailProps> = ({
                     currentYear === year
                       ? 'border-primary-green text-primary-green bg-green-50/50'
                       : 'border-transparent text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
+                  } ${cardEditing ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                 >
                   {year}
                 </button>
@@ -586,12 +691,14 @@ const StudentResultDetail: React.FC<StudentResultDetailProps> = ({
                 return (
                   <button
                     key={term}
+                    disabled={cardEditing}
+                    title={cardEditing ? 'Finish or cancel your edit first' : undefined}
                     onClick={() => setActiveTerm(term)}
                     className={`flex-1 px-4 py-2.5 text-xs font-medium transition-colors relative ${
                       activeTerm === term
                         ? 'text-gray-900 bg-white border-b-2 border-primary-green'
                         : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-b-2 border-transparent'
-                    }`}
+                    } ${cardEditing ? 'opacity-40 cursor-not-allowed pointer-events-none' : ''}`}
                   >
                     {term}
                     {hasResult && (
@@ -608,6 +715,7 @@ const StudentResultDetail: React.FC<StudentResultDetailProps> = ({
             <ResultCard
               result={currentResult}
               onRefresh={fetchResults}
+              onEditingChange={setCardEditing}
               onPreview={(r) => setPreviewResult(r)}
             />
           ) : (

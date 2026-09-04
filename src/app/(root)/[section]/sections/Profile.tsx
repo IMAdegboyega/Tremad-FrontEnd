@@ -19,6 +19,7 @@ import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useUser } from '@/Constants/UserContext'
 import { updateProfile, uploadAvatar } from '@/lib/api/student.service'
+import { getApiErrorMessage } from '@/lib/api/client'
 import { toTitleCase, getInitials } from '@/lib/utils'
 
 /**
@@ -111,11 +112,9 @@ const Profile = () => {
         await user.refresh()
       }
     } catch (err) {
-      const message =
-        err instanceof Error
-          ? err.message
-          : 'Something went wrong while saving your profile.'
-      setSaveError(message)
+      setSaveError(
+        getApiErrorMessage(err, 'Something went wrong while saving your profile.')
+      )
     } finally {
       setIsSaving(false)
     }
@@ -179,7 +178,7 @@ const Profile = () => {
       setAvatarPreview(null)
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Avatar upload failed.'
+        getApiErrorMessage(err, 'Avatar upload failed.')
       setAvatarError(message)
       URL.revokeObjectURL(localUrl)
       setAvatarPreview(null)

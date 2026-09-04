@@ -110,12 +110,35 @@ export interface Staff {
   lastLogin?: string;
 }
 
+/**
+ * Matches POST /super-admin/create-admin, which reads
+ * { email, firstName, lastName, phone, subjects } and generates the teacherId
+ * and temporary password server-side.
+ */
 export interface CreateStaffData {
   email: string;
   firstName: string;
   lastName: string;
+  phoneNumber?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  address?: string;
+  /** Local Government */
+  city?: string;
+  /** State of origin */
+  state?: string;
+  country?: string;
+  /** A teacher can hold several subjects and classes. */
+  subjects?: string[];
+  assignedClasses?: string[];
+  nextOfKin?: {
+    name?: string;
+    relationship?: string;
+    phone?: string;
+    email?: string;
+  };
+  emergencyContact?: string;
   department?: string;
-  role: 'admin' | 'teacher';
 }
 
 export interface PaginatedResponse<T> {

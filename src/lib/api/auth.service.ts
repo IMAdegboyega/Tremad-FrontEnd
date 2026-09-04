@@ -256,12 +256,14 @@ export const studentLogout = async (): Promise<ApiResponse> => {
  * Teacher Login
  */
 export const teacherLogin = async (
-  teacherId: string,
+  identifier: string,
   password: string
 ): Promise<ApiResponse<any>> => {
+  // Staff may sign in with either their email or their staff ID. We send both
+  // `identifier` (new) and `teacherId` (legacy) so either backend build works.
   const response = await apiClient.post(
     API.AUTH.TEACHER.LOGIN,
-    { teacherId, password },
+    { identifier, teacherId: identifier, password },
     false
   );
 

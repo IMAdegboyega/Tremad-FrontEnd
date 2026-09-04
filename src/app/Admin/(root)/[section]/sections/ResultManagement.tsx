@@ -24,6 +24,11 @@ import AllResultsPage from '@/components/superadmin/Result/AllResultsPage';
 import SubjectAnalysis from '@/components/superadmin/Result/SubjectAnalysis';
 import PrintBroadsheet from '@/components/superadmin/Result/PrintBroadsheet';
 import {
+  getAcademicYearOptions,
+  getCurrentAcademicYear,
+  withAcademicYear,
+} from '@/Constants/academicYears';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -138,16 +143,9 @@ const PAGE_SIZE = 8;
 // ============================================================================
 
 const ResultManagement: React.FC<ResultManagementprop> = () => {
-  const currentAcademicYear = useMemo(() => {
-    // Schools usually run Sep–Jul. Past August → use current year/year+1;
-    // before September → use year-1/year. Best-effort default; the term
-    // selector lets admins override.
-    const now = new Date();
-    const year = now.getFullYear();
-    const isPostAugust = now.getMonth() >= 8;
-    const start = isPostAugust ? year : year - 1;
-    return `${start}/${start + 1}`;
-  }, []);
+  // Session default + the canonical picker list (see Constants/academicYears).
+  const currentAcademicYear = useMemo(() => getCurrentAcademicYear(), []);
+  const yearOptions = useMemo(() => getAcademicYearOptions(), []);
 
   const [showAddModal, setShowAddModal] = useState(false);
   const [currentView, setCurrentView] = useState<'overview' | 'all-results' | 'subject-analysis' | 'broadsheet'>('overview');
@@ -368,6 +366,28 @@ const ResultManagement: React.FC<ResultManagementprop> = () => {
             <span className='hidden sm:inline'>Add Result</span>
           </button>
 
+          {/* Session (academic year) selector — separate from the term so admins
+              can actually move between years, not just terms within one year. */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className='flex items-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 min-h-[44px]'>
+                <ListFilter className='w-4 h-4' />
+                <span className='hidden sm:inline'>{academicYear}</span>
+                <span className='sm:hidden'>Year</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align='end' className='max-h-72 overflow-y-auto'>
+              {withAcademicYear(yearOptions, academicYear).map((y) => (
+                <DropdownMenuItem key={y} onClick={() => setAcademicYear(y)}>
+                  <span className={`cursor-pointer ${y === academicYear ? 'font-semibold text-green-700' : ''}`}>
+                    {y}
+                    {y === currentAcademicYear ? ' (current)' : ''}
+                  </span>
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Term selector — dropdown menu so admins can switch which term's
               results they see without leaving the page. */}
           <DropdownMenu>
@@ -381,8 +401,8 @@ const ResultManagement: React.FC<ResultManagementprop> = () => {
             <DropdownMenuContent align='end'>
               {TERMS.map((t) => (
                 <DropdownMenuItem key={t} onClick={() => setTerm(t)}>
-                  <span className='cursor-pointer'>
-                    {t} {academicYear}
+                  <span className={`cursor-pointer ${t === term ? 'font-semibold text-green-700' : ''}`}>
+                    {t}
                   </span>
                 </DropdownMenuItem>
               ))}

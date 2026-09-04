@@ -77,13 +77,13 @@ export default function AdminSignIn() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <label className="block text-sm text-gray-600 mb-1">
-            Teacher ID
+            Email or Staff ID
           </label>
           <input
             type="text"
             value={formData.teacherId}
             onChange={(e) => setFormData({ ...formData, teacherId: e.target.value })}
-            placeholder="Enter your teacher ID"
+            placeholder="Enter your email or staff ID"
             className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:bg-white"
             required
           />

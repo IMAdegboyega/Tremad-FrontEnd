@@ -87,6 +87,32 @@ export interface ApiError {
   isNetworkError?: boolean;
 }
 
+/**
+ * Pull a readable message out of whatever this layer threw.
+ *
+ * IMPORTANT: `request()` rejects with a plain ApiError *object*, not an Error
+ * instance — so `err instanceof Error` is false and callers that rely on it
+ * silently discard the server's real message. Always use this instead.
+ */
+export const getApiErrorMessage = (err: unknown, fallback: string): string => {
+  if (typeof err === 'string' && err.trim()) return err;
+
+  if (err && typeof err === 'object') {
+    const e = err as Partial<ApiError>;
+    // Surface field-level validation errors when the API sends them.
+    const details = Array.isArray(e.errors)
+      ? e.errors
+          .map((x: any) => (typeof x === 'string' ? x : x?.message || x?.msg))
+          .filter(Boolean)
+          .join(', ')
+      : '';
+    if (e.message) return details ? `${e.message} (${details})` : e.message;
+    if (details) return details;
+  }
+
+  return fallback;
+};
+
 // ============================================================================
 // INTERNAL HELPERS
 // ============================================================================
@@ -217,10 +243,13 @@ const handleErrorResponse = async <T>(response: Response): Promise<never> => {
   if (response.status === 401) {
     removeToken();
     if (typeof window !== 'undefined') {
+      // Route folders are lowercase (/admin, /staff) since the rename — the old
+      // checks looked for 'SuperAdmin'/'Admin' and never matched, so admins and
+      // staff were being bounced to the student sign-in page.
       const path = window.location.pathname;
-      if (path.includes('SuperAdmin')) {
+      if (path.startsWith('/admin')) {
         window.location.href = '/admin/sign-in';
-      } else if (path.includes('Admin')) {
+      } else if (path.startsWith('/staff')) {
         window.location.href = '/staff/sign-in';
       } else {
         window.location.href = '/sign-in';

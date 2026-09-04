@@ -1,140 +1,144 @@
 'use client'
 
 // StaffManagement
-// High-level overview:
-// - Provides search, filter, and paginated listing of staff using client-side state
-// - Shows quick stats (totals and activity) and per-staff actions via a dropdown menu
-// - Implements a smart pagination component with ellipses for large page counts
-// - Similar to StudentManagement but without grade filtering
+// Live data — backed by GET /super-admin/staff (users with role "admin").
+//
+// Search, status filtering and pagination are all done SERVER-side: the backend
+// endpoint accepts { page, limit, search, status } so we never hold the full
+// staff list in memory. Search is debounced so typing doesn't fire a request per
+// keystroke.
+//
+// Note on statuses: the backend models staff state as a single `isActive`
+// boolean, so only Active/Inactive exist. (The old mock data had a third
+// "Suspended" state that the API cannot express, so it's gone.)
 
-import React, { useState } from 'react';
-import { Search, ChevronLeft, ChevronRight, ListFilter } from 'lucide-react';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Search, ChevronLeft, ChevronRight, ListFilter, RefreshCw } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { allStaffData } from '@/Constants/PortalLoginData';
 import StatsCard from '@/components/superadmin/PortalLogin/StatsCard';
 import AddStaffModal from '@/components/modals/AddStaff';
+import { getAllStaff, type Staff } from '@/lib/api/superAdmin.service';
+import { getApiErrorMessage } from '@/lib/api/client';
 
-// Expected shape of each staff member in allStaffData:
-// {
-//   id: string | number,         // Stable unique key for React list rendering
-//   fullName: string,            // Used for display and search (case-insensitive)
-//   email?: string,              // Optional; used for display and search
-//   staffId: string,             // Searched and displayed in the table
-//   department: string,          // Staff department (e.g., 'Mathematics', 'Science')
-//   role: string,                // Staff role (e.g., 'Teacher', 'Head of Department')
-//   status: 'Active' | 'Inactive' | 'Suspended' // Drives badge styles and status filter
-// }
+type StatusFilter = 'all' | 'active' | 'inactive';
+
+const ITEMS_PER_PAGE = 8;
+
+/** Display helpers — the API returns raw User docs, so shape them for the table. */
+const displayName = (s: Staff) =>
+  `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() || s.email || 'Unnamed staff';
+const displayId = (s: Staff) => s.teacherId || s.staffId || '—';
+const displayDept = (s: Staff) => s.department || s.position || '—';
+const initialsOf = (name: string) =>
+  name.split(' ').filter(Boolean).map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 
 const StaffManagement: React.FC = () => {
-  // Search string entered by the user; used to match name, email, or staffId
   const [searchQuery, setSearchQuery] = useState('');
-  // Current page for pagination (1-indexed)
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [currentPage, setCurrentPage] = useState(1);
-  // Status filter; 'all' means include every status
-  const [statusFilter, setStatusFilter] = useState<'all' | 'Active' | 'Inactive' | 'Suspended'>('all');
+
+  const [staff, setStaff] = useState<Staff[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Global counts for the stat cards. Fetched with limit=1 so we only pay for
+  // the pagination totals, not the rows themselves.
+  const [totalStaff, setTotalStaff] = useState(0);
+  const [activeCount, setActiveCount] = useState(0);
 
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
 
-  const renderModals = () => {
-    return (
-      <>
-        <AddStaffModal
-          isOpen={showAddStaffModal}
-          onClose={() => setShowAddStaffModal(false)}
-        />
-      </>
-    )
-  }
+  // Debounce the search box (350ms) and reset to page 1 on a new term.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchQuery.trim());
+      setCurrentPage(1);
+    }, 350);
+    return () => clearTimeout(t);
+  }, [searchQuery]);
 
-  // Number of staff rows displayed per page in the table.
-  // Note: If you expose this as a user setting, ensure currentPage is clamped when it changes.
-  const itemsPerPage = 8;
+  const fetchStaff = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getAllStaff({
+        page: currentPage,
+        limit: ITEMS_PER_PAGE,
+        search: debouncedSearch || undefined,
+        status: statusFilter === 'all' ? undefined : statusFilter,
+      });
 
-  // Derive the visible staff by applying search + status filters
-  // Complexity: O(n) per render where n = allStaffData.length.
-  // For very large lists, consider memoization with useMemo and/or server-side filtering.
-  // Also consider debouncing search input to reduce re-renders while typing.
-  const filteredStaff = allStaffData.filter(staff => {
-    // Case-insensitive search across multiple fields for a forgiving UX
-    const matchesSearch = staff.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         staff.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         staff.staffId.includes(searchQuery);
-    
-    // Apply selected status filter (or allow all when set to 'all').
-    // Status match is exact; adjust if backend uses different casing.
-    const matchesStatus = statusFilter === 'all' || staff.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
+      if (res.success && res.data) {
+        // Backend responds with { staff, pagination }; tolerate an `items` key too.
+        const payload = res.data as unknown as {
+          staff?: Staff[];
+          items?: Staff[];
+          pagination?: { totalPages: number; totalCount: number };
+        };
+        setStaff(payload.staff ?? payload.items ?? []);
+        setTotalPages(payload.pagination?.totalPages || 1);
+      } else {
+        setError(res.message || 'Could not load staff.');
+        setStaff([]);
+      }
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Could not load staff.'));
+      setStaff([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, debouncedSearch, statusFilter]);
 
-  // Pagination calculations
-  // totalPages: number of pages needed to show all filtered results.
-  // startIndex/endIndex: slice boundaries for the current page window.
-  // Guard: If filters change and shrink results, currentPage may exceed totalPages. The UI
-  // resets currentPage to 1 on filter/search changes to avoid empty views.
-  const totalPages = Math.ceil(filteredStaff.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentStaff = filteredStaff.slice(startIndex, endIndex);
+  const fetchCounts = useCallback(async () => {
+    try {
+      const [all, active] = await Promise.all([
+        getAllStaff({ limit: 1 }),
+        getAllStaff({ limit: 1, status: 'active' }),
+      ]);
+      const totalOf = (r: typeof all) =>
+        (r.data as unknown as { pagination?: { totalCount: number } })?.pagination?.totalCount ?? 0;
+      setTotalStaff(totalOf(all));
+      setActiveCount(totalOf(active));
+    } catch {
+      /* stat cards are non-critical — leave them at their last known values */
+    }
+  }, []);
 
-  // Top-level stats used by header cards.
-  // Note: These are derived from the FULL dataset (not filtered) to reflect global counts.
-  // If you need stats for the filtered subset, compute from filteredStaff instead.
-  const activeStaff = allStaffData.filter(s => s.status === 'Active').length;
-  const inactiveStaff = allStaffData.filter(s => s.status === 'Inactive').length;
-  const suspendedStaff = allStaffData.filter(s => s.status === 'Suspended').length;
-  // Example figure for demo purposes; wire to backend analytics when available
-  const newThisMonth = 12;
+  useEffect(() => { fetchStaff(); }, [fetchStaff]);
+  useEffect(() => { fetchCounts(); }, [fetchCounts]);
 
-  // Generate page numbers for pagination display
-  // Strategy:
-  // - If there are 7 pages or fewer, show them all: [1 2 3 4 5 6 7]
-  // - Otherwise show compact form with ellipses: [1 … (current-1) current (current+1) … total]
-  //   Examples:
-  //   - current=1, total=10 -> [1 2 … 10]
-  //   - current=5, total=10 -> [1 … 4 5 6 … 10]
-  //   - current=9, total=10 -> [1 … 8 9 10]
+  const refreshAll = useCallback(() => {
+    fetchStaff();
+    fetchCounts();
+  }, [fetchStaff, fetchCounts]);
+
+  const inactiveCount = Math.max(0, totalStaff - activeCount);
+  const activePct = totalStaff > 0 ? Math.round((activeCount / totalStaff) * 100) : 0;
+
   const generatePageNumbers = () => {
     const pages: (number | string)[] = [];
-    
     if (totalPages <= 7) {
-      // Show all pages if 7 or fewer
-      for (let i = 1; i <= totalPages; i++) {
-        pages.push(i);
-      }
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
     } else {
-      // Show smart pagination with ellipsis for large page counts
-      pages.push(1); // Always show first page
-      
-      if (currentPage > 3) {
-        pages.push('...');
-      }
-      
-      // Show current page and its immediate neighbors within [2, totalPages-1]
+      pages.push(1);
+      if (currentPage > 3) pages.push('...');
       const start = Math.max(2, currentPage - 1);
       const end = Math.min(totalPages - 1, currentPage + 1);
-      
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-      
-      if (currentPage < totalPages - 2) {
-        pages.push('...');
-      }
-      
-      pages.push(totalPages); // Always show last page
+      for (let i = start; i <= end; i++) pages.push(i);
+      if (currentPage < totalPages - 2) pages.push('...');
+      pages.push(totalPages);
     }
-    
     return pages;
   };
 
-  // Update the current page while guarding against out-of-range values.
-  // This does not clamp beyond [1, totalPages]; callers should disable buttons accordingly.
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
+
+  const statusLabel =
+    statusFilter === 'all' ? null : statusFilter === 'active' ? 'Active' : 'Inactive';
 
   return (
     <div className="min-h-screen bg-gray-50 space-y-3 p-2 sm:p-4 md:p-6">
@@ -143,17 +147,21 @@ const StaffManagement: React.FC = () => {
         <div className="flex flex-col sm:flex-row justify-between sm:items-start gap-3 mb-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">Staff management</h1>
-            <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage subjects and view progress</p>
+            <p className="text-xs sm:text-sm text-gray-500 mt-1">Manage staff accounts and access</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Could be connected to a term/semester selector in future */}
-            <button className="px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 min-h-[44px]">
-            <ListFilter size={18} />
-              <span className="hidden sm:inline">Current term</span>
-              <span className="sm:hidden">Term</span>
+            <button
+              onClick={refreshAll}
+              disabled={loading}
+              className="px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2 min-h-[44px] disabled:opacity-50"
+            >
+              <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+              <span className="hidden sm:inline">Refresh</span>
             </button>
-            {/* Trigger a create-staff modal or navigate to a creation form */}
-            <button onClick={() => setShowAddStaffModal(true)} className="px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-white bg-primary-green rounded-lg hover:bg-primary-green-hover flex items-center gap-2 min-h-[44px]">
+            <button
+              onClick={() => setShowAddStaffModal(true)}
+              className="px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-white bg-primary-green rounded-lg hover:bg-primary-green-hover flex items-center gap-2 min-h-[44px]"
+            >
               <span className="text-lg">+</span>
               <span className="hidden sm:inline">Add new staff</span>
               <span className="sm:hidden">Add staff</span>
@@ -163,33 +171,29 @@ const StaffManagement: React.FC = () => {
 
         <div className='grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6 mb-4 md:mb-8'>
           <StatsCard
-            title="Total Students" 
-            count={allStaffData.length} 
+            title="Total staff"
+            count={totalStaff}
             icon='/icon/message.svg'
-            change="+20.1% from last term" 
+            change="All staff on record"
             isPositive={true}
           />
           <StatsCard
-            title="Active Student" 
-            count={activeStaff} 
+            title="Active staff"
+            count={activeCount}
             icon='/icon/activity.svg'
-            change="-20.1% from last term" 
-            isPositive={false}
+            change={totalStaff > 0 ? `${activePct}% of all staff` : 'No staff yet'}
+            isPositive={true}
           />
           <StatsCard
-            title="New this month" 
-            count={newThisMonth} 
+            title="Inactive staff"
+            count={inactiveCount}
             icon='/icon/activity.svg'
-            change="+20.1% from last term" 
-            isPositive={true}
+            change={inactiveCount === 0 ? 'None inactive' : 'Deactivated accounts'}
+            isPositive={inactiveCount === 0}
           />
         </div>
       </header>
 
-      {/* Main Content
-          Layout/spacing is intentionally minimal here; parent container adds global padding.
-          The card below hosts search and filters; table handles overflow inside a bordered box.
-      */}
       <main>
         {/* Search and Filters */}
         <div className="bg-white rounded-lg border border-gray-100 mb-4 md:mb-6">
@@ -198,55 +202,42 @@ const StaffManagement: React.FC = () => {
               <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search by name, email or ID..."
+                placeholder="Search by name, email or staff ID..."
                 value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  // Reset to first page whenever the search query changes
-                  setCurrentPage(1);
-                }}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 sm:border-0 rounded-lg sm:rounded-none focus:outline-none focus:ring-2 sm:focus:ring-0 focus:ring-green-500 min-h-[44px]"
               />
             </div>
 
-            {/* Status filter menu: exact match on status string.
-                UX: Chip next to label shows active selection when not 'all'. */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 min-h-[44px]">
-                <ListFilter size={18} />
+                  <ListFilter size={18} />
                   <span className="hidden sm:inline">Filter by status</span>
                   <span className="sm:hidden">Status</span>
-                  {statusFilter !== 'all' && (
+                  {statusLabel && (
                     <span className="ml-1 px-2 py-0.5 bg-green-100 text-green-700 rounded text-xs">
-                      {statusFilter}
+                      {statusLabel}
                     </span>
                   )}
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {/* Reset pagination when filters change to avoid landing on empty pages */}
                 <DropdownMenuItem onClick={() => { setStatusFilter('all'); setCurrentPage(1); }}>
-                  <span className='cursor-pointer'>All Status</span>
+                  <span className='cursor-pointer'>All status</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setStatusFilter('Active'); setCurrentPage(1); }}>
-                  <span className='cursor-pointer'>Active ({activeStaff})</span>
+                <DropdownMenuItem onClick={() => { setStatusFilter('active'); setCurrentPage(1); }}>
+                  <span className='cursor-pointer'>Active ({activeCount})</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setStatusFilter('Inactive'); setCurrentPage(1); }}>
-                  <span className='cursor-pointer'>Inactive ({inactiveStaff})</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => { setStatusFilter('Suspended'); setCurrentPage(1); }}>
-                  <span className='cursor-pointer'>Suspended ({suspendedStaff})</span>
+                <DropdownMenuItem onClick={() => { setStatusFilter('inactive'); setCurrentPage(1); }}>
+                  <span className='cursor-pointer'>Inactive ({inactiveCount})</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
 
-        {/* Staff Table
-            Accessibility: Table uses semantic <table>/<thead>/<tbody>.
-            Consider adding scope="col" to <th> for improved screen reader support.
-            For very large datasets, consider virtualization (e.g., react-window). */}
+        {/* Staff Table */}
         <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px]">
@@ -260,107 +251,152 @@ const StaffManagement: React.FC = () => {
                 </tr>
               </thead>
               <tbody>
-                {currentStaff.length > 0 ? (
-                  currentStaff.map((staff) => (
-                    <tr key={staff.id} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="px-3 sm:px-6 py-3 sm:py-4">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
-                            <span className="text-xs sm:text-sm font-medium text-gray-600">
-                              {/* Render up to two-letter initials (first letters of name parts).
-                                 Edge cases: single-word names -> first letter only; names with punctuation are taken literally. */}
-                              {staff.fullName.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                            </span>
-                          </div>
-                          <div className="min-w-0">
-                            <div className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[100px] sm:max-w-none">{staff.fullName}</div>
-                            {staff.email && (
-                              <div className="text-[10px] sm:text-xs text-gray-500 truncate max-w-[100px] sm:max-w-none">{staff.email}</div>
-                            )}
+                {loading ? (
+                  // Skeleton rows keep the table height stable while fetching
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={`sk-${i}`} className="border-b border-gray-100 animate-pulse">
+                      <td className="px-3 sm:px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200" />
+                          <div className="space-y-2">
+                            <div className="h-3 w-28 bg-gray-200 rounded" />
+                            <div className="h-2 w-36 bg-gray-100 rounded" />
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{staff.staffId}</td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{staff.department}</td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4">
-                        {/* Status badge with color coding per status */}
-                        <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
-                          staff.status === 'Active' 
-                            ? 'bg-green-50 text-green-700' 
-                            : staff.status === 'Suspended'
-                            ? 'bg-yellow-50 text-yellow-700'
-                            : 'bg-red-50 text-red-700'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${
-                            staff.status === 'Active' 
-                              ? 'bg-green-600' 
-                              : staff.status === 'Suspended'
-                              ? 'bg-yellow-600'
-                              : 'bg-red-600'
-                          }`} />
-                          {staff.status}
-                        </span>
-                      </td>
-                      <td className="px-3 sm:px-6 py-3 sm:py-4">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <button className="text-gray-400 hover:text-gray-600 min-w-[44px] min-h-[44px] flex items-center justify-center">
-                              <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
-                              </svg>
-                            </button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {/* Wire these to route navigations or modals as required */}
-                            <DropdownMenuItem>
-                              <span className='cursor-pointer'>View Details</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                              <span className='cursor-pointer'>Edit Profile</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td>
+                      <td className="px-3 sm:px-6 py-4"><div className="h-3 w-20 bg-gray-200 rounded" /></td>
+                      <td className="px-3 sm:px-6 py-4"><div className="h-3 w-24 bg-gray-200 rounded" /></td>
+                      <td className="px-3 sm:px-6 py-4"><div className="h-5 w-16 bg-gray-200 rounded-full" /></td>
+                      <td className="px-3 sm:px-6 py-4"><div className="h-3 w-6 bg-gray-200 rounded" /></td>
                     </tr>
                   ))
+                ) : error ? (
+                  <tr>
+                    <td colSpan={5} className="px-3 sm:px-6 py-12 text-center">
+                      <p className="text-sm text-red-600 mb-3">{error}</p>
+                      <button
+                        onClick={refreshAll}
+                        className="px-4 py-2 text-sm text-white bg-primary-green rounded-lg hover:bg-primary-green-hover"
+                      >
+                        Try again
+                      </button>
+                    </td>
+                  </tr>
+                ) : staff.length > 0 ? (
+                  staff.map((member) => {
+                    const name = displayName(member);
+                    return (
+                      <tr key={member._id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <div className="flex items-center gap-2 sm:gap-3">
+                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
+                              <span className="text-xs sm:text-sm font-medium text-gray-600">
+                                {initialsOf(name)}
+                              </span>
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[100px] sm:max-w-none">{name}</div>
+                              {member.email && (
+                                <div className="text-[10px] sm:text-xs text-gray-500 truncate max-w-[100px] sm:max-w-none">{member.email}</div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{displayId(member)}</td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{displayDept(member)}</td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
+                            member.isActive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${
+                              member.isActive ? 'bg-green-600' : 'bg-red-600'
+                            }`} />
+                            {member.isActive ? 'Active' : 'Inactive'}
+                          </span>
+                        </td>
+                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="text-gray-400 hover:text-gray-600 min-w-[44px] min-h-[44px] flex items-center justify-center">
+                                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/>
+                                </svg>
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem>
+                                <span className='cursor-pointer'>View Details</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem>
+                                <span className='cursor-pointer'>Edit Profile</span>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
                     <td colSpan={5} className="px-3 sm:px-6 py-12 text-center text-sm text-gray-500">
-                      No staff found matching your criteria
+                      {debouncedSearch || statusFilter !== 'all'
+                        ? 'No staff match your search or filter.'
+                        : 'No staff yet — add your first staff member.'}
                     </td>
                   </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
 
-          {/* Custom Pagination - Fully Functional
-              Behavior:
-              - Prev/Next buttons are disabled at the bounds [1, totalPages]
-              - Page number list collapses with ellipses when totalPages > 7
-              - Non-numeric ellipsis elements are non-interactive */}
-          {filteredStaff.length > 0 && totalPages > 1 && (
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
-              {/* Mobile: stacked layout */}
-              <div className="flex items-center justify-between w-full sm:w-auto gap-2">
-                {/* Previous Button */}
-                <button 
-                  className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-                  disabled={currentPage === 1}
-                  onClick={() => handlePageChange(currentPage - 1)}
-                >
-                  <ChevronLeft className="w-4 h-4" />
-                  <span className="hidden sm:inline">Previous</span>
-                  <span className="sm:hidden">Prev</span>
-                </button>
+            {/* Pagination — driven by the server's totalPages */}
+            {!loading && !error && staff.length > 0 && totalPages > 1 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 sm:px-6 py-3 sm:py-4 border-t border-gray-200">
+                <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+                  <button
+                    className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2.5 text-xs sm:text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                    disabled={currentPage === 1}
+                    onClick={() => handlePageChange(currentPage - 1)}
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="hidden sm:inline">Previous</span>
+                    <span className="sm:hidden">Prev</span>
+                  </button>
 
-                {/* Page indicator for mobile */}
-                <span className="text-xs sm:hidden text-gray-500">
-                  {currentPage} / {totalPages}
-                </span>
+                  <span className="text-xs sm:hidden text-gray-500">
+                    {currentPage} / {totalPages}
+                  </span>
 
-                {/* Next Button - visible on mobile */}
-                <button 
-                  className="flex sm:hidden items-center gap-1 px-3 py-2.5 text-xs text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                  <button
+                    className="flex sm:hidden items-center gap-1 px-3 py-2.5 text-xs text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+                    disabled={currentPage === totalPages}
+                    onClick={() => handlePageChange(currentPage + 1)}
+                  >
+                    Next
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="hidden sm:flex items-center gap-2">
+                  {generatePageNumbers().map((page, index) => (
+                    <button
+                      key={index}
+                      onClick={() => typeof page === 'number' && handlePageChange(page)}
+                      disabled={typeof page !== 'number'}
+                      className={`min-w-[32px] h-8 flex items-center justify-center text-sm rounded-lg transition-colors ${
+                        page === currentPage
+                          ? 'bg-green-600 text-white font-medium'
+                          : typeof page === 'number'
+                          ? 'text-gray-700 hover:bg-gray-100'
+                          : 'text-gray-400 cursor-default'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
                   disabled={currentPage === totalPages}
                   onClick={() => handlePageChange(currentPage + 1)}
                 >
@@ -368,43 +404,16 @@ const StaffManagement: React.FC = () => {
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
-
-              {/* Page Numbers - hidden on mobile */}
-              <div className="hidden sm:flex items-center gap-2">
-                {generatePageNumbers().map((page, index) => (
-                  <button
-                    key={index}
-                    // Only numeric pages are interactive; ellipses act as visual separators
-                    onClick={() => typeof page === 'number' && handlePageChange(page)}
-                    disabled={typeof page !== 'number'}
-                    className={`min-w-[32px] h-8 flex items-center justify-center text-sm rounded-lg transition-colors ${
-                      page === currentPage
-                        ? 'bg-green-600 text-white font-medium'
-                        : typeof page === 'number'
-                        ? 'text-gray-700 hover:bg-gray-100'
-                        : 'text-gray-400 cursor-default'
-                    }`}
-                  >
-                    {page}
-                  </button>
-                ))}
-              </div>
-
-              {/* Next Button - desktop only */}
-              <button 
-                className="hidden sm:flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
-                disabled={currentPage === totalPages}
-                onClick={() => handlePageChange(currentPage + 1)}
-              >
-                Next
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+            )}
           </div>
         </div>
       </main>
-      {renderModals()}
+
+      <AddStaffModal
+        isOpen={showAddStaffModal}
+        onClose={() => setShowAddStaffModal(false)}
+        onSuccess={refreshAll}
+      />
     </div>
   );
 };

@@ -8,6 +8,11 @@ import {
   type Student,
   type SubjectInput,
 } from '@/lib/api/superAdmin.service';
+import {
+  getAcademicYearOptions,
+  getCurrentAcademicYear,
+  withAcademicYear,
+} from '@/Constants/academicYears';
 
 const TERMS = ['First Term', 'Second Term', 'Third Term'] as const;
 
@@ -42,7 +47,10 @@ const AddResultModal: React.FC<AddResultModalProps> = ({
   const [showStudentDropdown, setShowStudentDropdown] = useState(false);
   const [loadingStudents, setLoadingStudents] = useState(false);
 
-  const [academicYear, setAcademicYear] = useState(defaultAcademicYear);
+  // Falls back to the live session so the dropdown is never blank.
+  const [academicYear, setAcademicYear] = useState(
+    defaultAcademicYear || getCurrentAcademicYear()
+  );
   const [term, setTerm] = useState<typeof TERMS[number]>(defaultTerm);
   const [className, setClassName] = useState('');
   const [subjects, setSubjects] = useState<SubjectRow[]>([emptySubject(1)]);
@@ -251,13 +259,17 @@ const AddResultModal: React.FC<AddResultModalProps> = ({
               <label className='block text-sm font-medium text-gray-700 mb-1.5'>
                 Academic Year <span className='text-red-500'>*</span>
               </label>
-              <input
-                type='text'
-                placeholder='e.g. 2024/2025'
-                value={academicYear}
-                onChange={(e) => setAcademicYear(e.target.value)}
-                className='w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent'
-              />
+              <div className='relative'>
+                <select
+                  value={academicYear}
+                  onChange={(e) => setAcademicYear(e.target.value)}
+                  className='w-full appearance-none px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white pr-8'
+                >
+                  {withAcademicYear(getAcademicYearOptions(), academicYear).map((y) => (
+                    <option key={y} value={y}>{y}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div>

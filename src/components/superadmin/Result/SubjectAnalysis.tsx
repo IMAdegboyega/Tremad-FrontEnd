@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronDown, Loader2 } from 'lucide-react';
+import { getAcademicYearOptions, withAcademicYear } from '@/Constants/academicYears';
 import {
   getSubjectAnalysis,
   type SubjectAnalysisEntry,
@@ -117,13 +118,15 @@ const SubjectAnalysis: React.FC<SubjectAnalysisProps> = ({
       <div className='bg-white rounded-xl border border-gray-200 p-4 flex flex-wrap gap-3'>
         <div>
           <label className='block text-xs font-medium text-gray-600 mb-1'>Academic Year</label>
-          <input
-            type='text'
-            placeholder='e.g. 2025/2026'
+          <select
             value={academicYear}
             onChange={(e) => setAcademicYear(e.target.value)}
-            className='w-36 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500'
-          />
+            className='w-36 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500 bg-white'
+          >
+            {withAcademicYear(getAcademicYearOptions(), academicYear).map((y) => (
+              <option key={y} value={y}>{y}</option>
+            ))}
+          </select>
         </div>
 
         <div>
