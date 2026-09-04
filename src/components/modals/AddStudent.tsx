@@ -4,6 +4,7 @@
 import React, { useState } from 'react';
 import { X, CheckCircle, Copy, Check } from 'lucide-react';
 import { createStudent } from '@/lib/api';
+import { getApiErrorMessage } from '@/lib/api/client';
 import { NIGERIAN_STATES, getLGAsForState } from '@/Constants/NigeriaStates';
 import {
   DropdownMenu,
@@ -182,7 +183,8 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
       }
     } catch (err: any) {
       if (err.status === 400) {
-        setError(err.message || 'Invalid student data. Please check the form.');
+        // Validation failures carry the detail in `errors`, not `message`.
+        setError(getApiErrorMessage(err, 'Invalid student data. Please check the form.'));
       } else if (err.status === 409 || err.message?.includes('already exists')) {
         setError('A student with this email already exists.');
       } else if (err.isNetworkError) {

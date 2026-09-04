@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import LiveNowStrip from '@/components/superadmin/Analytics/LiveNowStrip';
 import UserActivityTable from '@/components/superadmin/Analytics/UserActivityTable';
 import UserSessionsDialog from '@/components/superadmin/Analytics/UserSessionsDialog';
+import AdmissionNumbersCard from '@/components/superadmin/Analytics/AdmissionNumbersCard';
 
 /**
  * Analytics & Insights — SuperAdmin
@@ -36,9 +37,10 @@ const AnalyticsAndInsights = () => {
           />
         </div>
 
-        {/* Right: who's online right now */}
-        <div className='lg:w-[340px] shrink-0 order-1 lg:order-2'>
+        {/* Right: who's online right now, plus the admission-number pool */}
+        <div className='lg:w-[340px] shrink-0 order-1 lg:order-2 flex flex-col gap-4'>
           <LiveNowStrip />
+          <AdmissionNumbersCard />
         </div>
       </div>
 
