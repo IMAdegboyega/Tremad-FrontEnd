@@ -1,4 +1,4 @@
-// src/app/SuperAdmin/(auth)/layout.tsx
+// src/app/admin/(auth)/layout.tsx
 import Image from 'next/image';
 
 export default function SuperAdminAuthLayout({

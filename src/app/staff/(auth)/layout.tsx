@@ -1,4 +1,4 @@
-// src/app/Admin/(auth)/layout.tsx
+// src/app/staff/(auth)/layout.tsx
 import Image from 'next/image';
 
 export default function AdminAuthLayout({

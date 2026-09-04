@@ -26,21 +26,21 @@ const STAT_CARDS_CONFIG: StatCardConfig[] = [
     key: 'totalStudents',
     title: 'Total student',
     icon: '/icon/TotalStudent.svg',
-    href: '/SuperAdmin/student-management',
+    href: '/admin/student-management',
     format: (v) => new Intl.NumberFormat('en-NG').format(v),
   },
   {
     key: 'activeTeachers',
     title: 'Active teachers',
     icon: '/icon/ActiveTeachers.svg',
-    href: '/SuperAdmin/staff-management',
+    href: '/admin/staff-management',
     format: (v) => new Intl.NumberFormat('en-NG').format(v),
   },
   {
     key: 'monthlyRevenue',
     title: 'Monthly revenue',
     icon: '/icon/MonthlyRevenue.svg',
-    href: '/SuperAdmin/payment-management',
+    href: '/admin/payment-management',
     // Naira symbol + thousands separator. We round to whole nairas because the
     // backend stores amounts as integers.
     format: (v) =>
@@ -52,7 +52,7 @@ const STAT_CARDS_CONFIG: StatCardConfig[] = [
     key: 'pendingApprovals',
     title: 'Pending approvals',
     icon: '/icon/PendingApprovals.svg',
-    href: '/SuperAdmin/approvals',
+    href: '/admin/approvals',
     format: (v) => new Intl.NumberFormat('en-NG').format(v),
   },
 ];

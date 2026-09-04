@@ -21,18 +21,18 @@ export const StudentNav = [
 export type StudentSectionSlug = typeof StudentNav[number]["slug"];
 
 export const SuperAdminNav = [
-  { name: "Home", slug: "home", icon: "/icon/home.svg", url: "/SuperAdmin/home", showInSidebar: true },
-  { name: "Portal Login", slug:"portal-login", icon: "/icon/portallogin.svg", url: "/SuperAdmin/portal-login", showInSidebar: true },
-  { name: "Student Management", slug: "student-management", icon: "/icon/studentmanagement.svg", url: "/SuperAdmin/student-management", showInSidebar: true },
-  { name: "Staff Management", slug: "staff-management", icon: "/icon/staffmanagement.svg", url: "/SuperAdmin/staff-management", showInSidebar: true },
-  { name: "Exam Questions", slug: "exam-questions", icon: "/icon/examquestions.svg", url: "/SuperAdmin/exam-questions", showInSidebar: true },
-  { name: "Result Management", slug: "result-management", icon: "/icon/resultmanagement.svg", url: "/SuperAdmin/result-management", showInSidebar: true },
-  { name: "Timetable", slug: "timetable", icon: "/icon/timetable.svg", url: "/SuperAdmin/timetable", showInSidebar: true },
-  { name: "Receipts", slug: "receipts", icon: "/icon/receipts.svg", url: "/SuperAdmin/receipts", showInSidebar: true },
-  { name: "Payment Management", slug: "payment-management", icon: "/icon/paymentmanagement.svg", url: "/SuperAdmin/payment-management", showInSidebar: true },
-  { name: "Approvals", slug: "approvals", icon: "/icon/PendingApprovals.svg", url: "/SuperAdmin/approvals", showInSidebar: true },
-  { name: "Analytics & Insights", slug: "analyticsandinsights", icon: "/icon/analytics&insights.svg", url: "/SuperAdmin/analyticsandinsights", showInSidebar: true },
-  { name: "Notification", slug: "notification", icon: "/icon/notification.svg", url: "/SuperAdmin/notification", showInSidebar: false },
+  { name: "Home", slug: "home", icon: "/icon/home.svg", url: "/admin/home", showInSidebar: true },
+  { name: "Portal Login", slug:"portal-login", icon: "/icon/portallogin.svg", url: "/admin/portal-login", showInSidebar: true },
+  { name: "Student Management", slug: "student-management", icon: "/icon/studentmanagement.svg", url: "/admin/student-management", showInSidebar: true },
+  { name: "Staff Management", slug: "staff-management", icon: "/icon/staffmanagement.svg", url: "/admin/staff-management", showInSidebar: true },
+  { name: "Exam Questions", slug: "exam-questions", icon: "/icon/examquestions.svg", url: "/admin/exam-questions", showInSidebar: true },
+  { name: "Result Management", slug: "result-management", icon: "/icon/resultmanagement.svg", url: "/admin/result-management", showInSidebar: true },
+  { name: "Timetable", slug: "timetable", icon: "/icon/timetable.svg", url: "/admin/timetable", showInSidebar: true },
+  { name: "Receipts", slug: "receipts", icon: "/icon/receipts.svg", url: "/admin/receipts", showInSidebar: true },
+  { name: "Payment Management", slug: "payment-management", icon: "/icon/paymentmanagement.svg", url: "/admin/payment-management", showInSidebar: true },
+  { name: "Approvals", slug: "approvals", icon: "/icon/PendingApprovals.svg", url: "/admin/approvals", showInSidebar: true },
+  { name: "Analytics & Insights", slug: "analyticsandinsights", icon: "/icon/analytics&insights.svg", url: "/admin/analyticsandinsights", showInSidebar: true },
+  { name: "Notification", slug: "notification", icon: "/icon/notification.svg", url: "/admin/notification", showInSidebar: false },
 ] as const;
 
 export type SuperAdminSectionSlug = typeof SuperAdminNav[number]["slug"];
@@ -45,14 +45,14 @@ export type SuperAdminSectionSlug = typeof SuperAdminNav[number]["slug"];
  * approval requests, tracked under "My Requests".
  */
 export const AdminNav = [
-  { name: "Home", slug: "home", icon: "/icon/home.svg", url: "/Admin/home", showInSidebar: true },
-  { name: "Timetable", slug: "timetable", icon: "/icon/timetable.svg", url: "/Admin/timetable", showInSidebar: true },
-  { name: "Student Management", slug: "student-management", icon: "/icon/studentmanagement.svg", url: "/Admin/student-management", showInSidebar: true },
-  { name: "Result Management", slug: "result-management", icon: "/icon/resultmanagement.svg", url: "/Admin/result-management", showInSidebar: true },
-  { name: "Payment", slug: "payment", icon: "/icon/payments.svg", url: "/Admin/payment", showInSidebar: true },
-  { name: "My Requests", slug: "my-requests", icon: "/icon/PendingApprovals.svg", url: "/Admin/my-requests", showInSidebar: true },
-  { name: "Profile", slug: "profile", icon: "/icon/profile.svg", url: "/Admin/profile", showInSidebar: true },
-  { name: "Notification", slug: "notification", icon: "/icon/notification.svg", url: "/Admin/notification", showInSidebar: false },
+  { name: "Home", slug: "home", icon: "/icon/home.svg", url: "/staff/home", showInSidebar: true },
+  { name: "Timetable", slug: "timetable", icon: "/icon/timetable.svg", url: "/staff/timetable", showInSidebar: true },
+  { name: "Student Management", slug: "student-management", icon: "/icon/studentmanagement.svg", url: "/staff/student-management", showInSidebar: true },
+  { name: "Result Management", slug: "result-management", icon: "/icon/resultmanagement.svg", url: "/staff/result-management", showInSidebar: true },
+  { name: "Payment", slug: "payment", icon: "/icon/payments.svg", url: "/staff/payment", showInSidebar: true },
+  { name: "My Requests", slug: "my-requests", icon: "/icon/PendingApprovals.svg", url: "/staff/my-requests", showInSidebar: true },
+  { name: "Profile", slug: "profile", icon: "/icon/profile.svg", url: "/staff/profile", showInSidebar: true },
+  { name: "Notification", slug: "notification", icon: "/icon/notification.svg", url: "/staff/notification", showInSidebar: false },
 ] as const;
 
 export type AdminSectionSlug = typeof AdminNav[number]["slug"];

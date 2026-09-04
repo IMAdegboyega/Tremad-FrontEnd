@@ -49,7 +49,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <div className="bg-white p-2 rounded-full cursor-pointer">
                   <Bell
                     className="cursor-pointer"
-                    onClick={() => (window.location.href = '/Admin/notification')}
+                    onClick={() => (window.location.href = '/staff/notification')}
                   />
                 </div>
                 <ProfileCard />
@@ -66,7 +66,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <div className="flex items-center">
                 <button
                   className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center"
-                  onClick={() => (window.location.href = '/Admin/notification')}
+                  onClick={() => (window.location.href = '/staff/notification')}
                 >
                   <Bell className="w-5 h-5" />
                 </button>

@@ -47,7 +47,7 @@ export default function SideBar({ navItems, showHelpCard = false }: SidebarProps
         ))}
 
         {/* "Need Help?" promo card — sits between the nav list and logout with a
-            generous gap so it reads as a distinct block. Student/Admin only. */}
+            generous gap so it reads as a distinct block. Student/staff only. */}
         {showHelpCard && (
           <div className='mt-10 rounded-2xl bg-primary-green-hover p-4 text-white'>
             <h3 className='text-lg font-semibold'>Need Help?</h3>

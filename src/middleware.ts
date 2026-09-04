@@ -16,9 +16,9 @@ const PUBLIC_ROUTES = [
   '/reset-success',
   '/coming-soon',
   '/landing-page',
-  '/SuperAdmin/sign-in',
-  '/Admin/sign-in',
-  '/Admin/reset-password',
+  '/admin/sign-in',
+  '/staff/sign-in',
+  '/staff/reset-password',
 ];
 
 // Auth pages — if user IS logged in, redirect them away from these
@@ -28,18 +28,18 @@ const AUTH_PAGES = [
   '/check-email',
   '/reset-password',
   '/reset-success',
-  '/SuperAdmin/sign-in',
-  '/Admin/sign-in',
-  '/Admin/reset-password',
+  '/admin/sign-in',
+  '/staff/sign-in',
+  '/staff/reset-password',
 ];
 
 // Protected route prefixes and their login redirects
 const PROTECTED_ZONES: { prefix: string; loginPath: string; homePath: string }[] = [
-  { prefix: '/SuperAdmin', loginPath: '/SuperAdmin/sign-in', homePath: '/SuperAdmin/home' },
-  { prefix: '/Admin', loginPath: '/Admin/sign-in', homePath: '/Admin/home' },
+  { prefix: '/admin', loginPath: '/admin/sign-in', homePath: '/admin/home' },
+  { prefix: '/staff', loginPath: '/staff/sign-in', homePath: '/staff/home' },
 ];
 
-// Student routes (no prefix — everything else that's not SuperAdmin/Admin)
+// Student routes (no prefix — everything else that's not SuperAdmin/staff)
 const STUDENT_LOGIN = '/sign-in';
 const STUDENT_HOME = '/home';
 
@@ -79,18 +79,18 @@ export function middleware(req: NextRequest) {
     if (hasAuthCookie) {
       const role = req.cookies.get('tremad_user_role')?.value;
 
-      const isSuperAdminOnSuperAdminAuth = role === 'super_admin' && pathname.startsWith('/SuperAdmin/sign-in');
-      const isAdminOnAdminAuth = role === 'admin' && pathname.startsWith('/Admin/sign-in');
+      const isSuperAdminOnSuperAdminAuth = role === 'super_admin' && pathname.startsWith('/admin/sign-in');
+      const isAdminOnAdminAuth = role === 'admin' && pathname.startsWith('/staff/sign-in');
       const isStudentOnStudentAuth = role === 'student' && (
         pathname === '/sign-in' || pathname === '/sign-in/' ||
         pathname === '/forgot-password' || pathname === '/forgot-password/'
       );
 
       if (isSuperAdminOnSuperAdminAuth) {
-        return NextResponse.redirect(new URL('/SuperAdmin/home', req.url));
+        return NextResponse.redirect(new URL('/admin/home', req.url));
       }
       if (isAdminOnAdminAuth) {
-        return NextResponse.redirect(new URL('/Admin/home', req.url));
+        return NextResponse.redirect(new URL('/staff/home', req.url));
       }
       if (isStudentOnStudentAuth) {
         return NextResponse.redirect(new URL('/home', req.url));

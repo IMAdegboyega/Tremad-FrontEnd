@@ -69,7 +69,7 @@ export default function Home({ children }: HomeProps) {
                 <div className='bg-white p-2 rounded-full cursor-pointer'>
                   <Bell
                     className='cursor-pointer'
-                    onClick={() => window.location.href = '/SuperAdmin/notification'}
+                    onClick={() => window.location.href = '/admin/notification'}
                   />
                 </div>
                 <ProfileCard />
@@ -91,7 +91,7 @@ export default function Home({ children }: HomeProps) {
               <div className="flex items-center">
                 <button
                   className='p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center'
-                  onClick={() => window.location.href = '/SuperAdmin/notification'}
+                  onClick={() => window.location.href = '/admin/notification'}
                 >
                   <Bell className='w-5 h-5' />
                 </button>

@@ -219,9 +219,9 @@ const handleErrorResponse = async <T>(response: Response): Promise<never> => {
     if (typeof window !== 'undefined') {
       const path = window.location.pathname;
       if (path.includes('SuperAdmin')) {
-        window.location.href = '/SuperAdmin/sign-in';
+        window.location.href = '/admin/sign-in';
       } else if (path.includes('Admin')) {
-        window.location.href = '/Admin/sign-in';
+        window.location.href = '/staff/sign-in';
       } else {
         window.location.href = '/sign-in';
       }

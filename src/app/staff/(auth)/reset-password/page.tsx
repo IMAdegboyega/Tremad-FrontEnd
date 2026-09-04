@@ -1,4 +1,4 @@
-// src/app/Admin/(auth)/reset-password/page.tsx
+// src/app/staff/(auth)/reset-password/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -48,7 +48,7 @@ export default function AdminResetPassword() {
 
     if (!userId) {
       setError('Session expired. Please sign in again.');
-      router.push('/Admin/sign-in');
+      router.push('/staff/sign-in');
       return;
     }
 
@@ -61,7 +61,7 @@ export default function AdminResetPassword() {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('tremad_password_change_userId');
         }
-        router.push('/Admin/home');
+        router.push('/staff/home');
       } else {
         setError(result?.message || 'Failed to change password. Please try again.');
       }

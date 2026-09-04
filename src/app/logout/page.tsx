@@ -45,9 +45,9 @@ export default function LogoutPage() {
 
       // Redirect to appropriate sign-in page
       if (role === 'super_admin') {
-        router.replace('/SuperAdmin/sign-in');
+        router.replace('/admin/sign-in');
       } else if (role === 'admin') {
-        router.replace('/Admin/sign-in');
+        router.replace('/staff/sign-in');
       } else {
         router.replace('/sign-in');
       }

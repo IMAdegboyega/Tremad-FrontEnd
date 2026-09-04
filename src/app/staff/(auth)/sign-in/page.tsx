@@ -1,4 +1,4 @@
-// src/app/Admin/(auth)/sign-in/page.tsx
+// src/app/staff/(auth)/sign-in/page.tsx
 'use client';
 
 import { useState } from 'react';
@@ -33,10 +33,10 @@ export default function AdminSignIn() {
           if (userId && typeof window !== 'undefined') {
             localStorage.setItem('tremad_password_change_userId', userId);
           }
-          router.push('/Admin/reset-password');
+          router.push('/staff/reset-password');
           return;
         }
-        router.push('/Admin/home');
+        router.push('/staff/home');
       } else {
         setError(result.message || 'Login failed');
       }

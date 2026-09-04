@@ -1,4 +1,4 @@
-// src/app/SuperAdmin/(auth)/sign-in/page.tsx
+// src/app/admin/(auth)/sign-in/page.tsx
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -36,7 +36,7 @@ export default function SuperAdminSignIn() {
       const result = await superAdminGoogleLogin(response.credential);
 
       if (result.success && result.data) {
-        router.push('/SuperAdmin/home');
+        router.push('/admin/home');
       } else {
         setError(result.message || 'Login failed');
       }
