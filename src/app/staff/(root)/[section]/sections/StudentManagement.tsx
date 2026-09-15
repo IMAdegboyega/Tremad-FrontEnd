@@ -10,6 +10,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { CLASS_SECTIONS } from '@/Constants/classes';
 import {
   getAssignedStudents,
   submitStudentCreationRequest,
@@ -19,6 +20,11 @@ import type { CreateStudentData } from '@/lib/api/superAdmin.service';
 
 const StudentManagement = () => {
   const [students, setStudents] = useState<AssignedStudent[]>([]);
+  // The grades this teacher is assigned to — they can only request students
+  // for their own classes, so the class picker is built from these.
+  const [classes, setClasses] = useState<string[]>([]);
+  const [grade, setGrade] = useState('');
+  const [section, setSection] = useState('A');
   const [loading, setLoading] = useState(true);
   const [errored, setErrored] = useState(false);
   const [searchInput, setSearchInput] = useState('');
@@ -45,7 +51,10 @@ const StudentManagement = () => {
     try {
       const res = await getAssignedStudents({ search: search || undefined, limit: 50 });
       if (res?.success && res.data) {
-        setStudents((res.data as any).students || []);
+        setStudents(res.data.students || []);
+        const list = res.data.classes || [];
+        setClasses(list);
+        setGrade((g) => g || list[0] || '');
         setErrored(false);
       } else {
         setErrored(true);
@@ -64,16 +73,20 @@ const StudentManagement = () => {
 
   const submit = async () => {
     setFormError('');
-    if (!form.email.trim() || !form.firstName.trim() || !form.lastName.trim() || !form.className.trim()) {
+    // Students are stored with their section ("JSS 1 A"); the teacher picks the
+    // grade from their own assignments and then the section.
+    const className = grade ? `${grade} ${section}`.trim() : '';
+    if (!form.email.trim() || !form.firstName.trim() || !form.lastName.trim() || !className) {
       setFormError('Email, first name, last name and class are required.');
       return;
     }
     setSaving(true);
     try {
-      const res = await submitStudentCreationRequest(form);
+      const res = await submitStudentCreationRequest({ ...form, className });
       if (res?.success) {
         setOpen(false);
         setForm({ email: '', firstName: '', lastName: '', className: '' });
+        setSection('A');
         setBanner('Student creation request sent to the admin for approval.');
       } else {
         setFormError(res?.message || 'Could not submit the request.');
@@ -147,7 +160,7 @@ const StudentManagement = () => {
                       <p className="text-xs text-gray-500">{s.email}</p>
                     </td>
                     <td className="px-4 py-3 text-gray-600">{s.admissionNumber || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">{s.className || '—'}</td>
+                    <td className="px-4 py-3 text-gray-600">{s.currentClass || s.className || '—'}</td>
                     <td className="px-4 py-3">
                       {s.isActive === false ? (
                         <span className="text-xs text-gray-400">Inactive</span>
@@ -181,9 +194,23 @@ const StudentManagement = () => {
             <Field label="Email">
               <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={inputCls} />
             </Field>
-            <Field label="Class">
-              <input value={form.className} onChange={(e) => setForm({ ...form, className: e.target.value })} placeholder="e.g. JSS1A" className={inputCls} />
-            </Field>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Class">
+                <select value={grade} onChange={(e) => setGrade(e.target.value)} className={inputCls}>
+                  {classes.length === 0 && <option value="">No classes assigned</option>}
+                  {classes.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="Section">
+                <select value={section} onChange={(e) => setSection(e.target.value)} className={inputCls}>
+                  {CLASS_SECTIONS.map((sec) => (
+                    <option key={sec} value={sec}>{sec}</option>
+                  ))}
+                </select>
+              </Field>
+            </div>
             <p className="text-xs text-gray-400">
               This is submitted to the admin for approval — the student is created once approved.
             </p>

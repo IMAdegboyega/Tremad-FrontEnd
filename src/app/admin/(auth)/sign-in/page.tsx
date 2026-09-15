@@ -1,10 +1,11 @@
 // src/app/admin/(auth)/sign-in/page.tsx
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { superAdminGoogleLogin } from '@/lib/api';
+import TremadLoader, { useDeferredLoading } from '@/components/shared/TremadLoader';
 
 declare global {
   interface Window {
@@ -23,6 +24,11 @@ declare global {
 export default function SuperAdminSignIn() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // Set the moment we start navigating away. `router.push` resolves long
+  // before the next route paints, so clearing `loading` in `finally` drops
+  // the loader and repaints THIS page for a second or two first. The ref (not
+  // state) is deliberate: it must be readable inside the same tick.
+  const navigatingRef = useRef(false);
   const [googleReady, setGoogleReady] = useState(false);
   const router = useRouter();
 
@@ -36,6 +42,7 @@ export default function SuperAdminSignIn() {
       const result = await superAdminGoogleLogin(response.credential);
 
       if (result.success && result.data) {
+        navigatingRef.current = true;
         router.push('/admin/home');
       } else {
         setError(result.message || 'Login failed');
@@ -53,7 +60,8 @@ export default function SuperAdminSignIn() {
         setError(err.message || 'Something went wrong. Please try again.');
       }
     } finally {
-      setLoading(false);
+      // Stay up through the route change — see navigatingRef above.
+      if (!navigatingRef.current) setLoading(false);
     }
   }, [router]);
 
@@ -100,8 +108,17 @@ export default function SuperAdminSignIn() {
     };
   }, [GOOGLE_CLIENT_ID, handleGoogleResponse]);
 
+  // Deferred so a fast response doesn't strobe the loader on and off, and
+  // held for a minimum beat once shown. See useDeferredLoading.
+  const showLoader = useDeferredLoading(loading);
+
   return (
     <div className="w-full">
+      {/* Overlays the form rather than replacing it, so the translucent
+          backdrop has something to show through — and the fields stay
+          exactly where they were if the request fails. */}
+      {showLoader && <TremadLoader message="Verifying your account" />}
+
       {/* School Logo */}
       <div className="flex justify-center mb-6">
         <div className="flex items-center justify-center">
@@ -129,14 +146,6 @@ export default function SuperAdminSignIn() {
         </div>
       )}
 
-      {/* Loading State */}
-      {loading && (
-        <div className="mb-6 flex items-center justify-center gap-3">
-          <div className="w-5 h-5 border-2 border-green-700 border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm text-gray-600">Verifying your account...</p>
-        </div>
-      )}
-
       {/* Google Sign-In Button */}
       <div className="flex justify-center">
         <div id="google-signin-button" />
@@ -148,15 +157,6 @@ export default function SuperAdminSignIn() {
           <div className="w-[400px] h-[44px] bg-gray-100 rounded-md animate-pulse" />
         </div>
       )}
-
-      {/* Info text */}
-      <div className="mt-10 text-center">
-        <p className="text-xs text-gray-400">
-          Only whitelisted Google accounts can access this portal.
-          <br />
-          Contact the system administrator if you need access.
-        </p>
-      </div>
     </div>
   );
 }

@@ -30,6 +30,8 @@ export const SuperAdminNav = [
   { name: "Timetable", slug: "timetable", icon: "/icon/timetable.svg", url: "/admin/timetable", showInSidebar: true },
   { name: "Receipts", slug: "receipts", icon: "/icon/receipts.svg", url: "/admin/receipts", showInSidebar: true },
   { name: "Payment Management", slug: "payment-management", icon: "/icon/paymentmanagement.svg", url: "/admin/payment-management", showInSidebar: true },
+  { name: "Admissions", slug: "admissions", icon: "/icon/studentmanagement.svg", url: "/admin/admissions", showInSidebar: true },
+  { name: "Public Content", slug: "public-content", icon: "/icon/examquestions.svg", url: "/admin/public-content", showInSidebar: true },
   { name: "Approvals", slug: "approvals", icon: "/icon/PendingApprovals.svg", url: "/admin/approvals", showInSidebar: true },
   { name: "Analytics & Insights", slug: "analyticsandinsights", icon: "/icon/analytics&insights.svg", url: "/admin/analyticsandinsights", showInSidebar: true },
   { name: "Notification", slug: "notification", icon: "/icon/notification.svg", url: "/admin/notification", showInSidebar: false },

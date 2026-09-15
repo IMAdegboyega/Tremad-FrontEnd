@@ -14,6 +14,11 @@ import { API } from './endpoints';
 export interface Student {
   _id: string;
   admissionNumber: string;
+  /**
+   * Learner's Identification Number — issued by government, not by Tremad.
+   * Blank until the school receives it; only an admin may set it.
+   */
+  lin?: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -57,6 +62,8 @@ export interface CreateStudentData {
   email: string;
   firstName: string;
   lastName: string;
+  /** Government-issued LIN, if the school already has it. */
+  lin?: string;
   // Academic
   className: string;
   // Demographics
@@ -105,6 +112,21 @@ export interface Staff {
   hireDate?: string;
   profileImage?: string;
   profilePicture?: string;
+  /** Local Government */
+  city?: string;
+  /** State of origin */
+  state?: string;
+  country?: string;
+  /** Subjects they teach. */
+  subjects?: string[];
+  /** GRADES they teach, e.g. ["JSS 1"] — a grade covers all its sections. */
+  assignedClasses?: string[];
+  nextOfKin?: {
+    name?: string;
+    relationship?: string;
+    phone?: string;
+    email?: string;
+  };
   isActive: boolean;
   createdAt: string;
   lastLogin?: string;
@@ -264,18 +286,31 @@ export interface DashboardAnalytics {
 // ============================================================================
 
 /** One period in a class timetable (as returned by the SA list endpoint). */
+/**
+ * Lessons and exams share one shape. For `type: 'exam'`, `teacherId` is the
+ * invigilator and `room` is the exam hall.
+ */
+export type TimetableEntryType = 'class' | 'exam';
+
 export interface SATimetableEntry {
   _id: string;
   className: string;
   subject: string;
-  teacherId: string;
-  teacherName: string;
+  /** Teacher, or invigilator on an exam. Null until someone is assigned. */
+  teacherId: string | null;
+  teacherName: string | null;
   day: 'Monday' | 'Tuesday' | 'Wednesday' | 'Thursday' | 'Friday';
   startTime: string; // HH:MM
   endTime: string; // HH:MM
+  /** Room, or exam hall on an exam. */
   room: string | null;
   academicSession: string;
   term: 'First' | 'Second' | 'Third';
+  type: TimetableEntryType;
+  /** ISO date — exams only. `day` is derived from this server-side. */
+  examDate: string | null;
+  /** False while the timetable is offline for maintenance (hidden from students). */
+  isPublished: boolean;
 }
 
 export interface TimetableSummary {
@@ -286,10 +321,29 @@ export interface TimetableSummary {
   hoursPerTeacher: Array<{ teacher: string; hours: number }>;
 }
 
+/**
+ * Exam stats. Separate from TimetableSummary because lesson metrics
+ * ("free periods", "hours per week") don't mean anything for exams.
+ */
+export interface ExamSummary {
+  totalExams: number;
+  examDays: number;
+  subjects: number;
+  missingInvigilator: number;
+  missingHall: number;
+  totalHours: number;
+  firstDate: string | null;
+  lastDate: string | null;
+}
+
 export interface TimetableListResponse {
   className: string;
   entries: SATimetableEntry[];
   summary: TimetableSummary;
+  /** Present only when listing exams. */
+  examSummary: ExamSummary | null;
+  /** Whether students can currently see this timetable. */
+  isPublished: boolean;
 }
 
 export interface TeacherOption {
@@ -301,13 +355,18 @@ export interface TeacherOption {
 export interface TimetableEntryInput {
   className: string;
   subject: string;
-  teacherId: string;
+  /** Optional — a period can be scheduled before staff are assigned. */
+  teacherId?: string;
   day: SATimetableEntry['day'];
   startTime: string;
   endTime: string;
   room?: string;
   academicSession: string;
   term: SATimetableEntry['term'];
+  /** Defaults to 'class' server-side. */
+  type?: TimetableEntryType;
+  /** Required when type is 'exam' (YYYY-MM-DD). The weekday is derived from it. */
+  examDate?: string;
 }
 
 // ============================================================================
@@ -679,6 +738,23 @@ export const createStaff = async (
 };
 
 /**
+ * Upload (or replace) any user's profile photo, as an admin.
+ *
+ * Note the ordering constraint this implies for the Add forms: the user has to
+ * exist before their photo can be attached, because the file is keyed by user
+ * id on Cloudinary. So creation is always create-then-upload, and a failed
+ * upload must not fail the creation — the account is already real at that point.
+ */
+export const uploadUserAvatar = async (
+  userId: string,
+  file: File
+): Promise<ApiResponse<{ profileImage: string; profilePicture: string }>> => {
+  const form = new FormData();
+  form.append('avatar', file);
+  return apiClient.upload(API.SUPER_ADMIN.USERS.UPLOAD_AVATAR(userId), form);
+};
+
+/**
  * Reset user password
  */
 export const resetUserPassword = async (
@@ -805,6 +881,197 @@ export const getStaff = async (
 ): Promise<ApiResponse<Staff>> => {
   return apiClient.get(API.SUPER_ADMIN.STAFF.GET_ONE(staffId));
 };
+
+/**
+ * Edit a staff member. This is how `assignedClasses` gets set on teachers who
+ * were created before that field existed — without it they see "no classes
+ * assigned" and their portal stays empty.
+ */
+export const updateStaff = async (
+  staffId: string,
+  data: Partial<CreateStaffData> & { isActive?: boolean }
+): Promise<ApiResponse<{ staff: Staff }>> => {
+  return apiClient.put(API.SUPER_ADMIN.STAFF.UPDATE(staffId), data);
+};
+
+/**
+ * The auto-generated temporary password for a staff member. Viewable only
+ * until they set their own — `available: false` after that. Every read is
+ * audited server-side.
+ */
+export const getStaffTempPassword = async (
+  staffId: string
+): Promise<
+  ApiResponse<{ available: boolean; tempPassword?: string; message?: string }>
+> => {
+  return apiClient.get(API.SUPER_ADMIN.STAFF.TEMP_PASSWORD(staffId));
+};
+
+
+// ============================================================================
+// ADMISSIONS INBOX + PUBLIC CONTENT BACK-OFFICE
+// ============================================================================
+
+export type ApplicationStatus =
+  | 'payment_pending'
+  | 'submitted'
+  | 'under_review'
+  | 'invited'
+  | 'offered'
+  | 'declined'
+  | 'withdrawn';
+
+export interface Application {
+  _id: string;
+  reference: string;
+  firstName: string;
+  lastName: string;
+  applicantName?: string;
+  dateOfBirth?: string;
+  gender?: string;
+  classApplyingFor: string;
+  previousSchool?: string;
+  guardianName: string;
+  guardianRelationship?: string;
+  guardianPhone: string;
+  guardianEmail: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  preferredContact?: 'visit' | 'call' | 'email';
+  notes?: string;
+  status: ApplicationStatus;
+  reviewNote?: string;
+  reviewedAt?: string;
+  payment?: {
+    required: boolean;
+    amount?: number;
+    currency?: string;
+    status: 'pending' | 'paid' | 'failed' | 'waived';
+    paidAt?: string;
+    channel?: string;
+  };
+  submittedAt?: string;
+  createdAt: string;
+}
+
+export interface ContactMessage {
+  _id: string;
+  kind: 'enquiry' | 'complaint' | 'feedback';
+  name: string;
+  email: string;
+  phone?: string;
+  preferredContact?: 'visit' | 'call' | 'email';
+  subject?: string;
+  message: string;
+  relatedStudentName?: string;
+  status: 'new' | 'read' | 'responded' | 'closed';
+  priority: 'low' | 'medium' | 'high';
+  adminNote?: string;
+  createdAt: string;
+}
+
+/** Mirrors SchoolContent on the backend — see public.service.ts for the
+ *  per-kind meaning of each column. */
+export interface AdminContentItem {
+  _id?: string;
+  title: string;
+  subtitle?: string;
+  amount?: number | null;
+  term?: string;
+  note?: string;
+  optional?: boolean;
+}
+
+export interface AdminContentDoc {
+  _id: string;
+  kind: 'books' | 'bills' | 'scheme';
+  className: string;
+  academicYear: string;
+  studentType: 'fresh' | 'returning' | 'all';
+  note?: string;
+  items: AdminContentItem[];
+  total?: number;
+  isPublished: boolean;
+  updatedAt: string;
+}
+
+/**
+ * Applications. Abandoned checkouts are hidden unless `includeUnpaid` is set —
+ * someone who opened the form and never paid is not an applicant.
+ */
+export const getApplications = async (params?: {
+  status?: string;
+  className?: string;
+  search?: string;
+  includeUnpaid?: boolean;
+  page?: number;
+  limit?: number;
+}): Promise<
+  ApiResponse<{
+    applications: Application[];
+    counts: Record<string, number>;
+    pagination: { total: number; page: number; pages: number; limit: number };
+  }>
+> => apiClient.get(API.SUPER_ADMIN.ADMISSIONS.LIST, params);
+
+export const getApplication = async (
+  id: string
+): Promise<ApiResponse<{ application: Application }>> =>
+  apiClient.get(API.SUPER_ADMIN.ADMISSIONS.GET_ONE(id));
+
+export const updateApplicationStatus = async (
+  id: string,
+  data: { status: ApplicationStatus; reviewNote?: string }
+): Promise<ApiResponse<{ application: Application }>> =>
+  apiClient.put(API.SUPER_ADMIN.ADMISSIONS.UPDATE_STATUS(id), data);
+
+/** Contact / complaints / feedback inbox. */
+export const getContactMessages = async (params?: {
+  kind?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}): Promise<
+  ApiResponse<{
+    messages: ContactMessage[];
+    unread: number;
+    counts: Record<string, number>;
+    pagination: { total: number; page: number; pages: number; limit: number };
+  }>
+> => apiClient.get(API.SUPER_ADMIN.MESSAGES.LIST, params);
+
+export const updateContactMessage = async (
+  id: string,
+  data: { status?: string; adminNote?: string; priority?: string }
+): Promise<ApiResponse<{ contactMessage: ContactMessage }>> =>
+  apiClient.put(API.SUPER_ADMIN.MESSAGES.UPDATE(id), data);
+
+/** Public content — drafts included, unlike the public endpoint. */
+export const getAdminContent = async (
+  kind: 'books' | 'bills' | 'scheme',
+  params?: { className?: string; academicYear?: string }
+): Promise<ApiResponse<{ kind: string; content: AdminContentDoc[] }>> =>
+  apiClient.get(API.SUPER_ADMIN.CONTENT.LIST(kind), params);
+
+/** Upsert by (kind, class, year, studentType). Replaces the rows. */
+export const saveAdminContent = async (
+  kind: 'books' | 'bills' | 'scheme',
+  data: {
+    className: string;
+    academicYear?: string;
+    studentType?: 'fresh' | 'returning' | 'all';
+    items: AdminContentItem[];
+    note?: string;
+    isPublished?: boolean;
+  }
+): Promise<ApiResponse<{ content: AdminContentDoc }>> =>
+  apiClient.put(API.SUPER_ADMIN.CONTENT.SAVE(kind), data);
+
+export const deleteAdminContent = async (
+  contentId: string
+): Promise<ApiResponse<null>> =>
+  apiClient.delete(API.SUPER_ADMIN.CONTENT.DELETE(contentId));
 
 // ============================================================================
 // ADMISSION POOL
@@ -952,6 +1219,8 @@ export const listTimetable = async (params: {
   className: string;
   academicSession?: string;
   term?: string;
+  /** 'class' (default) for lessons, 'exam' for the exam timetable. */
+  type?: TimetableEntryType;
 }): Promise<ApiResponse<TimetableListResponse>> => {
   return apiClient.get(API.SUPER_ADMIN.TIMETABLE.LIST, params);
 };
@@ -976,6 +1245,22 @@ export const deleteTimetableEntry = async (
   id: string
 ): Promise<ApiResponse<{ timetableId: string }>> => {
   return apiClient.delete(API.SUPER_ADMIN.TIMETABLE.DELETE(id));
+};
+
+/**
+ * Take a class's timetable (or exam timetable) offline for maintenance, or put
+ * it back online. Offline hides it from students only — admins keep full access.
+ */
+export const setTimetablePublished = async (
+  className: string,
+  type: TimetableEntryType,
+  isPublished: boolean
+): Promise<ApiResponse<{ className: string; isPublished: boolean; updated: number }>> => {
+  return apiClient.patch(API.SUPER_ADMIN.TIMETABLE.PUBLISH, {
+    className,
+    type,
+    isPublished,
+  });
 };
 
 /** Class names the SA can build timetables for (classes students belong to). */
@@ -1274,6 +1559,7 @@ const superAdminService = {
   // User Management
   createStudent,
   createStaff,
+  uploadUserAvatar,
   resetUserPassword,
   forceLogoutUser,
   removeUser,
@@ -1287,8 +1573,18 @@ const superAdminService = {
   getStudentTempPassword,
 
   // Staff Management
+  getApplications,
+  getApplication,
+  updateApplicationStatus,
+  getContactMessages,
+  updateContactMessage,
+  getAdminContent,
+  saveAdminContent,
+  deleteAdminContent,
   getAllStaff,
   getStaff,
+  updateStaff,
+  getStaffTempPassword,
   
   // Admission Pool
   getAdmissionPoolStatus,

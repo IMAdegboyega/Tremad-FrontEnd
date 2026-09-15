@@ -9,6 +9,11 @@ interface DeactivateAccountModalProps {
   onClose: () => void;
   studentId: string;
   studentName: string;
+  /**
+   * Noun used in the copy. The behaviour is role-agnostic (it's just a User),
+   * so staff reuse this with subjectNoun="staff member".
+   */
+  subjectNoun?: string;
   /** Optional callback after the deactivation succeeds (e.g. refetch list). */
   onDeactivated?: () => void;
 }
@@ -26,6 +31,7 @@ const DeactivateAccountModal: React.FC<DeactivateAccountModalProps> = ({
   onClose,
   studentId,
   studentName,
+  subjectNoun = 'student',
   onDeactivated,
 }) => {
   const [showSuccess, setShowSuccess] = useState(false);
@@ -46,7 +52,7 @@ const DeactivateAccountModal: React.FC<DeactivateAccountModalProps> = ({
 
   const handleDeactivate = async () => {
     if (!studentId) {
-      setError('Missing student ID — refresh and try again.');
+      setError(`Missing ${subjectNoun} ID — refresh and try again.`);
       return;
     }
     setLoading(true);

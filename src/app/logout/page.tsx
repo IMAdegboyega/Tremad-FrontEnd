@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { removeToken, getUser } from '@/lib/api';
 import { API_BASE_URL } from '@/lib/api/endpoints';
+import TremadLoader from '@/components/shared/TremadLoader';
 
 export default function LogoutPage() {
   const router = useRouter();
@@ -56,13 +57,8 @@ export default function LogoutPage() {
     performLogout();
   }, [router]);
 
-  // Brief loading state while logout processes
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="flex items-center gap-3">
-        <div className="w-5 h-5 border-2 border-green-700 border-t-transparent rounded-full animate-spin" />
-        <p className="text-gray-600">Signing out...</p>
-      </div>
-    </div>
-  );
+  // No deferred timing here: this route exists ONLY to show the wait, so
+  // there is nothing to flash against — hiding it for the first 200ms would
+  // just leave a blank white screen.
+  return <TremadLoader message="Signing you out" />;
 }

@@ -54,6 +54,9 @@ export {
   // Teacher
   teacherLogin,
   teacherChangePassword,
+  storePasswordChangeHandoff,
+  getPasswordChangeHandoff,
+  clearPasswordChangeHandoff,
   teacherLogout,
 } from './auth.service';
 
@@ -74,6 +77,7 @@ export {
   // User Management
   createStudent,
   createStaff,
+  uploadUserAvatar,
   resetUserPassword,
   forceLogoutUser,
   removeUser,

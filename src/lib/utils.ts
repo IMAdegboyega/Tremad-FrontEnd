@@ -120,3 +120,21 @@ export function getStudentAvatarUrl(student: AvatarSeed): string | null {
   const seed = encodeURIComponent(`${gender || 'neutral'}-${seedRoot}`)
   return `https://api.dicebear.com/9.x/${style}/svg?seed=${seed}`
 }
+
+/**
+ * The uploaded photo for a user, or null.
+ *
+ * Unlike `getStudentAvatarUrl` this never falls back to a generated cartoon.
+ * Staff are shown as a real photo or their initials — a DiceBear character
+ * next to a teacher's name in an admin table reads as placeholder data, which
+ * is exactly what we spent this project removing.
+ */
+export function getUploadedAvatarUrl(user: {
+  profileImage?: string | null
+  profilePicture?: string | null
+} | null | undefined): string | null {
+  if (!user) return null
+  const uploaded = user.profileImage || user.profilePicture || null
+  // '/img/avatar.jpg' is the legacy static placeholder, not a real upload.
+  return uploaded && uploaded !== '/img/avatar.jpg' ? uploaded : null
+}

@@ -11,7 +11,7 @@ export default function AuthLayout({
       {/* Left side - School Building Image */}
       <div className="hidden lg:flex lg:w-1/2 relative rounded-2xl overflow-hidden mr-6">
         <Image
-          src="/img/tremadschool.png" // You'll need to add your school building image
+          src="/TREMAD-new-file/8.png" // You'll need to add your school building image
           alt="TREMAD School Building"
           fill
           className="object-cover"

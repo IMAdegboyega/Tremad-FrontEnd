@@ -47,11 +47,13 @@ import {
   getAuditLogs,
   reactivateUser,
   getStudentTempPassword,
+  updateStudent,
   type Student,
   type AuditLog,
   type DashboardOverview,
 } from "@/lib/api/superAdmin.service";
 import { toTitleCase, getStudentAvatarUrl } from "@/lib/utils";
+import { getApiErrorMessage } from "@/lib/api/client";
 
 // ============================================================================
 // HELPERS
@@ -423,6 +425,12 @@ const StudentManagement: React.FC = () => {
                     {detailStudent.className && ` • ${detailStudent.className}`}
                     {detailStudent.email && ` • ${detailStudent.email}`}
                   </p>
+                  <LinEditor
+                    student={detailStudent}
+                    onSaved={(lin) =>
+                      setDetailStudent((prev) => (prev ? { ...prev, lin } : prev))
+                    }
+                  />
                 </div>
                 <span
                   className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium ${
@@ -987,6 +995,112 @@ const StudentAvatar: React.FC<{
   );
 };
 
+/**
+ * Inline LIN editor on the student detail card.
+ *
+ * The LIN is government-issued, so it usually arrives WEEKS after the student
+ * is created — an admin needs to add it to an existing record, not just at
+ * creation. Inline beats a whole edit mode for a single field.
+ *
+ * The unique index means a duplicate is a real possibility (two admins typing
+ * from the same sheet), so the 409 is surfaced verbatim rather than swallowed.
+ */
+const LinEditor: React.FC<{
+  student: Student;
+  onSaved: (lin: string) => void;
+}> = ({ student, onSaved }) => {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(student.lin || "");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  // Switching students must not carry the previous one's draft across.
+  useEffect(() => {
+    setValue(student.lin || "");
+    setEditing(false);
+    setError("");
+  }, [student._id, student.lin]);
+
+  const save = async () => {
+    setSaving(true);
+    setError("");
+    try {
+      const next = value.trim().toUpperCase();
+      const res = await updateStudent(student._id, { lin: next });
+      if (res?.success) {
+        onSaved(next);
+        setEditing(false);
+      } else {
+        setError(res?.message || "Could not save the LIN.");
+      }
+    } catch (err: any) {
+      setError(
+        err?.status === 409
+          ? err?.message || "That LIN is already recorded against another student."
+          : getApiErrorMessage(err, "Could not save the LIN."),
+      );
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!editing) {
+    return (
+      <p className="text-xs sm:text-sm text-gray-500 mt-1 flex items-center gap-2 justify-center sm:justify-start">
+        <span>
+          LIN:{" "}
+          {student.lin ? (
+            <span className="font-mono text-gray-800">{student.lin}</span>
+          ) : (
+            <span className="text-gray-400">not recorded yet</span>
+          )}
+        </span>
+        <button
+          onClick={() => setEditing(true)}
+          className="text-xs text-green-700 hover:underline"
+        >
+          {student.lin ? "Change" : "Add"}
+        </button>
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          value={value}
+          onChange={(e) => setValue(e.target.value.toUpperCase())}
+          placeholder="Learner's Identification Number"
+          className="text-sm border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500"
+        />
+        <button
+          onClick={save}
+          disabled={saving}
+          className="text-sm px-3 py-1.5 rounded-lg bg-green-700 text-white hover:bg-green-800 disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save"}
+        </button>
+        <button
+          onClick={() => {
+            setEditing(false);
+            setValue(student.lin || "");
+            setError("");
+          }}
+          disabled={saving}
+          className="text-sm px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+        >
+          Cancel
+        </button>
+      </div>
+      <p className="text-xs text-gray-400 mt-1">
+        Issued by government. Leave blank to clear it.
+      </p>
+      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
+    </div>
+  );
+};
+
 const DemographicsGrid: React.FC<{ student: Student }> = ({ student }) => {
   const rows: Array<{ label: string; value?: string }> = [
     { label: "Phone", value: student.phoneNumber },
@@ -1061,31 +1175,44 @@ const TempPasswordReveal: React.FC<{ studentId: string }> = ({ studentId }) => {
       setRevealed(false);
       return;
     }
+    // Already fetched once — show it again without a second round trip.
+    if (fetched) {
+      setRevealed(true);
+      return;
+    }
+
     // First reveal → fetch from the server.
-    if (!fetched) {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await getStudentTempPassword(studentId);
-        if (res?.success && res.data) {
-          if (res.data.available && res.data.tempPassword) {
-            setPassword(res.data.tempPassword);
-          } else {
-            setUnavailableMsg(
-              res.data.message || "This student has set their own password.",
-            );
-          }
+    setLoading(true);
+    setError("");
+    try {
+      const res = await getStudentTempPassword(studentId);
+      if (res?.success && res.data) {
+        if (res.data.available && res.data.tempPassword) {
+          setPassword(res.data.tempPassword);
         } else {
-          setError(res?.message || "Could not fetch password.");
+          setUnavailableMsg(
+            res.data.message || "This student has set their own password.",
+          );
         }
         setFetched(true);
-      } catch (err: any) {
-        setError(err?.message || "Network error. Please try again.");
-      } finally {
-        setLoading(false);
+        setRevealed(true);
+      } else {
+        setError(res?.message || "Could not fetch password.");
       }
+    } catch (err: any) {
+      // A 401 is the ADMIN's session lapsing, not a problem with this student.
+      // The client wipes the token on any 401, so a second click would report
+      // the confusing "No token provided" instead.
+      setError(
+        err?.status === 401
+          ? "Your session expired. Sign in again to reveal this."
+          : err?.message || "Network error. Please try again.",
+      );
+    } finally {
+      setLoading(false);
     }
-    setRevealed(true);
+    // `revealed` stays false on failure — flipping to "Hide" over an empty
+    // field made a failed fetch look like a blank password.
   };
 
   const handleCopy = async () => {

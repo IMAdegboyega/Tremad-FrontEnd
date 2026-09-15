@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, CalendarDays, ClipboardList } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -10,56 +10,30 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatExamDate } from '@/Constants/examDates';
+import {
+  getAcademicYearOptions,
+  getCurrentAcademicYear,
+} from '@/Constants/academicYears';
 import {
   getTeacherTimetable,
   getTeacherProfile,
   submitTimetableEntryRequest,
   type TeacherTimetableResponse,
+  type TeacherScheduleEntry,
   type TimetableEntryRequest,
 } from '@/lib/api/teacher.service';
 
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'] as const;
 const TERMS = ['First', 'Second', 'Third'] as const;
 
-const defaultSession = () => {
-  const now = new Date();
-  const y = now.getFullYear();
-  return now.getMonth() >= 7 ? `${y}/${y + 1}` : `${y - 1}/${y}`;
-};
-
-type FlatPeriod = {
-  _id: string;
-  day: string;
-  subject: string;
-  startTime: string;
-  endTime: string;
-  room?: string;
-  className?: string;
-};
-
-const flatten = (data: TeacherTimetableResponse | null): FlatPeriod[] => {
-  if (!data?.timetableByDay) return [];
-  const out: FlatPeriod[] = [];
-  Object.entries(data.timetableByDay).forEach(([day, list]) => {
-    (list || []).forEach((e: any) =>
-      out.push({
-        _id: e._id,
-        day,
-        subject: e.subject,
-        startTime: e.startTime,
-        endTime: e.endTime,
-        room: e.room,
-        className: e.className,
-      })
-    );
-  });
-  return out;
-};
+type Tab = 'lessons' | 'exams';
 
 const Timetable = () => {
   const [data, setData] = useState<TeacherTimetableResponse | null>(null);
   const [teacherId, setTeacherId] = useState('');
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<Tab>('lessons');
 
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -73,7 +47,7 @@ const Timetable = () => {
     startTime: '08:00',
     endTime: '09:00',
     room: '',
-    academicSession: defaultSession(),
+    academicSession: getCurrentAcademicYear(),
     term: 'First' as (typeof TERMS)[number],
   });
 
@@ -97,11 +71,13 @@ const Timetable = () => {
     load();
   }, []);
 
-  const periods = useMemo(() => flatten(data), [data]);
-  const classes = useMemo(
-    () => (data?.assignedClasses || []).map((c) => c.name).filter(Boolean),
-    [data]
-  );
+  // The API already separates the two — a teacher can be a subject teacher on
+  // one row and an invigilator on another.
+  const lessons = useMemo(() => data?.lessons ?? [], [data]);
+  const exams = useMemo(() => data?.exams ?? [], [data]);
+  const classes = useMemo(() => data?.assignedClasses ?? [], [data]);
+
+  const yearOptions = useMemo(() => getAcademicYearOptions(), []);
 
   const submit = async () => {
     setFormError('');
@@ -125,7 +101,7 @@ const Timetable = () => {
           startTime: form.startTime,
           endTime: form.endTime,
           room: form.room.trim() || undefined,
-          academicSession: form.academicSession.trim(),
+          academicSession: form.academicSession,
           term: form.term,
         },
       };
@@ -149,7 +125,7 @@ const Timetable = () => {
         <div>
           <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">My Timetable</h1>
           <p className="text-sm text-gray-500">
-            Your teaching schedule. Changes are sent to the admin for approval.
+            Your teaching schedule and the exams you&apos;re invigilating.
           </p>
         </div>
         <button
@@ -170,47 +146,34 @@ const Timetable = () => {
         </div>
       )}
 
+      {/* Lessons / Exams */}
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-lg w-fit">
+        <TabButton
+          active={tab === 'lessons'}
+          onClick={() => setTab('lessons')}
+          icon={<ClipboardList size={15} />}
+          label="Lessons"
+          count={loading ? undefined : lessons.length}
+        />
+        <TabButton
+          active={tab === 'exams'}
+          onClick={() => setTab('exams')}
+          icon={<CalendarDays size={15} />}
+          label="Exams"
+          count={loading ? undefined : exams.length}
+        />
+      </div>
+
       {loading ? (
         <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
           {DAYS.map((d) => (
             <Skeleton key={d} className="h-40 rounded-xl" />
           ))}
         </div>
-      ) : periods.length === 0 ? (
-        <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm">
-          You have no scheduled periods yet.
-        </div>
+      ) : tab === 'lessons' ? (
+        <LessonGrid lessons={lessons} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-          {DAYS.map((day) => {
-            const dayPeriods = periods
-              .filter((p) => p.day === day)
-              .sort((a, b) => a.startTime.localeCompare(b.startTime));
-            return (
-              <div key={day} className="bg-white rounded-xl shadow-sm flex flex-col">
-                <div className="px-3 py-2.5 border-b border-gray-100 flex items-center justify-between">
-                  <span className="font-semibold text-gray-800 text-sm">{day}</span>
-                  <span className="text-xs text-gray-400">{dayPeriods.length}</span>
-                </div>
-                <div className="p-2 space-y-2 min-h-[80px]">
-                  {dayPeriods.length === 0 ? (
-                    <p className="text-xs text-gray-300 text-center py-4">No classes</p>
-                  ) : (
-                    dayPeriods.map((p) => (
-                      <div key={p._id} className="rounded-lg border border-gray-100 bg-gray-50 p-2.5">
-                        <p className="text-sm font-medium text-gray-900 leading-tight">{p.subject}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">{p.startTime}–{p.endTime}</p>
-                        <p className="text-xs text-gray-500 truncate">
-                          {p.className}{p.room ? ` · ${p.room}` : ''}
-                        </p>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <ExamList exams={exams} />
       )}
 
       {/* Request-change modal */}
@@ -255,7 +218,9 @@ const Timetable = () => {
               </Field>
             </div>
             <Field label="Academic session">
-              <input value={form.academicSession} onChange={(e) => setForm({ ...form, academicSession: e.target.value })} className={inputCls} />
+              <select value={form.academicSession} onChange={(e) => setForm({ ...form, academicSession: e.target.value })} className={inputCls}>
+                {yearOptions.map((y) => <option key={y} value={y}>{y}</option>)}
+              </select>
             </Field>
             {formError && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{formError}</p>}
           </div>
@@ -270,6 +235,132 @@ const Timetable = () => {
     </div>
   );
 };
+
+/** Weekly grid of the lessons this teacher takes. */
+const LessonGrid = ({ lessons }: { lessons: TeacherScheduleEntry[] }) => {
+  if (lessons.length === 0) {
+    return (
+      <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm">
+        You have no scheduled periods yet.
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+      {DAYS.map((day) => {
+        const dayPeriods = lessons
+          .filter((p) => p.day === day)
+          .sort((a, b) => a.startTime.localeCompare(b.startTime));
+        return (
+          <div key={day} className="bg-white rounded-xl shadow-sm flex flex-col">
+            <div className="px-3 py-2.5 border-b border-gray-100 flex items-center justify-between">
+              <span className="font-semibold text-gray-800 text-sm">{day}</span>
+              <span className="text-xs text-gray-400">{dayPeriods.length}</span>
+            </div>
+            <div className="p-2 space-y-2 min-h-[80px]">
+              {dayPeriods.length === 0 ? (
+                <p className="text-xs text-gray-300 text-center py-4">No classes</p>
+              ) : (
+                dayPeriods.map((p) => (
+                  <div key={p._id} className="rounded-lg border border-gray-100 bg-gray-50 p-2.5">
+                    <p className="text-sm font-medium text-gray-900 leading-tight">{p.subject}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">{p.startTime}–{p.endTime}</p>
+                    <p className="text-xs text-gray-500 truncate">
+                      {p.className}{p.room ? ` · ${p.room}` : ''}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
+/**
+ * Exams are sittings on real calendar dates, not a repeating weekly grid, so
+ * they're listed in date order with the weekday derived from the date
+ * ("Monday 12 June"). `room` is the exam hall here, not a classroom.
+ */
+const ExamList = ({ exams }: { exams: TeacherScheduleEntry[] }) => {
+  if (exams.length === 0) {
+    return (
+      <div className="bg-white rounded-xl p-8 text-center text-gray-400 shadow-sm">
+        You aren&apos;t invigilating any exams.
+      </div>
+    );
+  }
+
+  // Group by sitting date so a day's papers read together.
+  const byDate = new Map<string, TeacherScheduleEntry[]>();
+  exams.forEach((e) => {
+    const key = e.examDate ? formatExamDate(e.examDate) : e.day;
+    if (!byDate.has(key)) byDate.set(key, []);
+    byDate.get(key)!.push(e);
+  });
+
+  return (
+    <div className="flex flex-col gap-3">
+      {Array.from(byDate.entries()).map(([label, list]) => (
+        <div key={label} className="bg-white rounded-xl shadow-sm overflow-hidden">
+          <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
+            <CalendarDays size={15} className="text-amber-600" />
+            <span className="font-semibold text-gray-800 text-sm">{label}</span>
+            <span className="text-xs text-gray-400">
+              {list.length} paper{list.length === 1 ? '' : 's'}
+            </span>
+          </div>
+          <div className="divide-y divide-gray-50">
+            {list.map((e) => (
+              <div key={e._id} className="px-4 py-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">{e.subject}</p>
+                  <p className="text-xs text-gray-500">{e.className}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm text-gray-700">{e.startTime}–{e.endTime}</p>
+                  <p className="text-xs text-gray-500">
+                    {e.room ? `Hall: ${e.room}` : 'Hall not set'}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const TabButton = ({
+  active,
+  onClick,
+  icon,
+  label,
+  count,
+}: {
+  active: boolean;
+  onClick: () => void;
+  icon: React.ReactNode;
+  label: string;
+  count?: number;
+}) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-1.5 text-sm px-3 py-1.5 rounded-md transition-colors ${
+      active ? 'bg-white text-gray-900 shadow-sm font-medium' : 'text-gray-500 hover:text-gray-700'
+    }`}
+  >
+    {icon}
+    {label}
+    {count !== undefined && (
+      <span className={`text-xs ${active ? 'text-gray-400' : 'text-gray-400'}`}>({count})</span>
+    )}
+  </button>
+);
 
 const inputCls =
   'w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500';

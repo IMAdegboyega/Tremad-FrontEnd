@@ -1,12 +1,13 @@
 // src/app/(auth)/sign-in/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { studentLogin } from '@/lib/api';
+import { studentLogin, storePasswordChangeHandoff } from '@/lib/api';
+import TremadLoader, { useDeferredLoading } from '@/components/shared/TremadLoader';
 
 export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
@@ -18,6 +19,11 @@ export default function SignIn() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // Set the moment we start navigating away. `router.push` resolves long
+  // before the next route paints, so clearing `loading` in `finally` drops
+  // the loader and repaints THIS page for a second or two first. The ref (not
+  // state) is deliberate: it must be readable inside the same tick.
+  const navigatingRef = useRef(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,11 +35,16 @@ export default function SignIn() {
 
       if (result.success) {
         if (result.requiresPasswordChange || result.data?.requiresPasswordChange) {
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('tremad_password_change_userId', result.userId || result.data?.userId);
-          }
+          // The change token is what authorises the reset — the userId alone
+          // is not enough (and must not be).
+          storePasswordChangeHandoff(
+            result.userId || result.data?.userId,
+            result.changeToken || result.data?.changeToken
+          );
+          navigatingRef.current = true;
           router.push('/reset-password');
         } else {
+          navigatingRef.current = true;
           router.push('/home');
         }
       } else {
@@ -41,17 +52,28 @@ export default function SignIn() {
       }
     } catch (err: any) {
       if (err.message?.includes('Password change required')) {
+        navigatingRef.current = true;
         router.push('/reset-password');
       } else {
         setError(err.message || 'Invalid credentials. Please try again.');
       }
     } finally {
-      setLoading(false);
+      // Stay up through the route change — see navigatingRef above.
+      if (!navigatingRef.current) setLoading(false);
     }
   };
 
+  // Deferred so a fast response doesn't strobe the loader on and off, and
+  // held for a minimum beat once shown. See useDeferredLoading.
+  const showLoader = useDeferredLoading(loading);
+
   return (
     <div className="w-full">
+      {/* Overlays the form rather than replacing it, so the translucent
+          backdrop has something to show through — and the fields stay
+          exactly where they were if the request fails. */}
+      {showLoader && <TremadLoader message="Signing you in" />}
+
       {/* Back to landing page — subtle top-left link so it doesn't compete
           with the main Login action but is easy to discover. */}
       <div className="mb-4">

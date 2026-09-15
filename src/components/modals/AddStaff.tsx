@@ -19,7 +19,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { NIGERIAN_STATES, getLGAsForState } from '@/Constants/NigeriaStates';
-import { createStaff } from '@/lib/api/superAdmin.service';
+import { createStaff, uploadUserAvatar } from '@/lib/api/superAdmin.service';
+import AvatarPicker from '@/components/shared/AvatarPicker';
 import { getApiErrorMessage } from '@/lib/api/client';
 
 interface AddStaffModalProps {
@@ -95,6 +96,10 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, onSucces
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
   const [formData, setFormData] = useState<StaffData>(EMPTY_FORM);
+  // Held until the staff member exists — the photo is keyed by user id on
+  // Cloudinary, so there's nothing to attach it to before creation.
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoWarning, setPhotoWarning] = useState('');
 
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -188,10 +193,32 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, onSucces
 
       if (res.success) {
         const data = (res.data ?? {}) as {
+          id?: string;
           teacherId?: string;
           tempPassword?: string;
           email?: string;
         };
+
+        // The account exists now. A failed photo upload must NOT read as a
+        // failed creation — warn on the success screen and let the admin add
+        // it later from the staff detail page.
+        if (photo && data.id) {
+          try {
+            const up = await uploadUserAvatar(data.id, photo);
+            if (!up?.success) {
+              setPhotoWarning(
+                up?.message || 'The staff member was created, but the photo didn’t upload.'
+              );
+            }
+          } catch (err: any) {
+            setPhotoWarning(
+              err?.status === 503
+                ? 'The staff member was created, but photo uploads aren’t configured on the server.'
+                : 'The staff member was created, but the photo didn’t upload. You can add it from their profile.'
+            );
+          }
+        }
+
         setCreatedCreds({
           teacherId: data.teacherId,
           tempPassword: data.tempPassword,
@@ -218,6 +245,8 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, onSucces
     setSubmitError(null);
     setCreatedCreds(null);
     setFormData(EMPTY_FORM);
+    setPhoto(null);
+    setPhotoWarning('');
     onClose();
   };
 
@@ -321,6 +350,13 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, onSucces
             {/* ---------------- Step 1: Staff details ---------------- */}
             {currentStep === 1 && (
               <div className="space-y-4">
+                <AvatarPicker
+                  file={photo}
+                  onChange={setPhoto}
+                  uploading={submitting && !!photo}
+                  disabled={submitting}
+                />
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -710,6 +746,13 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, onSucces
 
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Successful!</h2>
           <p className="text-sm text-gray-600 mb-4">Staff added successfully</p>
+
+          {/* The account was created either way — the photo is the only casualty. */}
+          {photoWarning && (
+            <div className="mb-4 text-left bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-2.5">
+              {photoWarning}
+            </div>
+          )}
 
           {(createdCreds?.teacherId || createdCreds?.tempPassword) && (
             <div className="mb-6 text-left bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">

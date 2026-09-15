@@ -11,7 +11,7 @@ export default function AdminAuthLayout({
       {/* Left side - School Building Image */}
       <div className="hidden lg:flex lg:w-1/2 relative rounded-2xl overflow-hidden mr-6">
         <Image
-          src="/img/tremadschool.png"
+          src="/TREMAD-new-file/8.png"
           alt="TREMAD School Building"
           fill
           className="object-cover"

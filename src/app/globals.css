@@ -156,3 +156,33 @@ body {
   display: none;  /* Chrome, Safari, Opera */
 }
 
+/* ============================================================================
+   Tremad loader — the crest with a single green ring orbiting it.
+   See components/shared/TremadLoader.tsx.
+
+   The logo never rotates; only `.tremad-loader-arc` does. Under
+   prefers-reduced-motion the rotation is swapped for an opacity pulse —
+   a spinning full-screen ring is a genuine vestibular trigger and there's
+   nowhere to look away to.
+   ========================================================================= */
+
+@keyframes tremadLoaderSpin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes tremadLoaderPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.45; }
+}
+
+.tremad-loader-arc {
+  /* 0.9s reads as purposeful. Much slower and it looks stalled; much faster
+     and it buzzes. */
+  animation: tremadLoaderSpin 0.9s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tremad-loader-arc {
+    animation: tremadLoaderPulse 1.8s ease-in-out infinite;
+  }
+}

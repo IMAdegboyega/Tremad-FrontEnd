@@ -17,8 +17,14 @@ import { Search, ChevronLeft, ChevronRight, ListFilter, RefreshCw } from 'lucide
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import StatsCard from '@/components/superadmin/PortalLogin/StatsCard';
 import AddStaffModal from '@/components/modals/AddStaff';
+import StaffDetail from '@/components/superadmin/StaffDetail';
+import DeactivateAccountModal from '@/components/modals/Deactivate';
+import DeleteAccountModal from '@/components/modals/DeleteAcount';
+import ResetPasswordModal from '@/components/modals/ResetPassword';
+import { reactivateUser } from '@/lib/api/superAdmin.service';
 import { getAllStaff, type Staff } from '@/lib/api/superAdmin.service';
 import { getApiErrorMessage } from '@/lib/api/client';
+import UserAvatar from '@/components/shared/UserAvatar';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
 
@@ -29,8 +35,6 @@ const displayName = (s: Staff) =>
   `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim() || s.email || 'Unnamed staff';
 const displayId = (s: Staff) => s.teacherId || s.staffId || '—';
 const displayDept = (s: Staff) => s.department || s.position || '—';
-const initialsOf = (name: string) =>
-  name.split(' ').filter(Boolean).map((n) => n[0]).join('').slice(0, 2).toUpperCase();
 
 const StaffManagement: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -49,6 +53,20 @@ const StaffManagement: React.FC = () => {
   const [activeCount, setActiveCount] = useState(0);
 
   const [showAddStaffModal, setShowAddStaffModal] = useState(false);
+
+  // When set, the detail panel replaces the table (same pattern as students).
+  const [selectedStaffId, setSelectedStaffId] = useState<string | null>(null);
+
+  // Row-level actions. The row itself opens the detail page, so this menu is
+  // only for the quick operations you'd otherwise have to drill in for.
+  const [actionTarget, setActionTarget] = useState<Staff | null>(null);
+  const [action, setAction] = useState<'deactivate' | 'delete' | 'reset' | null>(null);
+  const [rowBusy, setRowBusy] = useState<string | null>(null);
+
+  const closeAction = () => {
+    setAction(null);
+    setActionTarget(null);
+  };
 
   // Debounce the search box (350ms) and reset to page 1 on a new term.
   useEffect(() => {
@@ -114,6 +132,18 @@ const StaffManagement: React.FC = () => {
     fetchCounts();
   }, [fetchStaff, fetchCounts]);
 
+  const handleReactivate = async (member: Staff) => {
+    setRowBusy(member._id);
+    try {
+      await reactivateUser(member._id);
+      refreshAll();
+    } catch {
+      /* surfaced on the next fetch */
+    } finally {
+      setRowBusy(null);
+    }
+  };
+
   const inactiveCount = Math.max(0, totalStaff - activeCount);
   const activePct = totalStaff > 0 ? Math.round((activeCount / totalStaff) * 100) : 0;
 
@@ -139,6 +169,16 @@ const StaffManagement: React.FC = () => {
 
   const statusLabel =
     statusFilter === 'all' ? null : statusFilter === 'active' ? 'Active' : 'Inactive';
+
+  if (selectedStaffId) {
+    return (
+      <StaffDetail
+        staffId={selectedStaffId}
+        onBack={() => setSelectedStaffId(null)}
+        onSaved={refreshAll}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 space-y-3 p-2 sm:p-4 md:p-6">
@@ -286,14 +326,18 @@ const StaffManagement: React.FC = () => {
                   staff.map((member) => {
                     const name = displayName(member);
                     return (
-                      <tr key={member._id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <tr
+                        key={member._id}
+                        onClick={() => setSelectedStaffId(member._id)}
+                        className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                      >
                         <td className="px-3 sm:px-6 py-3 sm:py-4">
                           <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-200 flex-shrink-0 overflow-hidden flex items-center justify-center">
-                              <span className="text-xs sm:text-sm font-medium text-gray-600">
-                                {initialsOf(name)}
-                              </span>
-                            </div>
+                            <UserAvatar
+                              user={member}
+                              className="w-8 h-8 sm:w-10 sm:h-10"
+                              textClassName="text-xs sm:text-sm font-medium text-gray-600"
+                            />
                             <div className="min-w-0">
                               <div className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[100px] sm:max-w-none">{name}</div>
                               {member.email && (
@@ -314,7 +358,10 @@ const StaffManagement: React.FC = () => {
                             {member.isActive ? 'Active' : 'Inactive'}
                           </span>
                         </td>
-                        <td className="px-3 sm:px-6 py-3 sm:py-4">
+                        <td
+                          className="px-3 sm:px-6 py-3 sm:py-4"
+                          onClick={(e) => e.stopPropagation()}
+                        >
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <button className="text-gray-400 hover:text-gray-600 min-w-[44px] min-h-[44px] flex items-center justify-center">
@@ -324,11 +371,31 @@ const StaffManagement: React.FC = () => {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <span className='cursor-pointer'>View Details</span>
+                              <DropdownMenuItem
+                                onClick={() => { setActionTarget(member); setAction('reset'); }}
+                              >
+                                <span className='cursor-pointer'>Reset password</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <span className='cursor-pointer'>Edit Profile</span>
+                              {member.isActive ? (
+                                <DropdownMenuItem
+                                  onClick={() => { setActionTarget(member); setAction('deactivate'); }}
+                                >
+                                  <span className='cursor-pointer'>Deactivate</span>
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  disabled={rowBusy === member._id}
+                                  onClick={() => handleReactivate(member)}
+                                >
+                                  <span className='cursor-pointer'>
+                                    {rowBusy === member._id ? 'Reactivating…' : 'Reactivate'}
+                                  </span>
+                                </DropdownMenuItem>
+                              )}
+                              <DropdownMenuItem
+                                onClick={() => { setActionTarget(member); setAction('delete'); }}
+                              >
+                                <span className='cursor-pointer text-red-600'>Delete</span>
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -413,6 +480,33 @@ const StaffManagement: React.FC = () => {
         isOpen={showAddStaffModal}
         onClose={() => setShowAddStaffModal(false)}
         onSuccess={refreshAll}
+      />
+
+      <ResetPasswordModal
+        isOpen={action === 'reset' && !!actionTarget}
+        onClose={closeAction}
+        studentId={actionTarget?._id || ''}
+        studentName={actionTarget ? displayName(actionTarget) : ''}
+        studentEmail={actionTarget?.email || ''}
+        subjectNoun="staff member"
+      />
+
+      <DeactivateAccountModal
+        isOpen={action === 'deactivate' && !!actionTarget}
+        onClose={closeAction}
+        studentId={actionTarget?._id || ''}
+        studentName={actionTarget ? displayName(actionTarget) : ''}
+        subjectNoun="staff member"
+        onDeactivated={refreshAll}
+      />
+
+      <DeleteAccountModal
+        isOpen={action === 'delete' && !!actionTarget}
+        onClose={closeAction}
+        studentId={actionTarget?._id}
+        studentName={actionTarget ? displayName(actionTarget) : ''}
+        subjectNoun="staff member"
+        onDeleted={refreshAll}
       />
     </div>
   );

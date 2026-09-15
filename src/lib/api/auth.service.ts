@@ -161,6 +161,44 @@ export const superAdminLogout = async (): Promise<ApiResponse> => {
 /**
  * Student Login
  */
+
+/**
+ * The forced password-change handoff.
+ *
+ * Login verifies the temporary password and mints a short-lived token scoped to
+ * the change. We stash it alongside the userId so the reset page can complete
+ * the flow — the change endpoint is public (no session exists yet) and this
+ * token is the only thing that authorises it.
+ */
+const CHANGE_USER_KEY = 'tremad_password_change_userId';
+const CHANGE_TOKEN_KEY = 'tremad_password_change_token';
+
+export const storePasswordChangeHandoff = (
+  userId: string,
+  changeToken: string
+): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(CHANGE_USER_KEY, userId);
+  localStorage.setItem(CHANGE_TOKEN_KEY, changeToken);
+};
+
+export const getPasswordChangeHandoff = (): {
+  userId: string | null;
+  changeToken: string | null;
+} => {
+  if (typeof window === 'undefined') return { userId: null, changeToken: null };
+  return {
+    userId: localStorage.getItem(CHANGE_USER_KEY),
+    changeToken: localStorage.getItem(CHANGE_TOKEN_KEY),
+  };
+};
+
+export const clearPasswordChangeHandoff = (): void => {
+  if (typeof window === 'undefined') return;
+  localStorage.removeItem(CHANGE_USER_KEY);
+  localStorage.removeItem(CHANGE_TOKEN_KEY);
+};
+
 export const studentLogin = async (
   admissionNumber: string,
   password: string
@@ -185,12 +223,12 @@ export const studentLogin = async (
  */
 export const studentChangePassword = async (
   userId: string,
-  currentPassword: string,
+  changeToken: string,
   newPassword: string
 ): Promise<ApiResponse<{ token: string }>> => {
   const response = await apiClient.post(
     API.AUTH.STUDENT.CHANGE_PASSWORD,
-    { userId, currentPassword, newPassword },
+    { userId, changeToken, newPassword },
     false
   );
 
@@ -278,18 +316,18 @@ export const teacherLogin = async (
 /**
  * Teacher Change Password
  *
- * Mirrors studentChangePassword. For first-login, pass an empty currentPassword.
- * On success the backend returns a fresh token + user — store them so the
- * teacher lands authenticated.
+ * Mirrors studentChangePassword. `changeToken` comes from the login response
+ * and is what authorises the change. On success the backend returns a fresh
+ * token + user — store them so the teacher lands authenticated.
  */
 export const teacherChangePassword = async (
   userId: string,
-  currentPassword: string,
+  changeToken: string,
   newPassword: string
 ): Promise<ApiResponse<any>> => {
   const response = await apiClient.post(
     API.AUTH.TEACHER.CHANGE_PASSWORD,
-    { userId, currentPassword, newPassword },
+    { userId, changeToken, newPassword },
     false
   );
 
@@ -334,6 +372,9 @@ const authService = {
   // Teacher
   teacherLogin,
   teacherChangePassword,
+  storePasswordChangeHandoff,
+  getPasswordChangeHandoff,
+  clearPasswordChangeHandoff,
   teacherLogout,
 };
 

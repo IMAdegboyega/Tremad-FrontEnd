@@ -499,6 +499,7 @@ const Profile = () => {
             {[
               // All academic fields are admin-managed; students can't self-edit.
               { label: 'Student admission CID', field: 'studentAdmissionCID' },
+              { label: 'LIN', field: 'lin' },
               { label: 'Current grade', field: 'currentGrade' },
               { label: 'Class section', field: 'classSection' },
               { label: 'Admission date', field: 'admissionDate' },

@@ -9,6 +9,8 @@ interface DeleteAccountModalProps {
   onClose: () => void;
   studentId?: string;
   studentName?: string;
+  /** Noun used in the copy — "student" (default) or e.g. "staff member". */
+  subjectNoun?: string;
   onDeleted?: () => void;
 }
 
@@ -27,6 +29,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   onClose,
   studentId,
   studentName,
+  subjectNoun = 'student',
   onDeleted,
 }) => {
   const [showSuccess, setShowSuccess] = useState(false);
@@ -48,7 +51,7 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
 
   const handleDelete = async () => {
     if (!studentId) {
-      setError('Missing student ID — refresh and try again.');
+      setError(`Missing ${subjectNoun} ID — refresh and try again.`);
       return;
     }
     setLoading(true);
@@ -99,8 +102,9 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
             <span className='font-semibold'>{studentName}&apos;s</span> account?
           </p>
           <p className='text-xs text-gray-500 mb-6'>
-            The account will be disabled and the student locked out. Historical
-            data (results, payments, audit logs) is preserved.
+            The account will be disabled and the {subjectNoun} locked out, and it
+            disappears from this list. Historical data (results, payments, audit
+            logs) is preserved.
           </p>
 
           {error && (

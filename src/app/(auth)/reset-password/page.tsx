@@ -1,11 +1,16 @@
 // src/app/(auth)/reset-password/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { Eye, EyeOff, Check, X } from 'lucide-react';
 import Image from 'next/image';
-import { studentChangePassword } from '@/lib/api';
+import {
+  studentChangePassword,
+  getPasswordChangeHandoff,
+  clearPasswordChangeHandoff,
+} from '@/lib/api';
+import TremadLoader, { useDeferredLoading } from '@/components/shared/TremadLoader';
 
 export default function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,6 +19,11 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // Set the moment we start navigating away. `router.push` resolves long
+  // before the next route paints, so clearing `loading` in `finally` drops
+  // the loader and repaints THIS page for a second or two first. The ref (not
+  // state) is deliberate: it must be readable inside the same tick.
+  const navigatingRef = useRef(false);
   const router = useRouter();
 
   const passwordRequirements = [
@@ -35,27 +45,24 @@ export default function ResetPassword() {
       return;
     }
 
-    const userId =
-      typeof window !== 'undefined'
-        ? localStorage.getItem('tremad_password_change_userId')
-        : null;
+    // Both come from the login that verified the temporary password. The token
+    // is short-lived (10 min) and is what actually authorises the change.
+    const { userId, changeToken } = getPasswordChangeHandoff();
 
-    if (!userId) {
-      setError('Session expired. Please sign in again.');
+    if (!userId || !changeToken) {
+      setError('Your session expired. Please sign in again.');
+      navigatingRef.current = true;
       router.push('/sign-in');
       return;
     }
 
     setLoading(true);
     try {
-      // currentPassword is optional for first-login per the backend validator/controller,
-      // so we pass an empty string.
-      const result: any = await studentChangePassword(userId, '', password);
+      const result: any = await studentChangePassword(userId, changeToken, password);
 
       if (result?.success) {
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('tremad_password_change_userId');
-        }
+        clearPasswordChangeHandoff();
+        navigatingRef.current = true;
         router.push('/reset-success');
       } else {
         setError(result?.message || 'Failed to change password. Please try again.');
@@ -63,12 +70,22 @@ export default function ResetPassword() {
     } catch (err: any) {
       setError(err?.message || 'Failed to change password. Please try again.');
     } finally {
-      setLoading(false);
+      // Stay up through the route change — see navigatingRef above.
+      if (!navigatingRef.current) setLoading(false);
     }
   };
 
+  // Deferred so a fast response doesn't strobe the loader on and off, and
+  // held for a minimum beat once shown. See useDeferredLoading.
+  const showLoader = useDeferredLoading(loading);
+
   return (
     <div className="w-full">
+      {/* Overlays the form rather than replacing it, so the translucent
+          backdrop has something to show through — and the fields stay
+          exactly where they were if the request fails. */}
+      {showLoader && <TremadLoader message="Setting your password" />}
+
       {/* School Logo */}
         <div className="flex justify-center mb-6">
           <div className="flex items-center justify-center">

@@ -1,50 +1,60 @@
 // middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { StudentNav } from '@/Constants';
 
 // ============================================================================
 // ROUTE DEFINITIONS
 // ============================================================================
+//
+// THE DEFAULT IS PUBLIC.
+//
+// This used to work the other way round: three protected zones were listed,
+// a handful of public paths were listed, and *everything else* fell through to
+// "student zone → redirect to /sign-in". That meant every new public page was
+// born protected. `/apply` was the first casualty — a prospective parent
+// clicking "Apply for admission" got bounced to the student login, asking for
+// an admission number they don't have and will never have unless they apply.
+//
+// Inverting it is safe because the student portal is a CLOSED set: it renders
+// from StudentNav, so if a slug isn't there it isn't a student page. Deriving
+// the list from the same constant the router uses means the two can't drift —
+// add a section to StudentNav and it's protected automatically.
 
-// Public routes — always accessible without auth
-const PUBLIC_ROUTES = [
-  '/',
+/** The student portal — exactly the sections the router can render. */
+const STUDENT_ROUTES = StudentNav.map((item) => item.url as string);
+
+/** Auth pages for the student portal (no prefix of their own). */
+const STUDENT_AUTH_PAGES = [
   '/sign-in',
   '/forgot-password',
   '/check-email',
   '/reset-password',
   '/reset-success',
-  '/coming-soon',
-  '/landing-page',
+];
+
+/** Prefixed zones. Everything under these requires a session. */
+const PROTECTED_ZONES: {
+  prefix: string;
+  loginPath: string;
+  homePath: string;
+  role: string;
+}[] = [
+  { prefix: '/admin', loginPath: '/admin/sign-in', homePath: '/admin/home', role: 'super_admin' },
+  { prefix: '/staff', loginPath: '/staff/sign-in', homePath: '/staff/home', role: 'admin' },
+];
+
+/** Auth pages inside the prefixed zones — reachable without a session. */
+const ZONE_AUTH_PAGES = [
   '/admin/sign-in',
   '/staff/sign-in',
   '/staff/reset-password',
 ];
 
-// Auth pages — if user IS logged in, redirect them away from these
-const AUTH_PAGES = [
-  '/sign-in',
-  '/forgot-password',
-  '/check-email',
-  '/reset-password',
-  '/reset-success',
-  '/admin/sign-in',
-  '/staff/sign-in',
-  '/staff/reset-password',
-];
-
-// Protected route prefixes and their login redirects
-const PROTECTED_ZONES: { prefix: string; loginPath: string; homePath: string }[] = [
-  { prefix: '/admin', loginPath: '/admin/sign-in', homePath: '/admin/home' },
-  { prefix: '/staff', loginPath: '/staff/sign-in', homePath: '/staff/home' },
-];
-
-// Student routes (no prefix — everything else that's not SuperAdmin/staff)
 const STUDENT_LOGIN = '/sign-in';
-const STUDENT_HOME = '/home';
 
-// Token key — must match what client.ts uses
-const TOKEN_KEY = 'tremad_auth_token';
+const matches = (pathname: string, route: string) =>
+  pathname === route || pathname === `${route}/`;
 
 // ============================================================================
 // MIDDLEWARE
@@ -53,73 +63,71 @@ const TOKEN_KEY = 'tremad_auth_token';
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // 1. Always allow static files and Next.js internals
+  // 1. Static files and Next internals — never our business.
   if (
     pathname.startsWith('/_next') ||
     pathname.startsWith('/api') ||
-    pathname.includes('.') // static files (.svg, .ico, .css, .js, etc.)
+    pathname.includes('.')
   ) {
     return NextResponse.next();
   }
 
-  // 2. Check for auth token
-  // Next.js middleware can't read localStorage, so we check cookies.
-  // The token can be stored as a cookie OR we check a cookie flag.
-  // For localStorage-based auth, we use a lightweight cookie sync approach:
-  // The client sets a cookie 'tremad_auth_active=1' when token exists.
+  // Middleware can't read localStorage, so the client mirrors its auth state
+  // into these cookies on sign-in (see client.ts setToken/setUser).
   const hasAuthCookie = req.cookies.get('tremad_auth_active')?.value === '1';
+  const role = req.cookies.get('tremad_user_role')?.value;
 
-  // 3. Public routes — always accessible
-  const isPublicRoute = PUBLIC_ROUTES.some(
-    (route) => pathname === route || pathname === route + '/'
-  );
+  // 2. Auth pages: reachable signed out; bounce a signed-in user to their own
+  //    home, but ONLY from their own role's login page. A super admin looking
+  //    at the student sign-in page is doing something deliberate.
+  const isZoneAuthPage = ZONE_AUTH_PAGES.some((r) => matches(pathname, r));
+  const isStudentAuthPage = STUDENT_AUTH_PAGES.some((r) => matches(pathname, r));
 
-  if (isPublicRoute) {
-    // Only redirect if the user is visiting their OWN role's auth page
+  if (isZoneAuthPage || isStudentAuthPage) {
     if (hasAuthCookie) {
-      const role = req.cookies.get('tremad_user_role')?.value;
-
-      const isSuperAdminOnSuperAdminAuth = role === 'super_admin' && pathname.startsWith('/admin/sign-in');
-      const isAdminOnAdminAuth = role === 'admin' && pathname.startsWith('/staff/sign-in');
-      const isStudentOnStudentAuth = role === 'student' && (
-        pathname === '/sign-in' || pathname === '/sign-in/' ||
-        pathname === '/forgot-password' || pathname === '/forgot-password/'
-      );
-
-      if (isSuperAdminOnSuperAdminAuth) {
+      if (role === 'super_admin' && pathname.startsWith('/admin/sign-in')) {
         return NextResponse.redirect(new URL('/admin/home', req.url));
       }
-      if (isAdminOnAdminAuth) {
+      if (role === 'admin' && pathname.startsWith('/staff/sign-in')) {
         return NextResponse.redirect(new URL('/staff/home', req.url));
       }
-      if (isStudentOnStudentAuth) {
+      if (
+        role === 'student' &&
+        (matches(pathname, '/sign-in') || matches(pathname, '/forgot-password'))
+      ) {
         return NextResponse.redirect(new URL('/home', req.url));
       }
     }
     return NextResponse.next();
   }
 
-  // 4. Protected zone check
+  // 3. Prefixed protected zones (/admin, /staff).
   for (const zone of PROTECTED_ZONES) {
     if (pathname.startsWith(zone.prefix)) {
       if (!hasAuthCookie) {
-        // Not authenticated — redirect to zone's login
         const loginUrl = new URL(zone.loginPath, req.url);
         loginUrl.searchParams.set('redirect', pathname);
         return NextResponse.redirect(loginUrl);
       }
-      // Authenticated — allow through
       return NextResponse.next();
     }
   }
 
-  // 5. All other routes = student zone
-  if (!hasAuthCookie) {
-    const loginUrl = new URL(STUDENT_LOGIN, req.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+  // 4. The student portal — an explicit list, not a catch-all.
+  const isStudentRoute = STUDENT_ROUTES.some((route) => matches(pathname, route));
+  if (isStudentRoute) {
+    if (!hasAuthCookie) {
+      const loginUrl = new URL(STUDENT_LOGIN, req.url);
+      loginUrl.searchParams.set('redirect', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+    return NextResponse.next();
   }
 
+  // 5. Everything else is public: the landing page, /apply, and any marketing
+  //    page added later. A genuinely unknown path falls through to Next's own
+  //    404, which is the honest answer — far better than pretending it's a
+  //    student page and demanding a login for something that doesn't exist.
   return NextResponse.next();
 }
 

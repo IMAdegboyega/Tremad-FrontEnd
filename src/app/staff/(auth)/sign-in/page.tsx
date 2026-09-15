@@ -1,16 +1,22 @@
 // src/app/staff/(auth)/sign-in/page.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import Image from 'next/image';
 import { Eye, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { teacherLogin } from '@/lib/api';
+import { teacherLogin, storePasswordChangeHandoff } from '@/lib/api';
+import TremadLoader, { useDeferredLoading } from '@/components/shared/TremadLoader';
 
 export default function AdminSignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  // Set the moment we start navigating away. `router.push` resolves long
+  // before the next route paints, so clearing `loading` in `finally` drops
+  // the loader and repaints THIS page for a second or two first. The ref (not
+  // state) is deliberate: it must be readable inside the same tick.
+  const navigatingRef = useRef(false);
   const [formData, setFormData] = useState({
     teacherId: '',
     password: '',
@@ -29,13 +35,17 @@ export default function AdminSignIn() {
         // First-login: backend returns requiresPasswordChange + userId and does
         // NOT issue a session yet. Mirror the student flow → reset-password.
         if (result.requiresPasswordChange || result.data?.requiresPasswordChange) {
-          const userId = result.userId || result.data?.userId;
-          if (userId && typeof window !== 'undefined') {
-            localStorage.setItem('tremad_password_change_userId', userId);
-          }
+          // The change token is what authorises the reset — the userId alone
+          // is not enough (and must not be).
+          storePasswordChangeHandoff(
+            result.userId || result.data?.userId,
+            result.changeToken || result.data?.changeToken
+          );
+          navigatingRef.current = true;
           router.push('/staff/reset-password');
           return;
         }
+        navigatingRef.current = true;
         router.push('/staff/home');
       } else {
         setError(result.message || 'Login failed');
@@ -43,12 +53,22 @@ export default function AdminSignIn() {
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
     } finally {
-      setLoading(false);
+      // Stay up through the route change — see navigatingRef above.
+      if (!navigatingRef.current) setLoading(false);
     }
   };
 
+  // Deferred so a fast response doesn't strobe the loader on and off, and
+  // held for a minimum beat once shown. See useDeferredLoading.
+  const showLoader = useDeferredLoading(loading);
+
   return (
     <div className="w-full">
+      {/* Overlays the form rather than replacing it, so the translucent
+          backdrop has something to show through — and the fields stay
+          exactly where they were if the request fails. */}
+      {showLoader && <TremadLoader message="Signing you in" />}
+
       {/* School Logo */}
       <div className="flex justify-center mb-6">
         <div className="flex items-center justify-center">

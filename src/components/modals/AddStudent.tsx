@@ -3,8 +3,10 @@
 
 import React, { useState } from 'react';
 import { X, CheckCircle, Copy, Check } from 'lucide-react';
-import { createStudent } from '@/lib/api';
+import { createStudent, uploadUserAvatar } from '@/lib/api';
+import AvatarPicker from '@/components/shared/AvatarPicker';
 import { getApiErrorMessage } from '@/lib/api/client';
+import { GRADE_LEVELS, CLASS_SECTIONS } from '@/Constants/classes';
 import { NIGERIAN_STATES, getLGAsForState } from '@/Constants/NigeriaStates';
 import {
   DropdownMenu,
@@ -19,6 +21,8 @@ interface AddStudentModalProps {
 }
 
 interface StudentFormData {
+  /** Government-issued Learner's Identification Number (optional). */
+  lin: string;
   // Step 1: Student details
   firstName: string;
   lastName: string;
@@ -59,6 +63,7 @@ const INITIAL_FORM: StudentFormData = {
   state: '',
   currentGrade: '',
   classSection: '',
+  lin: '',
   guardianName: '',
   relationship: '',
   guardianPhone: '',
@@ -74,18 +79,20 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
   const [credentials, setCredentials] = useState<CreatedCredentials | null>(null);
   const [copied, setCopied] = useState(false);
   const [formData, setFormData] = useState<StudentFormData>(INITIAL_FORM);
+  // Held until the student exists — the photo is keyed by user id on
+  // Cloudinary, so there's nothing to attach it to before creation.
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoWarning, setPhotoWarning] = useState('');
 
   // Full 36 states + FCT, sourced from the shared NigeriaStates dataset.
   const nigerianStates = NIGERIAN_STATES;
   // LGAs for whichever state is currently selected (empty until one is picked).
   const availableLGAs = getLGAsForState(formData.state);
 
-  const gradeLevels = [
-    'Primary 1', 'Primary 2', 'Primary 3', 'Primary 4', 'Primary 5', 'Primary 6',
-    'JSS 1', 'JSS 2', 'JSS 3', 'SS 1', 'SS 2', 'SS 3',
-  ];
-
-  const classSections = ['A', 'B', 'C', 'D', 'E'];
+  // Shared with the Timetable builder so a grade here always matches a grade
+  // there — see Constants/classes.ts.
+  const gradeLevels = GRADE_LEVELS;
+  const classSections = CLASS_SECTIONS;
   const genders = ['Male', 'Female'];
 
   if (!isOpen) return null;
@@ -156,6 +163,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
         lastName: formData.lastName,
         className,
         ...cleaned({
+          lin: formData.lin,
           phoneNumber: formData.phoneNumber,
           dateOfBirth: formData.dateOfBirth,
           gender: formData.gender,
@@ -171,6 +179,26 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
       });
 
       if (result.success && result.data) {
+        // The account exists now. A failed photo upload must NOT read as a
+        // failed creation — surface it as a warning on the success screen and
+        // let the admin retry from the student's detail page.
+        if (photo && result.data.id) {
+          try {
+            const up = await uploadUserAvatar(result.data.id, photo);
+            if (!up?.success) {
+              setPhotoWarning(
+                up?.message || 'The student was created, but the photo didn’t upload.'
+              );
+            }
+          } catch (err: any) {
+            setPhotoWarning(
+              err?.status === 503
+                ? 'The student was created, but photo uploads aren’t configured on the server.'
+                : 'The student was created, but the photo didn’t upload. You can add it from their profile.'
+            );
+          }
+        }
+
         setCredentials({
           admissionNumber: result.data.admissionNumber,
           tempPassword: result.data.tempPassword,
@@ -224,6 +252,8 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     setCredentials(null);
     setCopied(false);
     setFormData(INITIAL_FORM);
+    setPhoto(null);
+    setPhotoWarning('');
     onClose();
   };
 
@@ -280,6 +310,13 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
             {/* Step 1: Student details */}
             {currentStep === 1 && (
               <div className="space-y-3 sm:space-y-4">
+                <AvatarPicker
+                  file={photo}
+                  onChange={setPhoto}
+                  uploading={loading && !!photo}
+                  disabled={loading}
+                />
+
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                   <div>
                     <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">First name *</label>
@@ -312,6 +349,23 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
                     placeholder="Enter email address"
                     className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent min-h-[44px]"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+                    LIN <span className="text-gray-400 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.lin}
+                    onChange={(e) => handleInputChange('lin', e.target.value.toUpperCase())}
+                    placeholder="Learner's Identification Number"
+                    className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent min-h-[44px]"
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    Issued by government — leave blank if the school hasn&apos;t received it yet.
+                    It can be added later from the student&apos;s record.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
@@ -591,6 +645,13 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
             <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-1">Student Created!</h2>
             <p className="text-sm text-gray-500">Share these credentials with the student</p>
           </div>
+
+          {/* The account was created either way — the photo is the only casualty. */}
+          {photoWarning && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-2.5 mb-4">
+              {photoWarning}
+            </div>
+          )}
 
           {credentials && (
             <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">

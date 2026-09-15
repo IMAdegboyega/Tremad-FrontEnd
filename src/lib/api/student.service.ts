@@ -12,6 +12,8 @@ import { API } from './endpoints';
 // ============================================================================
 
 export interface StudentProfile {
+  /** Learner's Identification Number — read-only here; an admin sets it. */
+  lin?: string;
   _id: string;
   id?: string;
   admissionNumber: string;
@@ -102,8 +104,13 @@ export interface TimetableEntry {
   startTime: string;
   endTime: string;
   subject: string;
+  /** Teacher, or invigilator on an exam. 'Unassigned' when nobody is set yet. */
   teacher: string;
+  /** Room, or exam hall on an exam. */
   room?: string;
+  type?: 'class' | 'exam';
+  /** ISO date — exams only. Rendered as "Monday 12 June". */
+  examDate?: string | null;
 }
 
 export interface Payment {
@@ -208,8 +215,13 @@ export const downloadResults = async (params?: {
 /**
  * Get timetable
  */
-export const getTimetable = async (): Promise<ApiResponse<TimetableEntry[]>> => {
-  return apiClient.get(API.STUDENT.ACADEMIC.TIMETABLE);
+export const getTimetable = async (params?: {
+  /** 'class' (default) for weekly lessons, 'exam' for the exam timetable. */
+  type?: 'class' | 'exam';
+  academicSession?: string;
+  term?: string;
+}): Promise<ApiResponse<TimetableEntry[]>> => {
+  return apiClient.get(API.STUDENT.ACADEMIC.TIMETABLE, params);
 };
 
 // ============================================================================

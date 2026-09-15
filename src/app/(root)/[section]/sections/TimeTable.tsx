@@ -5,6 +5,7 @@ import StatsCard from '@/components/student/TimeTable/StatsCard';
 import WeekView from '@/components/student/TimeTable/WeekView';
 import DayView from '@/components/student/TimeTable/DayView';
 import { getTimetable, type TimetableEntry } from '@/lib/api/student.service';
+import { formatExamDate } from '@/Constants/examDates';
 
 /**
  * TimeTable page
@@ -14,13 +15,15 @@ import { getTimetable, type TimetableEntry } from '@/lib/api/student.service';
  */
 const TimeTable = () => {
   const [viewMode, setViewMode] = useState<'Week view' | 'Day view'>('Week view');
+  // Which timetable to show: weekly lessons, or the exam schedule the admin set.
+  const [kind, setKind] = useState<'class' | 'exam'>('class');
   const [entries, setEntries] = useState<TimetableEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    getTimetable()
+    getTimetable({ type: kind })
       .then((res) => {
         if (cancelled) return;
         if (res?.success && Array.isArray(res.data)) {
@@ -38,7 +41,7 @@ const TimeTable = () => {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [kind]);
 
   return (
     <div className='space-y-4 lg:space-y-6'>
@@ -47,8 +50,30 @@ const TimeTable = () => {
           <div>
             <h1 className='text-2xl font-semibold text-gray-900'>Timetable</h1>
             <p className='text-sm text-gray-500 mt-1'>
-              Stay up to date with what is going on.
+              {kind === 'exam'
+                ? 'Your exam schedule, with halls and times.'
+                : 'Stay up to date with what is going on.'}
             </p>
+
+            {/* Lessons vs exams */}
+            <div className='mt-3 inline-flex rounded-lg border border-gray-200 bg-white p-0.5'>
+              {([
+                ['class', 'Class timetable'],
+                ['exam', 'Exam timetable'],
+              ] as const).map(([value, label]) => (
+                <button
+                  key={value}
+                  onClick={() => setKind(value)}
+                  className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-md transition-colors ${
+                    kind === value
+                      ? 'bg-green-700 text-white'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className='flex'>
@@ -78,7 +103,44 @@ const TimeTable = () => {
 
       <StatsCard entries={entries} isLoading={loading} />
 
-      {viewMode === 'Week view' ? (
+      {kind === 'exam' ? (
+        /* Exams are dated sittings, so they read as a chronological list. */
+        loading ? (
+          <div className='bg-white rounded-xl p-8 text-center text-gray-400'>
+            Loading exams…
+          </div>
+        ) : entries.length === 0 ? (
+          <div className='bg-white rounded-xl p-8 text-center text-gray-400'>
+            No exams have been scheduled yet.
+          </div>
+        ) : (
+          <div className='bg-white rounded-xl shadow-sm divide-y divide-gray-100'>
+            {entries.map((e) => (
+              <div key={e._id} className='flex items-center gap-4 px-4 py-3'>
+                <div className='w-44 shrink-0'>
+                  <p className='text-sm font-medium text-gray-900'>
+                    {formatExamDate(e.examDate) || e.day}
+                  </p>
+                  <p className='text-xs text-gray-500'>
+                    {e.startTime}–{e.endTime}
+                  </p>
+                </div>
+                <div className='flex-1 min-w-0'>
+                  <p className='text-sm font-medium text-gray-900 truncate'>
+                    {e.subject}
+                  </p>
+                  <p className='text-xs text-gray-500 truncate'>
+                    {e.room ? `Hall: ${e.room}` : 'Hall to be announced'}
+                    {e.teacher && e.teacher !== 'Unassigned'
+                      ? ` · Invigilator: ${e.teacher}`
+                      : ''}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        )
+      ) : viewMode === 'Week view' ? (
         <WeekView entries={entries} isLoading={loading} />
       ) : (
         <DayView entries={entries} isLoading={loading} />

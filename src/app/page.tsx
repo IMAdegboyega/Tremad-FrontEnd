@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import AboutUsIsland from "@/components/landing/AboutUsIsland";
 import LandingNav from "@/components/landing/LandingNav";
+import LandingContactForm from "@/components/landing/LandingContactForm";
 
 export default function LandingPage() {
   return (
@@ -90,13 +91,16 @@ export default function LandingPage() {
               <br />
               Quality Education
             </h1>
-            <button className="bg-white text-green-800 px-8 py-4 rounded-lg font-medium hover:-translate-y-1 hover:shadow-lg transition transform">
+            <Link
+              href="/apply"
+              className="inline-block bg-white text-green-800 px-8 py-4 rounded-lg font-medium hover:-translate-y-1 hover:shadow-lg transition transform"
+            >
               Apply for admission →
-            </button>
+            </Link>
           </div>
 
           {/* Three circular images - these sit ABOVE the wave */}
-          <div className="flex flex-col md:flex-row justify-center items-center gap-18 relative z-20">
+          <div className="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-18 relative z-20">
             {/* Image 1 */}
             <div className="relative w-64 h-120">
               <div className="w-full h-full rounded-[150px] overflow-hidden relative z-10">
@@ -230,7 +234,7 @@ export default function LandingPage() {
               </div>
             </div>
             <div>
-              <h2 className="text-4xl font-bold text-green-800 mb-6 leading-tight">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-800 mb-6 leading-tight">
                 Welcome to
                 <br />
                 Tremad Schools
@@ -249,7 +253,7 @@ export default function LandingPage() {
       <section id="facilities" className="py-20 bg-white scroll-mt-20 md:scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <p className="text-green-800 text-sm mb-2">About Rising</p>
-          <h2 className="text-4xl font-bold text-gray-800 mb-12">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-800 mb-8 md:mb-12">
             Our facilities
           </h2>
 
@@ -342,7 +346,7 @@ export default function LandingPage() {
       </section>
 
       {/* Programs Section */}
-      <section id="program" className="py-40 pb-50 px-10 bg-primary-green relative overflow-hidden scroll-mt-20 md:scroll-mt-24">
+      <section id="program" className="py-20 pb-24 px-5 sm:py-28 sm:pb-32 sm:px-8 md:py-40 md:pb-50 md:px-10 bg-primary-green relative overflow-hidden scroll-mt-20 md:scroll-mt-24">
         {/* Background decorations */}
         <div className="absolute inset-0 pointer-events-none">
           <Image
@@ -666,21 +670,27 @@ export default function LandingPage() {
                 <br />
                 EDUCATION TOGETHER
               </h2>
-              <button className="bg-primary-green text-white px-8 py-4 rounded-lg font-medium hover:-translate-y-1 hover:shadow-lg transition transform">
+              <Link
+                href="/apply"
+                className="inline-block bg-primary-green text-white px-8 py-4 rounded-lg font-medium hover:-translate-y-1 hover:shadow-lg transition transform"
+              >
                 Apply for admission →
-              </button>
+              </Link>
+              <p className="text-sm text-gray-700 mt-4">
+                Book lists, scheme of work and school fees are all in there too.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Contact Section */}
-      <section id="contact" className="py-40 bg-[#FBFCE9] scroll-mt-20 md:scroll-mt-24">
+      <section id="contact" className="py-16 sm:py-24 md:py-40 bg-[#FBFCE9] scroll-mt-20 md:scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-12">
+          <div className="grid md:grid-cols-2 gap-8 md:gap-12">
             <div>
               <p className="text-[#45BF5B] text-sm mb-2">Contact us</p>
-              <h2 className="text-5xl font-semibold text-[#10534A] mb-6">
+              <h2 className="text-3xl sm:text-4xl md:text-5xl font-semibold text-[#10534A] mb-4 md:mb-6">
                 Get in touch with us
               </h2>
               <p className="text-gray-600 mb-8">
@@ -688,79 +698,31 @@ export default function LandingPage() {
                 to apply? Fill out this form, and our admissions team will be in
                 touch!
               </p>
-              <div className="relative flex gap-4">
+              {/*
+                Decorative pair. Both children are absolutely positioned, so
+                this wrapper MUST carry its own height — without one it
+                collapses to 0px and the images spill out over the form below,
+                which is exactly what happened on narrow screens.
+              */}
+              <div className="relative h-[200px] sm:h-[240px] md:h-[260px] mt-2">
                 <Image
                   src="/img/Contact1.png"
-                  alt="School"
+                  alt=""
                   width={200}
                   height={200}
-                  className="absolute top-15 z-20"
+                  className="absolute top-4 left-0 z-20 w-[150px] sm:w-[180px] md:w-[200px] h-auto rounded-lg"
                 />
                 <Image
                   src="/img/Contact2.png"
-                  alt="School"
+                  alt=""
                   width={200}
                   height={200}
-                  className="absolute left-25 z-0"
+                  className="absolute top-12 left-24 sm:left-32 md:left-40 z-0 w-[150px] sm:w-[180px] md:w-[200px] h-auto rounded-lg"
                 />
               </div>
             </div>
 
-            <form className="space-y-4 max-w-xl max-h-xl p-8 bg-white rounded-xl">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">
-                    First name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter Your First Name"
-                    className="w-full px-4 py-2 bg-gray-100 border-0 rounded focus:outline-none focus:ring-2 focus:ring-green-700"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-600 mb-1">
-                    Last Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter Your Last Name"
-                    className="w-full px-4 py-2 bg-gray-100 border-0 rounded focus:outline-none focus:ring-2 focus:ring-green-700"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  placeholder="Enter your email address"
-                  className="w-full px-4 py-2 bg-gray-100 border-0 rounded focus:outline-none focus:ring-2 focus:ring-green-700"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  How can we help you?
-                </label>
-                <textarea
-                  placeholder="Enter your message"
-                  rows={5}
-                  className="w-full px-4 py-2 bg-gray-100 border-0 rounded resize-none focus:outline-none focus:ring-2 focus:ring-green-700"
-                ></textarea>
-              </div>
-
-              <div className="flex justify-end">
-                <button
-                  type="submit"
-                  className="bg-primary-green text-white px-6 py-2 rounded text-sm font-medium"
-                >
-                  Send message
-                </button>
-              </div>
-            </form>
+            <LandingContactForm />
           </div>
         </div>
       </section>

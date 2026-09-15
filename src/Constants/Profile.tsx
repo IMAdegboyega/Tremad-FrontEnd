@@ -17,6 +17,8 @@ export interface ProfileData {
   status: 'Active' | 'Inactive';
   // Academic Info
   studentAdmissionCID: string;
+  /** Learner's Identification Number — government-issued, admin-managed. */
+  lin: string;
   currentGrade: string;
   classSection: string;
   admissionDate: string;
@@ -60,6 +62,7 @@ export const emptyProfileData: ProfileData = {
   studentId: '',
   status: 'Active',
   studentAdmissionCID: '',
+  lin: '',
   currentGrade: '',
   classSection: '',
   admissionDate: '',
@@ -102,6 +105,7 @@ export const mapStudentProfileToProfileData = (
     studentId: profile.admissionNumber || '',
     status: profile.isActive ? 'Active' : 'Inactive',
     studentAdmissionCID: profile.admissionNumber || '',
+    lin: profile.lin || '',
     currentGrade: className,
     admissionDate: profile.createdAt
       ? new Date(profile.createdAt).toLocaleDateString('en-GB')

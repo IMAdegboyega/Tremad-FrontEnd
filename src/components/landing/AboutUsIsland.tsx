@@ -304,14 +304,13 @@ export default function AboutUsIsland() {
           aria-label="Skip About Us section"
           className="absolute bottom-6 right-6 md:bottom-8 md:right-8 z-30
                      flex items-center gap-1.5
-                     px-4 py-2 rounded-full
+                     px-2 py-2 rounded-full
                      text-sm font-medium text-white/70 hover:text-white
                      bg-white/10 hover:bg-white/25
                      backdrop-blur-md
                      border border-white/20 hover:border-white/40
                      transition-all cursor-pointer"
         >
-          Skip
           <ChevronRight className="w-4 h-4" />
         </button>
       </div>

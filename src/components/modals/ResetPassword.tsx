@@ -11,6 +11,8 @@ interface ResetPasswordModalProps {
   studentId: string;
   studentName: string;
   studentEmail: string;
+  /** Noun used in the copy — "student" (default) or e.g. "staff member". */
+  subjectNoun?: string;
 }
 
 /**
@@ -26,6 +28,7 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
   studentId,
   studentName,
   studentEmail,
+  subjectNoun = 'student',
 }) => {
   const [showSuccess, setShowSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -50,7 +53,7 @@ const ResetPasswordModal: React.FC<ResetPasswordModalProps> = ({
 
   const handleReset = async () => {
     if (!studentId) {
-      setError('Missing student ID — refresh and try again.');
+      setError(`Missing ${subjectNoun} ID — refresh and try again.`);
       return;
     }
     setLoading(true);

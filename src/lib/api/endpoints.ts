@@ -71,10 +71,29 @@ export const API = {
         `/super-admin/students/${studentId}/temp-password`,
     },
 
+    // Admissions inbox + public content back-office
+    ADMISSIONS: {
+      LIST: '/super-admin/applications',
+      GET_ONE: (id: string) => `/super-admin/applications/${id}`,
+      UPDATE_STATUS: (id: string) => `/super-admin/applications/${id}/status`,
+    },
+    MESSAGES: {
+      LIST: '/super-admin/messages',
+      UPDATE: (id: string) => `/super-admin/messages/${id}`,
+    },
+    CONTENT: {
+      LIST: (kind: string) => `/super-admin/content/${kind}`,
+      SAVE: (kind: string) => `/super-admin/content/${kind}`,
+      DELETE: (contentId: string) => `/super-admin/content/item/${contentId}`,
+    },
+
     // Staff Management (teachers / admins)
     STAFF: {
       GET_ALL: '/super-admin/staff',
       GET_ONE: (staffId: string) => `/super-admin/staff/${staffId}`,
+      UPDATE: (staffId: string) => `/super-admin/staff/${staffId}`,
+      TEMP_PASSWORD: (staffId: string) =>
+        `/super-admin/staff/${staffId}/temp-password`,
     },
 
     // Result Management
@@ -133,6 +152,7 @@ export const API = {
       CREATE: '/super-admin/timetables',                        // POST - create a period
       UPDATE: (id: string) => `/super-admin/timetables/${id}`,  // PUT  - edit a period
       DELETE: (id: string) => `/super-admin/timetables/${id}`,  // DELETE - soft-delete a period
+      PUBLISH: '/super-admin/timetables/publish',               // PATCH - take a class timetable offline / online
       CLASSES: '/super-admin/timetables/classes',               // GET  - selectable class names
       TEACHERS: '/super-admin/timetables/teachers',             // GET  - selectable teachers
     },
@@ -185,6 +205,18 @@ export const API = {
   },
 
   // ============================================================================
+  // PUBLIC ENDPOINTS (no auth — prospective parents have no account)
+  // ==========================================================================
+  PUBLIC: {
+    SETTINGS: '/public/settings',                              // GET  - fee, socials, session
+    CONTENT: (kind: string) => `/public/content/${kind}`,      // GET  - books | bills | scheme
+    CONTACT: '/public/contact',                                // POST - enquiry/complaint/feedback
+    APPLICATIONS: '/public/applications',                      // POST - save + start payment
+    APPLICATION: (ref: string) => `/public/applications/${ref}`,            // GET  - track status
+    APPLICATION_VERIFY: (ref: string) => `/public/applications/${ref}/verify`, // POST - confirm payment
+  },
+
+  // ==========================================================================
   // TEACHER/ADMIN ENDPOINTS
   // ============================================================================
   TEACHER: {
@@ -201,6 +233,14 @@ export const API = {
     RESULTS_CLASS: '/admin/results/class',                  // GET  - approved class results
     PAYMENTS: '/admin/payments',                            // GET  - read-only payment history
     MY_REQUESTS: '/admin/my-requests',                      // GET  - my submitted requests
+
+    // Notifications (the real feed — approvals write to it)
+    NOTIFICATIONS: {
+      LIST: '/admin/notifications',                         // GET
+      UNREAD_COUNT: '/admin/notifications/unread-count',    // GET
+      MARK_READ: (id: string) => `/admin/notifications/${id}/read`, // PUT
+      MARK_ALL_READ: '/admin/notifications/read-all',       // PUT
+    },
 
     // Approval-gated writes (create an ApprovalRequest → SA approves)
     REQUESTS: {
