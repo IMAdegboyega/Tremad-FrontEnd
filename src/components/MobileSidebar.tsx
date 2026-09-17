@@ -1,11 +1,13 @@
 'use client'
 
-import React from 'react'
+import React, { useState } from 'react'
+import { MessageSquare } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import ProfileCard from './ProfileCard'
 import LogoutButton from './LogoutButton'
+import NeedHelpDialog from './shared/NeedHelpDialog'
 
 /**
  * Navigation item structure for the mobile sidebar
@@ -24,6 +26,8 @@ type MobileSidebarProps = {
   isOpen: boolean;                    // Controls sidebar visibility
   onClose: () => void;               // Callback function to close the sidebar
   navItems: readonly NavItem[];      // Array of navigation items to display
+  /** Show the "Contact us" action, matching the desktop sidebar's help card. */
+  showHelpCard?: boolean;
 };
 
 /**
@@ -38,7 +42,8 @@ type MobileSidebarProps = {
  * - Logout functionality
  * - Responsive design (hidden on large screens)
  */
-const MobileSidebar = ({ isOpen, onClose, navItems }: MobileSidebarProps) => {
+const MobileSidebar = ({ isOpen, onClose, navItems, showHelpCard = false }: MobileSidebarProps) => {
+  const [helpOpen, setHelpOpen] = useState(false);
   // Get current pathname to determine active navigation item
   const pathname = usePathname();
 
@@ -144,7 +149,20 @@ const MobileSidebar = ({ isOpen, onClose, navItems }: MobileSidebarProps) => {
             - Fixed at bottom with border separator
             - Contains logout functionality
           */}
-          <div className='p-4 border-t border-gray-100'>
+          <div className='p-4 border-t border-gray-100 space-y-1'>
+            {showHelpCard && (
+              <button
+                type='button'
+                onClick={() => {
+                  onClose();
+                  setHelpOpen(true);
+                }}
+                className='flex items-center gap-3 px-3 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer w-full text-left text-sm'
+              >
+                <MessageSquare size={20} className='text-gray-500' />
+                Contact us
+              </button>
+            )}
             <LogoutButton 
               className='flex items-center gap-3 px-3 py-3 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer w-full'
               iconSize={20}
@@ -152,6 +170,8 @@ const MobileSidebar = ({ isOpen, onClose, navItems }: MobileSidebarProps) => {
           </div>
         </div>
       </aside>
+
+      <NeedHelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
     </>
   );
 };

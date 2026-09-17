@@ -38,6 +38,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             isOpen={isMobileSidebarOpen}
             onClose={() => setIsMobileSidebarOpen(false)}
             navItems={sidebarNavItems}
+            showHelpCard
           />
 
           {/* Main content column */}

@@ -55,6 +55,7 @@ export default function Home({ children }: HomeProps) {
             isOpen={isMobileSidebarOpen}
             onClose={() => setIsMobileSidebarOpen(false)}
             navItems={sidebarNavItems}
+            showHelpCard
           />
 
           {/* Main content column */}

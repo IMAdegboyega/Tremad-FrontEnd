@@ -27,6 +27,8 @@ export interface PublicSettings {
     instagram: string;
     facebook: string;
     twitter: string;
+    tiktok: string;
+    linkedin: string;
   };
 }
 

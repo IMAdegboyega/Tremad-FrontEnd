@@ -26,7 +26,7 @@
  */
 
 import React, { useEffect, useRef, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 
 export default function AboutUsIsland() {
   const sectionRef = useRef<HTMLElement>(null);
@@ -311,7 +311,7 @@ export default function AboutUsIsland() {
                      border border-white/20 hover:border-white/40
                      transition-all cursor-pointer"
         >
-          <ChevronRight className="w-4 h-4" />
+          <ChevronDown className="w-4 h-4" />
         </button>
       </div>
     </section>

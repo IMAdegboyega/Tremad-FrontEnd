@@ -1,7 +1,10 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
-import React from 'react'
+import React, { useState } from 'react'
 import LogoutButton from './LogoutButton';
+import NeedHelpDialog from './shared/NeedHelpDialog';
 
 type NavItem = {
   name: string;
@@ -20,6 +23,9 @@ type SidebarProps = {
 };
 
 export default function SideBar({ navItems, showHelpCard = false }: SidebarProps) {
+  // The "Contact us" button below had no onClick at all — it rendered and did
+  // nothing. This is the state it was missing.
+  const [helpOpen, setHelpOpen] = useState(false);
 
   return (
     <aside className=' bg-gray-50 rounded-2xl p-4 space-y-5 max-h-fit w-70 sticky'>
@@ -56,7 +62,8 @@ export default function SideBar({ navItems, showHelpCard = false }: SidebarProps
             </p>
             <button
               type='button'
-              className='mt-4 w-full rounded-xl bg-primary-green py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90'
+              onClick={() => setHelpOpen(true)}
+              className='mt-4 w-full rounded-xl bg-white py-2.5 text-sm font-semibold text-primary-green transition hover:bg-white/90 cursor-pointer'
             >
               Contact us
             </button>
@@ -65,6 +72,8 @@ export default function SideBar({ navItems, showHelpCard = false }: SidebarProps
 
         <LogoutButton />
       </nav>
+
+      <NeedHelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
     </aside>
   )
 }

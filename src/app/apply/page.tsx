@@ -36,6 +36,7 @@ import { GRADE_LEVELS } from '@/Constants/classes';
 import { NIGERIAN_STATES, getLGAsForState } from '@/Constants/NigeriaStates';
 import { getApiErrorMessage } from '@/lib/api/client';
 import TremadLoader from '@/components/shared/TremadLoader';
+import SocialLinks from '@/components/shared/SocialLinks';
 import {
   getPublicSettings,
   getPublicContent,
@@ -811,12 +812,6 @@ const ContactForm = ({ settings }: { settings: PublicSettings | null }) => {
   };
 
   const c = settings?.contact;
-  const socials = [
-    { label: 'WhatsApp', value: c?.whatsapp },
-    { label: 'Instagram', value: c?.instagram },
-    { label: 'Facebook', value: c?.facebook },
-    { label: 'X / Twitter', value: c?.twitter },
-  ].filter((s) => s.value);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -936,24 +931,9 @@ const ContactForm = ({ settings }: { settings: PublicSettings | null }) => {
           )}
         </div>
 
-        {socials.length > 0 && (
-          <>
-            <h3 className="font-medium text-gray-900 mt-5 mb-2 text-sm">Follow us</h3>
-            <div className="flex flex-col gap-2 text-sm">
-              {socials.map((s) => (
-                <a
-                  key={s.label}
-                  href={s.value as string}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-green-700 hover:underline"
-                >
-                  {s.label}
-                </a>
-              ))}
-            </div>
-          </>
-        )}
+        {/* Shared with the in-portal Need Help dialog — one list, one place
+            to add a platform. */}
+        <SocialLinks contact={c} label="Follow us" className="mt-5" />
       </div>
     </div>
   );

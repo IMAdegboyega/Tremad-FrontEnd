@@ -3,6 +3,8 @@ import Link from "next/link";
 import AboutUsIsland from "@/components/landing/AboutUsIsland";
 import LandingNav from "@/components/landing/LandingNav";
 import LandingContactForm from "@/components/landing/LandingContactForm";
+import ShapedImage, { BLOB_ASPECT } from "@/components/landing/ShapedImage";
+import FramedPhoto from "@/components/landing/FramedPhoto";
 
 export default function LandingPage() {
   return (
@@ -101,119 +103,116 @@ export default function LandingPage() {
 
           {/* Three circular images - these sit ABOVE the wave */}
           <div className="flex flex-col md:flex-row justify-center items-center gap-8 md:gap-18 relative z-20">
-            {/* Image 1 */}
-            <div className="relative w-64 h-120">
-              <div className="w-full h-full rounded-[150px] overflow-hidden relative z-10">
-                <Image
-                  src="/img/student1.png"
-                  alt="Student"
-                  width={200}
-                  height={300}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <Image
-                src="/icon/arch.svg"
-                alt="arch"
-                width={800}
-                height={800}
-                className="absolute -top-5 -left-5 z-20"
-              />
-            </div>
-
-            {/* Image 2 */}
-            <div className="relative w-64 h-120">
-              <div className="w-full h-full rounded-[150px] overflow-hidden relative z-10">
-                <Image
-                  src="/img/student2.png"
-                  alt="Student"
-                  width={200}
-                  height={300}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <Image
-                src="/icon/arch.svg"
-                alt="arch"
-                width={800}
-                height={800}
-                className="absolute -top-2 -left-1 z-20"
-              />
-            </div>
-
-            {/* Image 3 */}
-            <div className="relative w-64 h-120">
-              <div className="w-full h-full rounded-[150px] overflow-hidden relative z-10">
-                <Image
-                  src="/img/student3.png"
-                  alt="Student"
-                  width={200}
-                  height={300}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <Image
-                src="/icon/arch.svg"
-                alt="arch"
-                width={800}
-                height={800}
-                className="absolute -top-5 -right-3 z-20"
-              />
-            </div>
+            {/* Each photo is now an ORDINARY rectangle — the pill and its
+                outline are CSS. Drop any jpg/png in and it takes the shape.
+                See components/landing/ShapedImage.tsx. */}
+            <ShapedImage
+              src="/TREMAD-new-file/9.png"
+              sourceAspect={1448 / 1086}
+              alt="Tremad pupils playing on the school playground"
+              className="w-64 h-120"
+              shape="pill"
+              outline={{ color: '#D9D9D9' }}
+              focus="30% 30%"
+              priority
+            />
+            <ShapedImage
+              src="/TREMAD-new-file/18.png"
+              sourceAspect={1448 / 1086}
+              alt="Tremad pupils on the playground roundabout"
+              className="w-64 h-120"
+              shape="pill"
+              outline={{ color: '#D9D9D9' }}
+              focus="50% 30%"
+              priority
+            />
+            <ShapedImage
+              src="/TREMAD-new-file/13.png"
+              sourceAspect={1448 / 1086}
+              alt="Tremad students outside a classroom block"
+              className="w-64 h-120"
+              shape="pill"
+              outline={{ color: '#D9D9D9' }}
+              focus="10% 30%"
+              priority
+            />
           </div>
         </div>
       </section>
 
       {/* Stats Section */}
-      <section className="bg-[#FBFCE9] px-20 py-32 z-0">
-        <div className="flex flex-row items-center justify-center gap-8 rounded-2xl p-8 relative">
-          <div className="text-center text-gray-800">
-            <div className="text-4xl mb-2 flex items-center justify-center">
+      {/*
+        Three columns in a hardcoded `flex-row` with `px-20` meant each stat got
+        roughly 50px on a 375px phone, so the copy broke to one or two words a
+        line. Below `md` each stat is now its own full-width row — icon on the
+        left, number and label on one baseline, sentence beneath — which reads
+        as a deliberate list rather than a squeezed table. Every change is
+        behind a breakpoint, so `md` and up renders exactly as before.
+      */}
+      <section className="bg-[#FBFCE9] px-6 sm:px-10 md:px-20 py-16 md:py-32 z-0">
+        <div className="flex flex-col gap-8 md:flex-row md:items-center justify-center md:gap-8 rounded-2xl p-0 md:p-8 relative max-w-md mx-auto md:max-w-none">
+          <div className="flex items-start gap-4 text-left md:block md:text-center text-gray-800">
+            <div className="shrink-0 flex items-center justify-center md:text-4xl md:mb-2">
               <Image
                 src="/icon/studentcountlp.svg"
                 alt="studentcount"
                 width={50}
                 height={50}
+                className="w-10 h-10 md:w-[50px] md:h-[50px]"
               />
             </div>
-            <h3 className="text-3xl font-bold">100+</h3>
-            <p className="font-medium text-lg">Students</p>
-            <small className="text-gray-600 text-sm">
-              A vibrant community of learners from Nursery through Senior
-              Secondary, shaping their futures together.
-            </small>
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2 md:block">
+                <h3 className="text-3xl font-bold">100+</h3>
+                <p className="font-medium text-lg">Students</p>
+              </div>
+              <small className="text-gray-600 text-sm">
+                A vibrant community of learners from Nursery through Senior
+                Secondary, shaping their futures together.
+              </small>
+            </div>
           </div>
-          <div className="text-center text-gray-800">
-            <div className="text-4xl mb-2 flex items-center justify-center">
+          <div className="flex items-start gap-4 text-left md:block md:text-center text-gray-800">
+            <div className="shrink-0 flex items-center justify-center md:text-4xl md:mb-2">
               <Image
                 src="/icon/teachercountlp.svg"
                 alt="teachercount"
                 width={50}
                 height={50}
+                className="w-10 h-10 md:w-[50px] md:h-[50px]"
               />
             </div>
-            <h3 className="text-3xl font-bold">30+</h3>
-            <p className="font-medium text-lg">Qualified Teachers</p>
-            <small className="text-gray-600 text-sm">
-              Trained, patient educators working closely with parents to
-              nurture every child&apos;s progress.
-            </small>
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2 md:block">
+                <h3 className="text-3xl font-bold">30+</h3>
+                <p className="font-medium text-lg">Qualified Teachers</p>
+              </div>
+              <small className="text-gray-600 text-sm">
+                Trained, patient educators working closely with parents to
+                nurture every child&apos;s progress.
+              </small>
+            </div>
           </div>
-          <div className="text-center text-gray-800">
-            <div className="text-4xl mb-2 flex items-center justify-center">
+          <div className="flex items-start gap-4 text-left md:block md:text-center text-gray-800">
+            <div className="shrink-0 flex items-center justify-center md:text-4xl md:mb-2">
               <Image
                 src="/icon/successcountlp.svg"
                 alt="successcount"
                 width={50}
                 height={50}
+                className="w-10 h-10 md:w-[50px] md:h-[50px]"
               />
             </div>
-            <h3 className="text-3xl font-bold">97%</h3>
-            <p className="font-medium text-lg">Success Rate</p>
-            <small className="text-gray-600 text-sm">
-              Consistent results in BECE, WAEC, and NECO — the outcome of
-              steady teaching and personal attention.
-            </small>
+            <div className="min-w-0">
+              <div className="flex items-baseline gap-2 md:block">
+                <h3 className="text-3xl font-bold">97%</h3>
+                <p className="font-medium text-lg">Success Rate</p>
+              </div>
+              <small className="text-gray-600 text-sm">
+                Consistent results in BECE, WAEC, and NECO — the outcome of
+                steady teaching and personal attention.
+              </small>
+            </div>
           </div>
         </div>
       </section>
@@ -222,17 +221,24 @@ export default function LandingPage() {
       <section id="welcome" className="py-20 bg-white scroll-mt-20 md:scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="relative">
-              <div className="rounded-[200px_200px_0_200px] overflow-hidden">
-                <Image
-                  src="/img/welcometoschool.png"
-                  alt="Students"
-                  width={500}
-                  height={400}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
+            {/*
+              Was a pre-cut PNG with the blob and its green line baked into the
+              alpha channel, which meant changing this photo meant re-cutting
+              the shape in an image editor. The shape is now a clip-path traced
+              from that PNG, so any ordinary rectangular photo drops in here.
+              Swap `src` and adjust `focus` if the subject sits off-centre.
+            */}
+            <ShapedImage
+              src="/TREMAD-new-file/1.png"
+              alt="Students at Tremad"
+              shape="blob"
+              className="w-full aspect-[5965/5127]"
+              sourceAspect={1448 / 1086}
+              boxAspect={BLOB_ASPECT}
+              renderWidth={584}
+              focus="50% 35%"
+              outline={{ color: '#006437', width: 1.5 }}
+            />
             <div>
               <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-green-800 mb-6 leading-tight">
                 Welcome to
@@ -390,13 +396,27 @@ export default function LandingPage() {
           <p className="text-white/60 text-lg mb-2 text-center">
             Africa Rising
           </p>
-          <h2 className="text-5xl font-bold text-white mb-20 text-center">
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-12 md:mb-20 text-center">
             Our Programs
           </h2>
 
-          <div className="space-y-60">
+          {/*
+            `space-y-60` put 240px between the two programs and `gap-60` put
+            another 240px between each photo and its own copy — on a phone that
+            is most of a screen of empty green, so the text never appears in the
+            same viewport as the picture it belongs to.
+          */}
+          <div className="space-y-24 sm:space-y-40 md:space-y-60">
             {/* Primary School */}
-            <div className="grid mx-auto md:grid-cols-2 sm:gap-20 gap-60 space-x-20 items-center">
+            {/*
+              `space-x-20` was doing real damage below md: it is a margin-left
+              on every child but the first, and while the grid is still ONE
+              column that lands an 80px indent on the text block alone. It only
+              makes sense once there are two columns, so it is md-only now —
+              which leaves the md+ spacing (gap-20 + the 80px margin) exactly as
+              it was.
+            */}
+            <div className="grid mx-auto md:grid-cols-2 gap-10 sm:gap-20 md:space-x-20 items-center">
               {/* Tilted Image */}
               <div className="relative flex justify-center">
                 <div className="relative hover:rotate-[3deg] transition-transform duration-300">
@@ -405,6 +425,10 @@ export default function LandingPage() {
                     alt="Primary School"
                     width={400}
                     height={400}
+                    // 400px intrinsic against ~335px of usable width on a 375px
+                    // phone; the section's overflow-hidden was silently
+                    // cropping it rather than letting it scale.
+                    className="w-full h-auto max-w-[400px]"
                   />
                 </div>
               </div>
@@ -412,7 +436,9 @@ export default function LandingPage() {
               {/* Content */}
               <div className="text-white">
                 <p className="text-white/60 text-base mb-1">About us</p>
-                <h3 className="text-5xl font-semibold mb-6">Primary School</h3>
+                <h3 className="text-3xl sm:text-4xl md:text-5xl font-semibold mb-6">
+                  Primary School
+                </h3>
                 <ul className="space-y-6">
                   <li className="flex items-start text-lg">
                     <svg
@@ -517,11 +543,13 @@ export default function LandingPage() {
             </div>
 
             {/* Secondary School */}
-            <div className="grid md:grid-cols-2 sm:gap-20 gap-60 items-center">
+            <div className="grid md:grid-cols-2 gap-10 sm:gap-20 items-center">
               {/* Content */}
               <div className="text-white order-2 md:order-1">
                 <p className="text-white/60 text-base mb-1">About us</p>
-                <h3 className="text-5xl font-bold mb-6">Secondary School</h3>
+                <h3 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-6">
+                  Secondary School
+                </h3>
                 <ul className="space-y-6">
                   <li className="flex items-start text-lg">
                     <svg
@@ -630,6 +658,7 @@ export default function LandingPage() {
                     alt="Secondary School"
                     width={409}
                     height={400}
+                    className="w-full h-auto max-w-[409px]"
                   />
                 </div>
               </div>
@@ -644,7 +673,16 @@ export default function LandingPage() {
       {/* CTA Section */}
       <section id="apply" className="py-20 bg-white scroll-mt-20 md:scroll-mt-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative overflow-hidden text-center rounded-3xl p-16 py-20 bg-gradient-to-b from-white via-[#F7FEE7]/70 to-[#89c082]">
+          {/*
+            `p-16` took 128px of horizontal padding out of a 375px phone,
+            leaving ~215px for a 36px headline — so "EDUCATION" nearly filled a
+            line on its own and the whole block ran five lines tall. Padding and
+            type size now step up with the viewport, and the forced <br /> is
+            suppressed below md so the headline wraps where it fits instead of
+            where the desktop layout wanted it. Everything is behind a
+            breakpoint; md and up is untouched.
+          */}
+          <div className="relative overflow-hidden text-center rounded-3xl p-6 py-12 sm:p-10 sm:py-16 md:p-16 md:py-20 bg-gradient-to-b from-white via-[#F7FEE7]/70 to-[#89c082]">
             {/* Soft vertical bars */}
             <div className="absolute inset-0 flex justify-between opacity-40 pointer-events-none">
               <div className="w-1 bg-gradient-to-b from-transparent via-green-100 to-transparent"></div>
@@ -665,18 +703,24 @@ export default function LandingPage() {
             </div>
 
             <div className="relative z-10">
-              <h2 className="text-4xl font-semibold text-black mb-8">
+              <h2 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-black mb-6 md:mb-8 text-balance md:text-wrap">
                 LET&apos;S SHAPE THE FUTURE OF
-                <br />
+                <br className="hidden md:inline" />{' '}
                 EDUCATION TOGETHER
               </h2>
+              {/*
+                `whitespace-nowrap` keeps the arrow attached to the label — it
+                was orphaning onto a line of its own once the button narrowed.
+                Full width below sm gives a proper thumb target; sm and up keeps
+                the original shrink-to-fit button exactly.
+              */}
               <Link
                 href="/apply"
-                className="inline-block bg-primary-green text-white px-8 py-4 rounded-lg font-medium hover:-translate-y-1 hover:shadow-lg transition transform"
+                className="inline-block w-full sm:w-auto text-center whitespace-nowrap bg-primary-green text-white px-8 py-4 rounded-lg font-medium hover:-translate-y-1 hover:shadow-lg transition transform"
               >
                 Apply for admission →
               </Link>
-              <p className="text-sm text-gray-700 mt-4">
+              <p className="text-sm text-gray-700 mt-4 max-w-sm mx-auto text-balance">
                 Book lists, scheme of work and school fees are all in there too.
               </p>
             </div>
@@ -705,19 +749,20 @@ export default function LandingPage() {
                 which is exactly what happened on narrow screens.
               */}
               <div className="relative h-[200px] sm:h-[240px] md:h-[260px] mt-2">
-                <Image
-                  src="/img/Contact1.png"
+                <FramedPhoto
+                  src="/TREMAD-new-file/4.png"
                   alt=""
-                  width={200}
-                  height={200}
-                  className="absolute top-4 left-0 z-20 w-[150px] sm:w-[180px] md:w-[200px] h-auto rounded-lg"
+                  className="absolute top-4 left-0 z-20 w-[150px] sm:w-[180px] md:w-[200px] aspect-square"
+                  sourceAspect={1448 / 1086}
+                  focus="50% 40%"
                 />
-                <Image
-                  src="/img/Contact2.png"
+                <FramedPhoto
+                  src="/TREMAD-new-file/7.png"
                   alt=""
-                  width={200}
-                  height={200}
-                  className="absolute top-12 left-24 sm:left-32 md:left-40 z-0 w-[150px] sm:w-[180px] md:w-[200px] h-auto rounded-lg"
+                  className="absolute top-12 left-24 sm:left-32 md:left-40 z-0 w-[150px] sm:w-[180px] md:w-[200px] aspect-square"
+                  tilt={9.75}
+                  sourceAspect={1448 / 1086}
+                  focus="50% 40%"
                 />
               </div>
             </div>
