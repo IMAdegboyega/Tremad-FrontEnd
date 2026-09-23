@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import CurriculumPanel from '@/components/superadmin/CurriculumPanel';
+import { getSubjects, type Subject } from '@/lib/api/curriculum.service';
 import {
   Plus,
   Pencil,
@@ -62,6 +64,7 @@ const emptyForm = (
 ): FormState => ({
   className,
   subject: '',
+  subjectId: '',
   teacherId: '',
   day: 'Monday',
   startTime: '08:00',
@@ -116,7 +119,49 @@ const COPY = {
  * summary strip shows total hours, free periods and hours-per-teacher. Students
  * in the class see the result on their own Time Table page.
  */
+/** Timetable builder, or the curriculum the timetable is built from. */
+type TimetableView = 'timetable' | 'curriculum';
+
+const ViewTabs: React.FC<{
+  view: TimetableView;
+  setView: (v: TimetableView) => void;
+}> = ({ view, setView }) => (
+  <div className='mt-3 flex gap-1 border-b border-gray-200'>
+    {(
+      [
+        ['timetable', 'Timetable'],
+        ['curriculum', 'Curriculum'],
+      ] as Array<[TimetableView, string]>
+    ).map(([key, label]) => (
+      <button
+        key={key}
+        onClick={() => setView(key)}
+        className={`text-sm px-4 py-2 -mb-px border-b-2 transition-colors ${
+          view === key
+            ? 'border-primary-green text-primary-green font-medium'
+            : 'border-transparent text-gray-500 hover:text-gray-700'
+        }`}
+      >
+        {label}
+      </button>
+    ))}
+  </div>
+);
+
+/**
+ * The subject's colour as a dot. Grey when the period isn't linked to the
+ * catalogue — those still render, they just have no colour to show.
+ */
+const SubjectDot: React.FC<{ colour: string | null }> = ({ colour }) => (
+  <span
+    aria-hidden='true'
+    className='inline-block w-2.5 h-2.5 rounded-full shrink-0'
+    style={{ backgroundColor: colour || '#D1D5DB' }}
+  />
+);
+
 const Timetable = () => {
+  const [view, setView] = useState<TimetableView>('timetable');
   const [teachers, setTeachers] = useState<TeacherOption[]>([]);
   const [selectedClass, setSelectedClass] = useState('');
   // Which timetable we're building: weekly lessons, or the exam schedule.
@@ -140,6 +185,15 @@ const Timetable = () => {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState<FormState>(emptyForm(''));
+  /**
+   * The catalogue, for the subject picker and for colouring cells.
+   *
+   * The subject used to be a free-text box with the placeholder "e.g.
+   * Mathematics", which is how "Maths" and "Mathematics" became two different
+   * subjects as far as the database was concerned. Picking from the catalogue
+   * is what ties a period to a colour.
+   */
+  const [catalogue, setCatalogue] = useState<Subject[]>([]);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -152,9 +206,13 @@ const Timetable = () => {
     (async () => {
       try {
         // Classes no longer come from the API — the grade list is fixed.
-        const teachRes = await getTimetableTeachers();
+        const [teachRes, subjRes] = await Promise.all([
+          getTimetableTeachers(),
+          getSubjects(),
+        ]);
         if (cancelled.current) return;
         setTeachers(teachRes?.data?.teachers ?? []);
+        setCatalogue(subjRes?.data?.subjects ?? []);
         setSelectedClass((c) => c || GRADE_LEVELS[0]);
       } catch {
         if (!cancelled.current) {
@@ -205,6 +263,7 @@ const Timetable = () => {
       _id: e._id,
       className: e.className,
       subject: e.subject,
+      subjectId: e.subjectId ?? '',
       teacherId: e.teacherId ?? '',
       day: e.day,
       startTime: e.startTime,
@@ -239,6 +298,7 @@ const Timetable = () => {
       const payload: TimetableEntryInput = {
         className: form.className,
         subject: form.subject.trim(),
+        subjectId: form.subjectId || undefined,
         teacherId: form.teacherId || undefined,
         day: form.day,
         startTime: form.startTime,
@@ -299,6 +359,26 @@ const Timetable = () => {
   const entriesByDay = (day: string) =>
     entries.filter((e) => e.day === day);
 
+  // Curriculum lives here rather than in its own sidebar entry: a timetable is
+  // built out of a class's subjects, so keeping the two a click apart means the
+  // list and the thing made from it stay in the same place.
+  if (view === 'curriculum') {
+    return (
+      <div className='flex flex-col gap-4'>
+        <div>
+          <h1 className='text-xl sm:text-2xl font-semibold text-gray-900'>
+            Timetable
+          </h1>
+          <p className='text-sm text-gray-500'>
+            What each class studies, and when.
+          </p>
+          <ViewTabs view={view} setView={setView} />
+        </div>
+        <CurriculumPanel />
+      </div>
+    );
+  }
+
   return (
     <div className='flex flex-col gap-4'>
       {/* Header */}
@@ -308,6 +388,8 @@ const Timetable = () => {
             Timetable
           </h1>
           <p className='text-sm text-gray-500'>{copy.subtitle}</p>
+
+          <ViewTabs view={view} setView={setView} />
 
           {/* Mode switch — lessons vs exams, same builder underneath */}
           <div className='mt-3 inline-flex rounded-lg border border-gray-200 bg-white p-0.5'>
@@ -489,7 +571,8 @@ const Timetable = () => {
                   </p>
                 </div>
                 <div className='flex-1 min-w-0'>
-                  <p className='text-sm font-medium text-gray-900 truncate'>
+                  <p className='text-sm font-medium text-gray-900 truncate flex items-center gap-2'>
+                    <SubjectDot colour={e.colour} />
                     {e.subject}
                   </p>
                   <p className='text-xs text-gray-500 truncate'>
@@ -543,10 +626,21 @@ const Timetable = () => {
                     dayEntries.map((e) => (
                       <div
                         key={e._id}
-                        className='group rounded-lg border border-gray-100 bg-gray-50 p-2.5 hover:border-green-200'
+                        className='group rounded-lg border p-2.5 transition-colors'
+                        style={
+                          e.colour
+                            ? {
+                                // A tint rather than a fill: the cell still has
+                                // to carry dark text for the teacher and room.
+                                backgroundColor: `${e.colour}14`,
+                                borderColor: `${e.colour}55`,
+                              }
+                            : undefined
+                        }
                       >
                         <div className='flex items-start justify-between gap-1'>
-                          <p className='text-sm font-medium text-gray-900 leading-tight'>
+                          <p className='text-sm font-medium text-gray-900 leading-tight flex items-center gap-1.5'>
+                            <SubjectDot colour={e.colour} />
                             {e.subject}
                           </p>
                           <div className='flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity'>
@@ -620,12 +714,38 @@ const Timetable = () => {
 
           <div className='space-y-3 py-1'>
             <Field label='Subject'>
-              <input
-                value={form.subject}
-                onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                placeholder='e.g. Mathematics'
+              <select
+                value={form.subjectId || ''}
+                onChange={(e) => {
+                  const picked = catalogue.find((c) => c._id === e.target.value);
+                  // Both are sent: the id ties the period to its colour, the
+                  // name is denormalised so an old timetable still reads
+                  // correctly after a rename or an archive.
+                  setForm({
+                    ...form,
+                    subjectId: picked?._id ?? '',
+                    subject: picked?.name ?? '',
+                  });
+                }}
                 className={inputCls}
-              />
+              >
+                <option value=''>Select a subject</option>
+                {catalogue.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name}
+                    {c.kind === 'activity' ? ' (activity)' : ''}
+                  </option>
+                ))}
+              </select>
+              {/* A period written before the catalogue existed keeps its typed
+                  name until someone re-saves it. Show what it was rather than
+                  an empty select that looks like data loss. */}
+              {!form.subjectId && form.subject && (
+                <p className='mt-1 text-xs text-amber-700'>
+                  Currently &ldquo;{form.subject}&rdquo;, which isn&apos;t in the
+                  catalogue. Pick a subject to give it a colour.
+                </p>
+              )}
             </Field>
 
             <Field label={`${COPY[form.type ?? 'class'].person} (optional)`}>

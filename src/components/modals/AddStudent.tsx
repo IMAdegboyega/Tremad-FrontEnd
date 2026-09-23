@@ -1,12 +1,18 @@
 // AddStudentModal — wired to backend with auto-generated admission number + temp password
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { X, CheckCircle, Copy, Check } from 'lucide-react';
 import { createStudent, uploadUserAvatar } from '@/lib/api';
 import AvatarPicker from '@/components/shared/AvatarPicker';
 import { getApiErrorMessage } from '@/lib/api/client';
+import WizardProgress from '@/components/shared/WizardProgress';
 import { GRADE_LEVELS, CLASS_SECTIONS } from '@/Constants/classes';
+import {
+  getCurriculum,
+  type Requirement,
+  type Subject,
+} from '@/lib/api/curriculum.service';
 import { NIGERIAN_STATES, getLGAsForState } from '@/Constants/NigeriaStates';
 import {
   DropdownMenu,
@@ -15,10 +21,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-interface AddStudentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+
 
 interface StudentFormData {
   /** Government-issued Learner's Identification Number (optional). */
@@ -71,6 +74,55 @@ const INITIAL_FORM: StudentFormData = {
   emergencyContact: '',
 };
 
+interface AddStudentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+/** A field counts as done once it holds something other than whitespace. */
+const filled = (v: string) => Boolean(v && v.trim());
+
+/**
+ * What each step requires, in order.
+ *
+ * SINGLE SOURCE for two things that must agree: how full the progress bar is,
+ * and whether "Continue" is enabled. They were separate before — the bar was
+ * a fixed three-state thing and validity was a switch statement — which is
+ * exactly the arrangement where one gets a new field and the other doesn't.
+ *
+ * Step 3 requires nothing: subjects come prefilled from the class curriculum
+ * and a class with none is legitimate, so it reads as complete on arrival.
+ */
+const STEP_CHECKS: Array<Array<(f: StudentFormData) => boolean>> = [
+  [
+    (f) => filled(f.firstName),
+    (f) => filled(f.lastName),
+    (f) => filled(f.email),
+    (f) => filled(f.gender),
+  ],
+  [(f) => filled(f.currentGrade), (f) => filled(f.classSection)],
+  [],
+  [
+    (f) => filled(f.guardianName),
+    (f) => filled(f.relationship),
+    (f) => filled(f.guardianPhone),
+  ],
+];
+
+const STEP_LABELS = [
+  'Student details',
+  'Academic info',
+  'Subjects & activities',
+  'Guardian info',
+];
+
+/** 0–1 for one step. A step with nothing required is complete by definition. */
+const stepRatio = (step: number, form: StudentFormData): number => {
+  const checks = STEP_CHECKS[step - 1] ?? [];
+  if (!checks.length) return 1;
+  return checks.filter((c) => c(form)).length / checks.length;
+};
+
 const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -84,6 +136,92 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
   const [photo, setPhoto] = useState<File | null>(null);
   const [photoWarning, setPhotoWarning] = useState('');
 
+  // ---- What this student will take -------------------------------------
+  // Read from the chosen grade's curriculum, then owned by this student. The
+  // curriculum is a template: unticking here changes this student only, and a
+  // later edit to the class's curriculum never reaches back into them.
+  const [curriculumSubjects, setCurriculumSubjects] = useState<
+    Array<{ subject: Subject; requirement: Requirement }>
+  >([]);
+  const [curriculumActivities, setCurriculumActivities] = useState<Subject[]>([]);
+  const [chosenSubjects, setChosenSubjects] = useState<Set<string>>(new Set());
+  const [chosenActivities, setChosenActivities] = useState<Set<string>>(new Set());
+  const [loadingCurriculum, setLoadingCurriculum] = useState(false);
+  const [curriculumError, setCurriculumError] = useState('');
+
+  const grade = formData.currentGrade;
+
+  const loadCurriculum = useCallback(async () => {
+    if (!grade) {
+      setCurriculumSubjects([]);
+      setCurriculumActivities([]);
+      setChosenSubjects(new Set());
+      setChosenActivities(new Set());
+      return;
+    }
+    setLoadingCurriculum(true);
+    setCurriculumError('');
+    try {
+      const res = await getCurriculum(grade);
+      if (res?.success && res.data) {
+        const subs = (res.data.curriculum.subjects || [])
+          .map((e) => ({
+            subject: typeof e.subject === 'string' ? null : e.subject,
+            requirement: e.requirement,
+          }))
+          // A subject archived since the curriculum was saved comes back
+          // unpopulated; drop it rather than render a nameless row.
+          .filter((e): e is { subject: Subject; requirement: Requirement } =>
+            Boolean(e.subject)
+          );
+        const acts = (res.data.curriculum.activities || [])
+          .map((a) => (typeof a === 'string' ? null : a))
+          .filter((a): a is Subject => Boolean(a));
+
+        setCurriculumSubjects(subs);
+        setCurriculumActivities(acts);
+        // Everything starts ticked — the admin unticks what this student won't
+        // take, rather than rebuilding the class's list by hand each time.
+        setChosenSubjects(new Set(subs.map((e) => e.subject._id)));
+        setChosenActivities(new Set(acts.map((a) => a._id)));
+      } else {
+        setCurriculumError(res?.message || 'Could not load this class.');
+      }
+    } catch {
+      setCurriculumError('Could not load this class.');
+    } finally {
+      setLoadingCurriculum(false);
+    }
+  }, [grade]);
+
+  // Re-reads whenever the grade changes, including back to blank. Keyed on the
+  // GRADE alone: a curriculum belongs to "Basic 1" — not to a section, and no
+  // longer to a session either.
+  //
+  // Guarded on `isOpen` so a closed modal isn't fetching in the background,
+  // but the hook itself still RUNS on every render — see the note on the
+  // early return below.
+  useEffect(() => {
+    if (!isOpen) return;
+    loadCurriculum();
+  }, [isOpen, loadCurriculum]);
+
+  const coreIds = useMemo(
+    () =>
+      new Set(
+        curriculumSubjects
+          .filter((e) => e.requirement === 'core')
+          .map((e) => e.subject._id)
+      ),
+    [curriculumSubjects]
+  );
+
+  // EVERY hook must appear above this line. React identifies hooks by call
+  // order, so a `useState`/`useEffect`/`useMemo` placed after an early return
+  // is skipped on the renders that bail out — and the next full render reads
+  // another hook's state. It works right up until the modal is closed once.
+  if (!isOpen) return null;
+
   // Full 36 states + FCT, sourced from the shared NigeriaStates dataset.
   const nigerianStates = NIGERIAN_STATES;
   // LGAs for whichever state is currently selected (empty until one is picked).
@@ -94,8 +232,6 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
   const gradeLevels = GRADE_LEVELS;
   const classSections = CLASS_SECTIONS;
   const genders = ['Male', 'Female'];
-
-  if (!isOpen) return null;
 
   const handleInputChange = (field: keyof StudentFormData, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -109,30 +245,13 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     if (error) setError('');
   };
 
-  const isStepValid = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!(
-          formData.firstName &&
-          formData.lastName &&
-          formData.email &&
-          formData.gender
-        );
-      case 2:
-        return !!(formData.currentGrade && formData.classSection);
-      case 3:
-        return !!(
-          formData.guardianName &&
-          formData.relationship &&
-          formData.guardianPhone
-        );
-      default:
-        return false;
-    }
-  };
+  // Same checks the progress bar counts, so a full segment and an enabled
+  // Continue button can never disagree.
+  const isStepValid = (step: number): boolean =>
+    stepRatio(step, formData) === 1;
 
   const handleNext = () => {
-    if (currentStep < 3) setCurrentStep(currentStep + 1);
+    if (currentStep < totalSteps) setCurrentStep(currentStep + 1);
   };
 
   const handleBack = () => {
@@ -176,6 +295,11 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
           guardianEmail: formData.guardianEmail,
           emergencyContact: formData.emergencyContact,
         }),
+        // Snapshot. Sent as ids; the backend re-checks kind and de-duplicates.
+        enrolledSubjects: curriculumSubjects
+          .filter((e) => chosenSubjects.has(e.subject._id))
+          .map((e) => ({ subject: e.subject._id, requirement: e.requirement })),
+        enrolledActivities: [...chosenActivities],
       });
 
       if (result.success && result.data) {
@@ -245,6 +369,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     }
   };
 
+  /** Leaves the page. State is per-mount, so nothing needs resetting. */
   const handleClose = () => {
     setCurrentStep(1);
     setShowSuccess(false);
@@ -254,6 +379,11 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     setFormData(INITIAL_FORM);
     setPhoto(null);
     setPhotoWarning('');
+    // The curriculum picks belong to the student being created, so they reset
+    // with everything else — reopening for the next student must not inherit
+    // the last one's subjects.
+    setChosenSubjects(new Set());
+    setChosenActivities(new Set());
     onClose();
   };
 
@@ -261,7 +391,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     if (e.target === e.currentTarget && !loading) handleClose();
   };
 
-  const totalSteps = 3;
+  const totalSteps = 4;
 
   return (
     <div
@@ -285,17 +415,16 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
               </button>
             </div>
 
-            {/* Stepper */}
-            <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm">
-              {['Student details', 'Academic info', 'Guardian info'].map((label, i) => (
-                <div key={i} className="flex-1">
-                  <div className={`text-center mb-1 sm:mb-2 ${currentStep === i + 1 ? 'text-green-600 font-medium' : currentStep > i + 1 ? 'text-green-600' : 'text-gray-400'}`}>
-                    {label}
-                  </div>
-                  <div className={`h-1 rounded-full ${currentStep > i ? 'bg-green-600' : 'bg-gray-200'}`} />
-                </div>
-              ))}
-            </div>
+            {/* Fills as fields are completed — see WizardProgress. */}
+            <WizardProgress
+              steps={STEP_LABELS.map((label, i) => ({
+                label,
+                ratio: stepRatio(i + 1, formData),
+              }))}
+              current={currentStep}
+              labelPosition="above"
+              onStepClick={setCurrentStep}
+            />
           </div>
 
           {/* Error */}
@@ -527,8 +656,90 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
               </div>
             )}
 
-            {/* Step 3: Guardian info */}
+            {/* Step 3: Subjects & activities, prefilled from the class */}
             {currentStep === 3 && (
+              <div className="space-y-4">
+                {!grade ? (
+                  <p className="text-sm text-gray-500">
+                    Go back and choose a grade first.
+                  </p>
+                ) : loadingCurriculum ? (
+                  <p className="text-sm text-gray-500">
+                    Loading what {grade} takes&hellip;
+                  </p>
+                ) : curriculumError ? (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-600">{curriculumError}</p>
+                  </div>
+                ) : curriculumSubjects.length === 0 &&
+                  curriculumActivities.length === 0 ? (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-800">
+                      Nothing has been assigned to {grade} yet. You can still
+                      create this student &mdash; set the class up under
+                      Timetable &rarr; Curriculum and edit them afterwards.
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-xs text-gray-500">
+                      Everything assigned to {grade} is ticked. Untick anything
+                      this student won&apos;t take. Core subjects can&apos;t be
+                      removed.
+                    </p>
+
+                    {curriculumSubjects.length > 0 && (
+                      <PickList
+                        title="Subjects"
+                        rows={curriculumSubjects.map((e) => ({
+                          id: e.subject._id,
+                          name: e.subject.name,
+                          colour: e.subject.colour,
+                          locked: e.requirement === 'core',
+                          badge: e.requirement,
+                        }))}
+                        chosen={chosenSubjects}
+                        onToggle={(id) => {
+                          // Core subjects are fixed by the curriculum — the
+                          // lock is the whole point of the core/elective split.
+                          if (coreIds.has(id)) return;
+                          setChosenSubjects((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(id)) next.delete(id);
+                            else next.add(id);
+                            return next;
+                          });
+                        }}
+                      />
+                    )}
+
+                    {curriculumActivities.length > 0 && (
+                      <PickList
+                        title="Activities"
+                        rows={curriculumActivities.map((a) => ({
+                          id: a._id,
+                          name: a.name,
+                          colour: a.colour,
+                          locked: false,
+                        }))}
+                        chosen={chosenActivities}
+                        onToggle={(id) =>
+                          setChosenActivities((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(id)) next.delete(id);
+                            else next.add(id);
+                            return next;
+                          })
+                        }
+                      />
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Step 4: Guardian info */}
+            {currentStep === 4 && (
               <div className="space-y-3 sm:space-y-4">
                 <div>
                   <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">Guardian name *</label>
@@ -603,7 +814,7 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
               </button>
 
               <div className="flex gap-2 sm:gap-3">
-                {currentStep < 3 ? (
+                {currentStep < totalSteps ? (
                   <button
                     onClick={handleNext}
                     disabled={!isStepValid(currentStep)}
@@ -705,5 +916,80 @@ const AddStudentModal: React.FC<AddStudentModalProps> = ({ isOpen, onClose }) =>
     </div>
   );
 };
+
+
+/**
+ * One tickable list. Shared by Subjects and Activities so the two can't drift
+ * apart visually; `locked` is what a core subject sets.
+ */
+const PickList: React.FC<{
+  title: string;
+  rows: Array<{
+    id: string;
+    name: string;
+    colour: string;
+    locked: boolean;
+    badge?: string;
+  }>;
+  chosen: Set<string>;
+  onToggle: (id: string) => void;
+}> = ({ title, rows, chosen, onToggle }) => (
+  <section className="border border-gray-200 rounded-lg">
+    <header className="px-3 py-2 border-b border-gray-100 flex items-center justify-between">
+      <h4 className="text-sm font-medium text-gray-900">{title}</h4>
+      <span className="text-xs text-gray-400">
+        {rows.filter((r) => chosen.has(r.id)).length} of {rows.length}
+      </span>
+    </header>
+    <div className="divide-y divide-gray-100">
+      {rows.map((r) => {
+        const on = chosen.has(r.id);
+        return (
+          <button
+            key={r.id}
+            type="button"
+            onClick={() => onToggle(r.id)}
+            disabled={r.locked}
+            aria-pressed={on}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 text-left transition-colors ${
+              r.locked ? 'cursor-not-allowed' : 'hover:bg-gray-50'
+            }`}
+          >
+            <span
+              className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 ${
+                on
+                  ? 'bg-green-600 border-green-600 text-white'
+                  : 'border-gray-300'
+              } ${r.locked ? 'opacity-60' : ''}`}
+            >
+              {on && (
+                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                </svg>
+              )}
+            </span>
+            <span
+              className="w-3 h-3 rounded-full shrink-0"
+              style={{ backgroundColor: r.colour }}
+              aria-hidden="true"
+            />
+            <span className="text-sm text-gray-900 flex-1 min-w-0 truncate">
+              {r.name}
+            </span>
+            {r.badge && (
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full capitalize ${
+                  r.locked ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                {r.badge}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  </section>
+);
 
 export default AddStudentModal;

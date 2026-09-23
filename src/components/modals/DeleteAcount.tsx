@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { Trash2, CheckCircle } from 'lucide-react';
 import { removeUser } from '@/lib/api/superAdmin.service';
+import { RETENTION_DAYS } from '@/Constants/retention';
 
 interface DeleteAccountModalProps {
   isOpen: boolean;
@@ -15,14 +16,16 @@ interface DeleteAccountModalProps {
 }
 
 /**
- * Delete modal — currently routes through `removeUser`, which the backend
- * implements as a soft delete (sets isActive=false, ends sessions). The user
- * record persists so audit logs, payment history, and result records still
- * resolve. We expose this as "Delete" in the UI because that's how admins
- * think about it, but with copy that explains the actual behavior.
+ * Delete modal.
  *
- * If a hard-delete endpoint is added later (cascading into payments, results,
- * etc.), swap the call here and update the copy.
+ * Deleting starts a 365-day clock; it does not destroy anything today. The
+ * copy below says so in those words, because the previous version told admins
+ * the row "disappears from this list" — which is now false, and was the sort
+ * of half-truth that makes people click Delete meaning something else.
+ *
+ * What an admin needs to know at this moment is exactly three things: they can
+ * undo it, roughly how long they have, and that the identifiers stay held in
+ * the meantime. Everything else belongs on the record, not in a dialog.
  */
 const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
   isOpen,
@@ -101,11 +104,26 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
             Are you sure you want to delete{' '}
             <span className='font-semibold'>{studentName}&apos;s</span> account?
           </p>
-          <p className='text-xs text-gray-500 mb-6'>
-            The account will be disabled and the {subjectNoun} locked out, and it
-            disappears from this list. Historical data (results, payments, audit
-            logs) is preserved.
-          </p>
+          <div className='text-xs text-gray-500 mb-6 space-y-2'>
+            <p>
+              They&apos;ll be signed out and locked out straight away. The
+              record stays here, greyed out with a clock beside the name, and
+              you can restore it for the next{' '}
+              <span className='font-semibold text-gray-700'>
+                {RETENTION_DAYS} days
+              </span>
+              .
+            </p>
+            <p>
+              Their email{subjectNoun === 'student' ? ' and admission number' : ''} stay
+              reserved for them the whole time — nobody else can be given
+              {subjectNoun === 'student' ? ' them' : ' it'}.
+            </p>
+            <p className='text-gray-400'>
+              After {RETENTION_DAYS} days the record is permanently removed and
+              cannot be recovered.
+            </p>
+          </div>
 
           {error && (
             <div className='mb-4 p-3 bg-red-50 border border-red-200 rounded-lg'>
@@ -139,9 +157,13 @@ const DeleteAccountModal: React.FC<DeleteAccountModalProps> = ({
             <CheckCircle className='w-6 h-6 text-green-600' />
           </div>
 
-          <h2 className='text-xl font-semibold text-gray-900 mb-2'>Success!</h2>
-          <p className='text-sm text-gray-600 mb-6'>
-            {studentName}&apos;s account has been removed from the system.
+          <h2 className='text-xl font-semibold text-gray-900 mb-2'>Deleted</h2>
+          <p className='text-sm text-gray-600 mb-2'>
+            {studentName}&apos;s account is now inactive.
+          </p>
+          <p className='text-xs text-gray-500 mb-6'>
+            You&apos;ll find it at the bottom of the list with a clock beside
+            the name. Restore is available there for {RETENTION_DAYS} days.
           </p>
 
           <div className='flex justify-end'>

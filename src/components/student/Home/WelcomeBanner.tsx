@@ -37,9 +37,10 @@ const WelcomeBanner = () => {
                 </span>
               )}
               <span className='text-xs lg:text-base font-base text-gray-200 lg:text-gray-300'>
-                {[user.grade, user.classCategory, user.term]
-                  .filter(Boolean)
-                  .join(' • ')}
+                {/* `classCategory` used to sit between these two. It was
+                    always undefined, so .filter(Boolean) dropped it and it
+                    never rendered — removed along with the field itself. */}
+                {[user.grade, user.term].filter(Boolean).join(' • ')}
               </span>
             </>
           )}

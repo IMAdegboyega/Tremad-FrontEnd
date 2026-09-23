@@ -104,6 +104,11 @@ export interface TimetableEntry {
   startTime: string;
   endTime: string;
   subject: string;
+  /**
+   * The subject's catalogue colour. Null on periods that predate the catalogue
+   * or whose name never matched one — those render grey rather than breaking.
+   */
+  colour?: string | null;
   /** Teacher, or invigilator on an exam. 'Unassigned' when nobody is set yet. */
   teacher: string;
   /** Room, or exam hall on an exam. */

@@ -81,6 +81,7 @@ export {
   resetUserPassword,
   forceLogoutUser,
   removeUser,
+  restoreUser,
   // Student Management
   getStudents,
   getStudent,

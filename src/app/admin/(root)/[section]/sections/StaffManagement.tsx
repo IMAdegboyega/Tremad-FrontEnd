@@ -18,15 +18,19 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import StatsCard from '@/components/superadmin/PortalLogin/StatsCard';
 import AddStaffModal from '@/components/modals/AddStaff';
 import StaffDetail from '@/components/superadmin/StaffDetail';
+import ClassTeacherBadge from '@/components/shared/ClassTeacherBadge';
 import DeactivateAccountModal from '@/components/modals/Deactivate';
 import DeleteAccountModal from '@/components/modals/DeleteAcount';
+import RestoreAccountModal from '@/components/modals/RestoreAccount';
+import PendingDeletionBadge from '@/components/shared/PendingDeletionBadge';
 import ResetPasswordModal from '@/components/modals/ResetPassword';
 import { reactivateUser } from '@/lib/api/superAdmin.service';
 import { getAllStaff, type Staff } from '@/lib/api/superAdmin.service';
 import { getApiErrorMessage } from '@/lib/api/client';
 import UserAvatar from '@/components/shared/UserAvatar';
 
-type StatusFilter = 'all' | 'active' | 'inactive';
+/** "deleted" is a third state — see the same type in StudentManagement. */
+type StatusFilter = 'all' | 'active' | 'inactive' | 'deleted';
 
 const ITEMS_PER_PAGE = 8;
 
@@ -60,7 +64,7 @@ const StaffManagement: React.FC = () => {
   // Row-level actions. The row itself opens the detail page, so this menu is
   // only for the quick operations you'd otherwise have to drill in for.
   const [actionTarget, setActionTarget] = useState<Staff | null>(null);
-  const [action, setAction] = useState<'deactivate' | 'delete' | 'reset' | null>(null);
+  const [action, setAction] = useState<'deactivate' | 'delete' | 'reset' | 'restore' | null>(null);
   const [rowBusy, setRowBusy] = useState<string | null>(null);
 
   const closeAction = () => {
@@ -167,8 +171,13 @@ const StaffManagement: React.FC = () => {
     if (page >= 1 && page <= totalPages) setCurrentPage(page);
   };
 
+  // A lookup, not a nested ternary — the chain silently labelled every
+  // non-'active' filter "Inactive", so adding 'deleted' would have shown the
+  // wrong word rather than failing.
   const statusLabel =
-    statusFilter === 'all' ? null : statusFilter === 'active' ? 'Active' : 'Inactive';
+    ({ active: 'Active', inactive: 'Inactive', deleted: 'Pending deletion' } as const)[
+      statusFilter as 'active' | 'inactive' | 'deleted'
+    ] ?? null;
 
   if (selectedStaffId) {
     return (
@@ -272,6 +281,12 @@ const StaffManagement: React.FC = () => {
                 <DropdownMenuItem onClick={() => { setStatusFilter('inactive'); setCurrentPage(1); }}>
                   <span className='cursor-pointer'>Inactive ({inactiveCount})</span>
                 </DropdownMenuItem>
+                {/* No count: activeCount/inactiveCount come from the overview
+                    stats, which don't track deletions. A wrong number beside
+                    this label would be worse than none. */}
+                <DropdownMenuItem onClick={() => { setStatusFilter('deleted'); setCurrentPage(1); }}>
+                  <span className='cursor-pointer text-amber-700'>Pending deletion</span>
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -329,7 +344,11 @@ const StaffManagement: React.FC = () => {
                       <tr
                         key={member._id}
                         onClick={() => setSelectedStaffId(member._id)}
-                        className="border-b border-gray-100 hover:bg-gray-50 cursor-pointer"
+                        /* Greyed but fully clickable — the admin's job on this
+                           row is to decide whether to restore it. */
+                        className={`border-b border-gray-100 hover:bg-gray-50 cursor-pointer ${
+                          member.isDeleted ? 'bg-gray-50/70' : ''
+                        }`}
                       >
                         <td className="px-3 sm:px-6 py-3 sm:py-4">
                           <div className="flex items-center gap-2 sm:gap-3">
@@ -339,7 +358,20 @@ const StaffManagement: React.FC = () => {
                               textClassName="text-xs sm:text-sm font-medium text-gray-600"
                             />
                             <div className="min-w-0">
-                              <div className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[100px] sm:max-w-none">{name}</div>
+                              <div className={`text-xs sm:text-sm font-medium flex items-center gap-1 min-w-0 ${
+                                member.isDeleted ? 'text-gray-500' : 'text-gray-900'
+                              }`}>
+                                <span className="truncate max-w-[100px] sm:max-w-none">{name}</span>
+                                {member.classTeacherOf && (
+                                  <ClassTeacherBadge
+                                    grade={member.classTeacherOf}
+                                    size={14}
+                                    className="text-primary-green"
+                                  />
+                                )}
+                                {/* Renders nothing unless isDeleted. */}
+                                <PendingDeletionBadge user={member} />
+                              </div>
                               {member.email && (
                                 <div className="text-[10px] sm:text-xs text-gray-500 truncate max-w-[100px] sm:max-w-none">{member.email}</div>
                               )}
@@ -349,14 +381,21 @@ const StaffManagement: React.FC = () => {
                         <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{displayId(member)}</td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-600">{displayDept(member)}</td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4">
-                          <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
-                            member.isActive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-                          }`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${
-                              member.isActive ? 'bg-green-600' : 'bg-red-600'
-                            }`} />
-                            {member.isActive ? 'Active' : 'Inactive'}
-                          </span>
+                          {/* Deleted is a third state — the countdown replaces
+                              the pill rather than sharing "Inactive" with
+                              someone merely on leave. */}
+                          {member.isDeleted ? (
+                            <PendingDeletionBadge user={member} variant="full" />
+                          ) : (
+                            <span className={`inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-medium ${
+                              member.isActive ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                            }`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${
+                                member.isActive ? 'bg-green-600' : 'bg-red-600'
+                              }`} />
+                              {member.isActive ? 'Active' : 'Inactive'}
+                            </span>
+                          )}
                         </td>
                         <td
                           className="px-3 sm:px-6 py-3 sm:py-4"
@@ -371,10 +410,36 @@ const StaffManagement: React.FC = () => {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              {/* Same order as the student menu: routine
+                                  actions, then Edit, then the destructive
+                                  pair. Staff have no "Send credentials" action
+                                  yet, so this is the student order minus that
+                                  one item rather than a different order.
+
+                                  A deleted row collapses to Restore alone —
+                                  every other item acts on a live account and
+                                  the backend refuses them, so offering them
+                                  would just produce "Staff member not found"
+                                  on a record plainly visible on screen. */}
+                              {member.isDeleted ? (
+                                <DropdownMenuItem
+                                  onClick={() => { setActionTarget(member); setAction('restore'); }}
+                                >
+                                  <span className='cursor-pointer text-green-700'>Restore account</span>
+                                </DropdownMenuItem>
+                              ) : (
+                              <>
                               <DropdownMenuItem
                                 onClick={() => { setActionTarget(member); setAction('reset'); }}
                               >
                                 <span className='cursor-pointer'>Reset password</span>
+                              </DropdownMenuItem>
+                              {/* Editing lives on the detail panel, which is
+                                  where the full record is loaded. */}
+                              <DropdownMenuItem
+                                onClick={() => setSelectedStaffId(member._id)}
+                              >
+                                <span className='cursor-pointer'>Edit</span>
                               </DropdownMenuItem>
                               {member.isActive ? (
                                 <DropdownMenuItem
@@ -397,6 +462,8 @@ const StaffManagement: React.FC = () => {
                               >
                                 <span className='cursor-pointer text-red-600'>Delete</span>
                               </DropdownMenuItem>
+                              </>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
@@ -507,6 +574,16 @@ const StaffManagement: React.FC = () => {
         studentName={actionTarget ? displayName(actionTarget) : ''}
         subjectNoun="staff member"
         onDeleted={refreshAll}
+      />
+
+      <RestoreAccountModal
+        isOpen={action === 'restore' && !!actionTarget}
+        onClose={closeAction}
+        userId={actionTarget?._id}
+        userName={actionTarget ? displayName(actionTarget) : ''}
+        subjectNoun="staff member"
+        deletion={actionTarget}
+        onRestored={refreshAll}
       />
     </div>
   );

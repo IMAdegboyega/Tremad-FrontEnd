@@ -35,11 +35,15 @@ import {
 } from "@/components/ui/dropdown-menu";
 import StatsCard from "@/components/superadmin/PortalLogin/StatsCard";
 import DeleteAccountModal from "@/components/modals/DeleteAcount";
-import AddStudentModal from "@/components/modals/AddStudent";
 import DeactivateAccountModal from "@/components/modals/Deactivate";
+import RestoreAccountModal from "@/components/modals/RestoreAccount";
+import PendingDeletionBadge from "@/components/shared/PendingDeletionBadge";
+import { purgeDetail } from "@/Constants/retention";
 import ResetPasswordModal from "@/components/modals/ResetPassword";
 import SendCredentialsModal from "@/components/modals/SendCredentials";
 import { Skeleton } from "@/components/ui/skeleton";
+import AddStudentModal from "@/components/modals/AddStudent";
+import StudentEditForm from "@/components/superadmin/StudentEditForm";
 import {
   getStudents,
   getStudent,
@@ -59,7 +63,15 @@ import { getApiErrorMessage } from "@/lib/api/client";
 // HELPERS
 // ============================================================================
 
-type StatusFilter = "all" | "active" | "inactive";
+/**
+ * "deleted" is a third state, not a flavour of inactive.
+ *
+ * A deleted student is also `isActive: false`, so before this existed they
+ * were folded into "Inactive" alongside students merely suspended for a term —
+ * one of those groups is counting down to permanent removal and the other
+ * isn't. The server filters on the same three names.
+ */
+type StatusFilter = "all" | "active" | "inactive" | "deleted";
 
 const PAGE_SIZE = 10;
 
@@ -136,10 +148,9 @@ const StudentManagement: React.FC = () => {
   const [overviewLoading, setOverviewLoading] = useState(true);
 
   // --- Modals / nav ---
-  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [modalAction, setModalAction] = useState<
-    "reset" | "deactivate" | "delete" | "send-credentials" | null
+    "reset" | "deactivate" | "delete" | "send-credentials" | "restore" | null
   >(null);
 
   // --- Detail view ---
@@ -149,6 +160,9 @@ const StudentManagement: React.FC = () => {
   const [activities, setActivities] = useState<AuditLog[]>([]);
   const [activityLoading, setActivityLoading] = useState(false);
   const [isHistoryView, setIsHistoryView] = useState(false);
+  const [showAddStudentModal, setShowAddStudentModal] = useState(false);
+  /** Edit mode swaps the demographics grid for StudentEditForm in place. */
+  const [editing, setEditing] = useState(false);
 
   // Reset to page 1 when filters or search change
   useEffect(() => {
@@ -231,6 +245,9 @@ const StudentManagement: React.FC = () => {
     setDetailStudent(student);
     setIsDetailView(true);
     setIsHistoryView(false);
+    // Reset, or opening a second student would land straight in an edit form
+    // still holding the previous one's values.
+    setEditing(false);
 
     setDetailLoading(true);
     setActivityLoading(true);
@@ -292,7 +309,7 @@ const StudentManagement: React.FC = () => {
 
   const openModal = (
     student: Student,
-    action: "reset" | "deactivate" | "delete" | "send-credentials",
+    action: "reset" | "deactivate" | "delete" | "send-credentials" | "restore",
   ) => {
     setSelectedStudent(student);
     setModalAction(action);
@@ -344,6 +361,15 @@ const StudentManagement: React.FC = () => {
         studentId={selectedStudent?._id ?? ""}
         studentName={selectedStudent ? fullName(selectedStudent) : ""}
         onDeleted={handleAfterMutation}
+      />
+      <RestoreAccountModal
+        isOpen={modalAction === "restore"}
+        onClose={closeModal}
+        userId={selectedStudent?._id ?? ""}
+        userName={selectedStudent ? fullName(selectedStudent) : ""}
+        subjectNoun="student"
+        deletion={selectedStudent}
+        onRestored={handleAfterMutation}
       />
       <SendCredentialsModal
         isOpen={modalAction === "send-credentials"}
@@ -432,42 +458,117 @@ const StudentManagement: React.FC = () => {
                     }
                   />
                 </div>
-                <span
-                  className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium ${
-                    detailStudent.isActive
-                      ? "bg-green-50 text-green-700"
-                      : "bg-red-50 text-red-700"
-                  }`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      detailStudent.isActive ? "bg-green-600" : "bg-red-600"
-                    }`}
+                {detailStudent.isDeleted ? (
+                  <PendingDeletionBadge
+                    user={detailStudent}
+                    variant="full"
+                    size={16}
                   />
-                  {detailStudent.isActive ? "Active" : "Inactive"} Account
-                </span>
+                ) : (
+                  <span
+                    className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-full text-xs sm:text-sm font-medium ${
+                      detailStudent.isActive
+                        ? "bg-green-50 text-green-700"
+                        : "bg-red-50 text-red-700"
+                    }`}
+                  >
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        detailStudent.isActive ? "bg-green-600" : "bg-red-600"
+                      }`}
+                    />
+                    {detailStudent.isActive ? "Active" : "Inactive"} Account
+                  </span>
+                )}
               </div>
 
-              {/* Demographics block — only renders fields that actually have data */}
+              {/*
+                The one thing an admin opening a deleted record needs: the
+                deadline, spelled out, and the button that stops it. Stated up
+                here rather than left to the badge, because this page is where
+                someone comes to decide.
+              */}
+              {detailStudent.isDeleted && (
+                <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                  <p className="text-sm text-amber-900 font-medium">
+                    {purgeDetail(detailStudent)}
+                  </p>
+                  <p className="text-xs text-amber-700 mt-1">
+                    They can&apos;t sign in, and their email
+                    {detailStudent.admissionNumber
+                      ? " and admission number stay"
+                      : " stays"}{' '}
+                    reserved until then. Restoring issues a new temporary
+                    password.
+                  </p>
+                </div>
+              )}
+
+              {/* Demographics block — only renders fields that actually have
+                  data — or the edit form in its place. */}
               {detailLoading ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                   {Array.from({ length: 6 }).map((_, i) => (
                     <Skeleton key={i} className="h-5 w-full" />
                   ))}
                 </div>
+              ) : editing ? (
+                <StudentEditForm
+                  student={detailStudent}
+                  onCancel={() => setEditing(false)}
+                  onSaved={async () => {
+                    setEditing(false);
+                    // Re-read rather than trusting the local form state: the
+                    // backend may normalise what it stored, and the list behind
+                    // this panel has to agree with it.
+                    await handleAfterMutation();
+                  }}
+                />
               ) : (
                 <DemographicsGrid student={detailStudent} />
               )}
 
-              {/* Temporary password reveal — blind by default */}
-              <TempPasswordReveal studentId={detailStudent._id} />
+              {/* Temporary password reveal — blind by default. Pointless on a
+                  deleted account, whose credentials can't be used. */}
+              {!detailStudent.isDeleted && (
+                <TempPasswordReveal studentId={detailStudent._id} />
+              )}
 
+              {/* Order is deliberate: the two routine credential actions first,
+                  then Edit, then the destructive pair last so Delete is never
+                  adjacent to something harmless.
+
+                  A deleted record collapses all of this to one button. The
+                  others act on a live account and would silently do nothing —
+                  or, in Edit's case, fail against a backend that refuses to
+                  write to a deleted record. Restore first, then they apply. */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-2 sm:gap-3">
+                {detailStudent.isDeleted ? (
+                  <ActionButton
+                    color="green"
+                    onClick={() => openModal(detailStudent, "restore")}
+                  >
+                    Restore account
+                  </ActionButton>
+                ) : (
+                <>
                 <ActionButton
                   color="green"
                   onClick={() => openModal(detailStudent, "reset")}
                 >
                   Reset password
+                </ActionButton>
+                <ActionButton
+                  color="yellow"
+                  onClick={() => openModal(detailStudent, "send-credentials")}
+                >
+                  Send credentials
+                </ActionButton>
+                <ActionButton
+                  color="green"
+                  onClick={() => setEditing((v) => !v)}
+                >
+                  {editing ? "Stop editing" : "Edit"}
                 </ActionButton>
                 {detailStudent.isActive ? (
                   <ActionButton
@@ -485,17 +586,13 @@ const StudentManagement: React.FC = () => {
                   </ActionButton>
                 )}
                 <ActionButton
-                  color="yellow"
-                  onClick={() => openModal(detailStudent, "send-credentials")}
-                >
-                  Send credentials
-                </ActionButton>
-                <ActionButton
                   color="red"
                   onClick={() => openModal(detailStudent, "delete")}
                 >
                   Delete
                 </ActionButton>
+                </>
+                )}
               </div>
             </div>
           </div>
@@ -640,6 +737,11 @@ const StudentManagement: React.FC = () => {
                     >
                       <span className="cursor-pointer">Inactive</span>
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setStatusFilter("deleted")}>
+                      <span className="cursor-pointer text-amber-700">
+                        Pending deletion
+                      </span>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
 
@@ -763,7 +865,16 @@ const StudentManagement: React.FC = () => {
                     students.map((student) => (
                       <tr
                         key={student._id}
-                        className="border-b border-gray-100 hover:bg-gray-50"
+                        /*
+                          A deleted student's row goes grey but stays fully
+                          legible and fully clickable. Greying is a status, not
+                          a disablement — the admin's job on this row is to
+                          decide whether to restore it, which they can't do if
+                          we've made it unreadable or inert.
+                        */
+                        className={`border-b border-gray-100 hover:bg-gray-50 ${
+                          student.isDeleted ? "bg-gray-50/70" : ""
+                        }`}
                       >
                         <td className="px-3 sm:px-6 py-3 sm:py-4">
                           <button
@@ -772,8 +883,18 @@ const StudentManagement: React.FC = () => {
                           >
                             <StudentAvatar student={student} size="sm" />
                             <div className="min-w-0">
-                              <div className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                                {fullName(student)}
+                              <div
+                                className={`flex items-center gap-1.5 text-xs sm:text-sm font-medium truncate ${
+                                  student.isDeleted
+                                    ? "text-gray-500"
+                                    : "text-gray-900"
+                                }`}
+                              >
+                                <span className="truncate">
+                                  {fullName(student)}
+                                </span>
+                                {/* Renders nothing unless isDeleted. */}
+                                <PendingDeletionBadge user={student} />
                               </div>
                               {student.email && (
                                 <div className="text-xs text-gray-500 truncate max-w-[140px] sm:max-w-none">
@@ -790,20 +911,36 @@ const StudentManagement: React.FC = () => {
                           {student.className || "—"}
                         </td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4">
-                          <span
-                            className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-xs font-medium ${
-                              student.isActive
-                                ? "bg-green-50 text-green-700"
-                                : "bg-red-50 text-red-700"
-                            }`}
-                          >
-                            <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                student.isActive ? "bg-green-600" : "bg-red-600"
-                              }`}
+                          {/*
+                            Three states, not two. A deleted student is also
+                            inactive, so showing the plain "Inactive" pill here
+                            would file someone counting down to permanent
+                            removal under the same label as someone suspended
+                            for a term. The countdown badge replaces the pill.
+                          */}
+                          {student.isDeleted ? (
+                            <PendingDeletionBadge
+                              user={student}
+                              variant="full"
                             />
-                            {student.isActive ? "Active" : "Inactive"}
-                          </span>
+                          ) : (
+                            <span
+                              className={`inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-full text-xs font-medium ${
+                                student.isActive
+                                  ? "bg-green-50 text-green-700"
+                                  : "bg-red-50 text-red-700"
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  student.isActive
+                                    ? "bg-green-600"
+                                    : "bg-red-600"
+                                }`}
+                              />
+                              {student.isActive ? "Active" : "Inactive"}
+                            </span>
+                          )}
                         </td>
                         <td className="px-3 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-500">
                           {relativeTime(student.lastLogin)}
@@ -822,6 +959,14 @@ const StudentManagement: React.FC = () => {
                               </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
+                              {/*
+                                A deleted row gets two items and no more.
+                                Everything else here acts on a live account —
+                                resetting the password of someone who can't log
+                                in, or "deactivating" an account that is already
+                                inactive, are all no-ops that read as real
+                                choices. Restore first, then the rest apply.
+                              */}
                               <DropdownMenuItem
                                 onClick={() => openDetail(student)}
                               >
@@ -829,48 +974,72 @@ const StudentManagement: React.FC = () => {
                                   View details
                                 </span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => openModal(student, "reset")}
-                              >
-                                <span className="cursor-pointer">
-                                  Reset password
-                                </span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  openModal(student, "send-credentials")
-                                }
-                              >
-                                <span className="cursor-pointer">
-                                  Send credentials
-                                </span>
-                              </DropdownMenuItem>
-                              {student.isActive ? (
+
+                              {student.isDeleted ? (
                                 <DropdownMenuItem
-                                  onClick={() =>
-                                    openModal(student, "deactivate")
-                                  }
+                                  onClick={() => openModal(student, "restore")}
                                 >
-                                  <span className="cursor-pointer text-yellow-700">
-                                    Deactivate
+                                  <span className="cursor-pointer text-green-700">
+                                    Restore account
                                   </span>
                                 </DropdownMenuItem>
                               ) : (
-                                <DropdownMenuItem
-                                  onClick={() => handleReactivate(student)}
-                                >
-                                  <span className="cursor-pointer text-green-700">
-                                    Reactivate
-                                  </span>
-                                </DropdownMenuItem>
+                                <>
+                                  <DropdownMenuItem
+                                    onClick={() => openModal(student, "reset")}
+                                  >
+                                    <span className="cursor-pointer">
+                                      Reset password
+                                    </span>
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      openModal(student, "send-credentials")
+                                    }
+                                  >
+                                    <span className="cursor-pointer">
+                                      Send credentials
+                                    </span>
+                                  </DropdownMenuItem>
+                                  {/* Edit opens the detail panel already in edit
+                                      mode — the form needs the full record, and
+                                      list rows carry only a subset of the fields. */}
+                                  <DropdownMenuItem
+                                    onClick={async () => {
+                                      await openDetail(student);
+                                      setEditing(true);
+                                    }}
+                                  >
+                                    <span className="cursor-pointer">Edit</span>
+                                  </DropdownMenuItem>
+                                  {student.isActive ? (
+                                    <DropdownMenuItem
+                                      onClick={() =>
+                                        openModal(student, "deactivate")
+                                      }
+                                    >
+                                      <span className="cursor-pointer text-yellow-700">
+                                        Deactivate
+                                      </span>
+                                    </DropdownMenuItem>
+                                  ) : (
+                                    <DropdownMenuItem
+                                      onClick={() => handleReactivate(student)}
+                                    >
+                                      <span className="cursor-pointer text-green-700">
+                                        Reactivate
+                                      </span>
+                                    </DropdownMenuItem>
+                                  )}
+                                  <DropdownMenuItem
+                                    onClick={() => openModal(student, "delete")}
+                                  >
+                                    <span className="text-red-600 cursor-pointer">
+                                      Delete user
+                                    </span>
+                                  </DropdownMenuItem>
+                                </>
                               )}
-                              <DropdownMenuItem
-                                onClick={() => openModal(student, "delete")}
-                              >
-                                <span className="text-red-600 cursor-pointer">
-                                  Delete user
-                                </span>
-                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </td>
@@ -1102,13 +1271,21 @@ const LinEditor: React.FC<{
 };
 
 const DemographicsGrid: React.FC<{ student: Student }> = ({ student }) => {
-  const rows: Array<{ label: string; value?: string }> = [
-    { label: "Phone", value: student.phoneNumber },
+  const rows: Array<{ label: string; value?: string; plain?: boolean }> = [
+    // Class first: it's the field that decides which timetable, results and
+    // book list the student sees, so it's the one an admin checks first. It
+    // was missing here entirely — see the note on `className` in
+    // superAdmin/student.management.controller.js for why it never arrived.
+    { label: "Class", value: student.className || student.currentClass },
+    { label: "Admission number", value: student.admissionNumber, plain: true },
+    { label: "LIN", value: student.lin, plain: true },
+    { label: "Phone", value: student.phoneNumber, plain: true },
     {
       label: "Date of birth",
       value: student.dateOfBirth
         ? new Date(student.dateOfBirth).toLocaleDateString()
         : undefined,
+      plain: true,
     },
     { label: "Gender", value: student.gender },
     { label: "Address", value: student.address },
@@ -1116,8 +1293,10 @@ const DemographicsGrid: React.FC<{ student: Student }> = ({ student }) => {
     { label: "State", value: student.state },
     { label: "Country", value: student.country },
     { label: "Guardian", value: student.guardianName },
-    { label: "Guardian phone", value: student.guardianPhone },
-    { label: "Emergency contact", value: student.emergencyContact },
+    { label: "Relationship", value: student.guardianRelationship },
+    { label: "Guardian phone", value: student.guardianPhone, plain: true },
+    { label: "Guardian email", value: student.guardianEmail, plain: true },
+    { label: "Emergency contact", value: student.emergencyContact, plain: true },
   ].filter((r) => r.value);
 
   if (rows.length === 0) {
@@ -1134,7 +1313,14 @@ const DemographicsGrid: React.FC<{ student: Student }> = ({ student }) => {
       {rows.map((r) => (
         <div key={r.label} className="flex justify-between sm:block">
           <span className="text-gray-500">{r.label}: </span>
-          <span className="text-gray-900 capitalize">{r.value}</span>
+          {/* `capitalize` is right for names and places but wrong for the
+              values that are already cased deliberately — TR26001 would
+              render as "Tr26001", and an email as "Parent@example.com". */}
+          <span
+            className={`text-gray-900 ${r.plain ? "" : "capitalize"}`}
+          >
+            {r.value}
+          </span>
         </div>
       ))}
     </div>

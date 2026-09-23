@@ -13,6 +13,7 @@ import {
 import { getUser as getStoredUser } from '@/lib/api/client';
 import { getProfile, StudentProfile } from '@/lib/api/student.service';
 import { getTeacherProfile } from '@/lib/api/teacher.service';
+import { divisionOf, DIVISION_LABELS, type Division } from '@/Constants/classes';
 
 //
 // 1. Types
@@ -60,7 +61,23 @@ export type User = {
   grade?: string;
   term: string;
   avatarUrl: string;
-  classCategory?: string;
+
+  /**
+   * Which half of the school this student belongs to — 'college' for JSS 1
+   * through SS 3, 'school' for everything below.
+   *
+   * Undefined for staff and super-admins, deliberately: they aren't in a class,
+   * and a default of 'school' would quietly rebrand the admin portal. Anything
+   * reading this must treat undefined as "not a student" rather than as a
+   * missing value to fill in.
+   *
+   * Replaces `classCategory`, which was declared, rendered by WelcomeBanner,
+   * and hardcoded to undefined — so it never displayed anything.
+   */
+  division?: Division;
+
+  /** What that division is called in the UI: TREMAD COLLEGE / TREMAD SCHOOL. */
+  divisionLabel?: string;
   courses: Course[];
   terms: Record<string, TermData>;
   profile: StudentProfile | null;
@@ -175,8 +192,16 @@ export function UserProvider({ children }: { children: ReactNode }) {
       storedUser?.profileImage ||
       storedUser?.profilePicture ||
       '/img/avatar.jpg';
-    const grade = profile?.className ?? undefined;
+    // Falls back to the login payload, which already carries `className`.
+    // Without that fallback the sidebar paints TREMAD SCHOOL, then flips to
+    // TREMAD COLLEGE once /student/profile resolves — a visible flicker on
+    // every page load for exactly the students the label matters to.
+    const grade = profile?.className ?? storedUser?.className ?? undefined;
     const role = storedUser?.role;
+
+    // Only students have a division. Staff and super-admins keep undefined so
+    // their shells fall back to the neutral brand — see the type above.
+    const division = role === 'student' ? divisionOf(grade) : undefined;
 
     return {
       firstName,
@@ -186,7 +211,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       email,
       role,
       grade,
-      classCategory: undefined,
+      division,
+      divisionLabel: division ? DIVISION_LABELS[division] : undefined,
       avatarUrl,
       term,
       setTerm,

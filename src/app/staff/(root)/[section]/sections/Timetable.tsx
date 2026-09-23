@@ -29,6 +29,18 @@ const TERMS = ['First', 'Second', 'Third'] as const;
 
 type Tab = 'lessons' | 'exams';
 
+/**
+ * The subject's catalogue colour as a dot. Grey when the period isn't linked —
+ * those still render, they just have no colour to show.
+ */
+const SubjectDot: React.FC<{ colour?: string | null }> = ({ colour }) => (
+  <span
+    aria-hidden="true"
+    className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+    style={{ backgroundColor: colour || '#D1D5DB' }}
+  />
+);
+
 const Timetable = () => {
   const [data, setData] = useState<TeacherTimetableResponse | null>(null);
   const [teacherId, setTeacherId] = useState('');
@@ -263,8 +275,24 @@ const LessonGrid = ({ lessons }: { lessons: TeacherScheduleEntry[] }) => {
                 <p className="text-xs text-gray-300 text-center py-4">No classes</p>
               ) : (
                 dayPeriods.map((p) => (
-                  <div key={p._id} className="rounded-lg border border-gray-100 bg-gray-50 p-2.5">
-                    <p className="text-sm font-medium text-gray-900 leading-tight">{p.subject}</p>
+                  <div
+                    key={p._id}
+                    className="rounded-lg border p-2.5"
+                    style={
+                      p.colour
+                        ? {
+                            // A tint, not a fill — the card still carries dark
+                            // text for the time, class and room.
+                            backgroundColor: `${p.colour}14`,
+                            borderColor: `${p.colour}55`,
+                          }
+                        : { backgroundColor: '#F9FAFB', borderColor: '#F3F4F6' }
+                    }
+                  >
+                    <p className="text-sm font-medium text-gray-900 leading-tight flex items-center gap-1.5">
+                      <SubjectDot colour={p.colour} />
+                      {p.subject}
+                    </p>
                     <p className="text-xs text-gray-500 mt-0.5">{p.startTime}–{p.endTime}</p>
                     <p className="text-xs text-gray-500 truncate">
                       {p.className}{p.room ? ` · ${p.room}` : ''}
@@ -317,7 +345,10 @@ const ExamList = ({ exams }: { exams: TeacherScheduleEntry[] }) => {
             {list.map((e) => (
               <div key={e._id} className="px-4 py-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{e.subject}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate flex items-center gap-2">
+                    <SubjectDot colour={e.colour} />
+                    {e.subject}
+                  </p>
                   <p className="text-xs text-gray-500">{e.className}</p>
                 </div>
                 <div className="text-right shrink-0">

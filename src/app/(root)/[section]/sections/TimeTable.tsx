@@ -13,6 +13,18 @@ import { formatExamDate } from '@/Constants/examDates';
  * Fetches /student/academic/timetable and renders Week/Day views plus stats.
  * Views share the same `entries` array; they each derive their own layout.
  */
+/**
+ * The subject's catalogue colour as a dot. Grey when the period isn't linked —
+ * those still render, they just have no colour to show.
+ */
+const SubjectDot: React.FC<{ colour?: string | null }> = ({ colour }) => (
+  <span
+    aria-hidden="true"
+    className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+    style={{ backgroundColor: colour || '#D1D5DB' }}
+  />
+);
+
 const TimeTable = () => {
   const [viewMode, setViewMode] = useState<'Week view' | 'Day view'>('Week view');
   // Which timetable to show: weekly lessons, or the exam schedule the admin set.
@@ -126,7 +138,8 @@ const TimeTable = () => {
                   </p>
                 </div>
                 <div className='flex-1 min-w-0'>
-                  <p className='text-sm font-medium text-gray-900 truncate'>
+                  <p className='text-sm font-medium text-gray-900 truncate flex items-center gap-2'>
+                    <SubjectDot colour={e.colour} />
                     {e.subject}
                   </p>
                   <p className='text-xs text-gray-500 truncate'>

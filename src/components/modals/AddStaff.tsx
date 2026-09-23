@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 // AddStaffModal
 // Three-step wizard to create a staff member (role: 'admin').
 //
@@ -19,6 +19,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { NIGERIAN_STATES, getLGAsForState } from '@/Constants/NigeriaStates';
+import WizardProgress from '@/components/shared/WizardProgress';
+import { GRADE_LEVELS } from '@/Constants/classes';
+import { getSubjects } from '@/lib/api/curriculum.service';
 import { createStaff, uploadUserAvatar } from '@/lib/api/superAdmin.service';
 import AvatarPicker from '@/components/shared/AvatarPicker';
 import { getApiErrorMessage } from '@/lib/api/client';
@@ -73,17 +76,11 @@ const EMPTY_FORM: StaffData = {
   emergencyContact: '',
 };
 
-const SUBJECTS = [
-  'Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology',
-  'Economics', 'Geography', 'History', 'Literature', 'Agricultural Science',
-  'Commerce', 'Government', 'Civic Education', 'Computer Science',
-  'Physical Education', 'Fine Arts', 'Music', 'French', 'Yoruba', 'Igbo', 'Hausa',
-];
 
-const CLASS_LEVELS = [
-  'Primary 1', 'Primary 2', 'Primary 3', 'Primary 4', 'Primary 5', 'Primary 6',
-  'JSS 1', 'JSS 2', 'JSS 3', 'SS 1', 'SS 2', 'SS 3',
-];
+// Was a hand-copied duplicate of GRADE_LEVELS, which is exactly how the two
+// drifted apart: a staff member assigned to "Primary 4" here could never match
+// a student stored as "Basic 4". One list now, imported.
+const CLASS_LEVELS: readonly string[] = GRADE_LEVELS;
 
 const RELATIONSHIPS = [
   'Spouse', 'Parent', 'Sibling', 'Child', 'Relative', 'Friend', 'Other',
@@ -91,6 +88,45 @@ const RELATIONSHIPS = [
 
 const inputClass =
   'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent';
+
+/** A field counts as done once it holds something other than whitespace. */
+const filled = (v: string) => Boolean(v && v.trim());
+
+/**
+ * What each step requires. Drives BOTH the progress bar and whether Continue
+ * is enabled — see the same pattern in AddStudent.tsx. Two separate rules for
+ * one question is how a new required field ends up gating the button without
+ * ever moving the bar.
+ *
+ * Step 2 counts arrays rather than strings: a teacher needs at least one
+ * subject and at least one class, so the segment is half-full with one of the
+ * two chosen.
+ */
+const STEP_CHECKS: Array<Array<(f: StaffData) => boolean>> = [
+  [
+    (f) => filled(f.firstName),
+    (f) => filled(f.lastName),
+    (f) => filled(f.email),
+    (f) => filled(f.phoneNumber),
+    (f) => filled(f.state),
+    (f) => filled(f.city),
+  ],
+  [(f) => f.subjects.length > 0, (f) => f.assignedClasses.length > 0],
+  [
+    (f) => filled(f.kinName),
+    (f) => filled(f.kinRelationship),
+    (f) => filled(f.kinPhone),
+  ],
+];
+
+const STEP_LABELS = ['1. Staff details', '2. Assignments', '3. Next of kin'];
+
+/** 0–1 for one step. */
+const stepRatio = (step: number, form: StaffData): number => {
+  const checks = STEP_CHECKS[step - 1] ?? [];
+  if (!checks.length) return 1;
+  return checks.filter((c) => c(form)).length / checks.length;
+};
 
 const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, onSuccess }) => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -111,6 +147,32 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, onSucces
 
   // Local Governments depend on the chosen state.
   const availableLGAs = getLGAsForState(formData.state);
+
+  // The subject list used to be a hand-copied array in this file AND in
+  // StaffDetail.tsx, with no database behind either. It now comes from the
+  // catalogue, filtered to actual subjects — a teacher is assigned to teach
+  // Mathematics, not to run Coloring.
+  //
+  // Declared above the `isOpen` guard on purpose: hooks cannot sit after an
+  // early return, or the hook order changes between renders.
+  const [subjectOptions, setSubjectOptions] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let cancelled = false;
+    getSubjects({ kind: 'subject' })
+      .then((res) => {
+        if (!cancelled && res?.success && res.data) {
+          setSubjectOptions(res.data.subjects.map((s) => s.name));
+        }
+      })
+      .catch(() => {
+        // Non-fatal: the rest of the form still works, the picker is just empty.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -135,26 +197,10 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, onSucces
     });
   };
 
-  const isStepValid = (step: number): boolean => {
-    switch (step) {
-      case 1:
-        return !!(
-          formData.firstName.trim() &&
-          formData.lastName.trim() &&
-          formData.email.trim() &&
-          formData.phoneNumber.trim() &&
-          formData.state &&
-          formData.city
-        );
-      case 2:
-        // A staff member must teach at least one subject and hold one class.
-        return formData.subjects.length > 0 && formData.assignedClasses.length > 0;
-      case 3:
-        return !!(formData.kinName.trim() && formData.kinRelationship && formData.kinPhone.trim());
-      default:
-        return false;
-    }
-  };
+  // Same checks the progress bar counts, so a full segment and an enabled
+  // Continue button can never disagree.
+  const isStepValid = (step: number): boolean =>
+    stepRatio(step, formData) === 1;
 
   const handleNext = () => currentStep < 3 && setCurrentStep(currentStep + 1);
   const handleBack = () => currentStep > 1 && setCurrentStep(currentStep - 1);
@@ -303,45 +349,17 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, onSucces
               password are generated automatically.
             </p>
 
-            {/* Progress tabs */}
+            {/* Fills as fields are completed — see WizardProgress. */}
             <div className="mt-6">
-              <div className="flex justify-between items-start relative w-full">
-                {[
-                  { id: 1, label: '1. Staff details' },
-                  { id: 2, label: '2. Assignments' },
-                  { id: 3, label: '3. Next of kin' },
-                ].map((step) => {
-                  const isCompleted = currentStep > step.id;
-                  const isActive = currentStep === step.id;
-                  return (
-                    <button
-                      key={step.id}
-                      onClick={() => currentStep >= step.id && setCurrentStep(step.id)}
-                      disabled={currentStep < step.id}
-                      className={`flex flex-col items-center w-full transition-all px-2 ${
-                        currentStep < step.id ? 'cursor-not-allowed' : ''
-                      }`}
-                    >
-                      <div
-                        className={`h-[3px] w-full rounded-full mb-2 transition-all duration-300 ${
-                          isCompleted || isActive ? 'bg-green-600' : 'bg-gray-200'
-                        }`}
-                      />
-                      <span
-                        className={`text-sm font-medium ${
-                          isActive
-                            ? 'text-green-700'
-                            : isCompleted
-                            ? 'text-gray-900'
-                            : 'text-gray-500'
-                        }`}
-                      >
-                        {step.label}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+              <WizardProgress
+                steps={STEP_LABELS.map((label, i) => ({
+                  label,
+                  ratio: stepRatio(i + 1, formData),
+                }))}
+                current={currentStep}
+                labelPosition="above"
+                onStepClick={setCurrentStep}
+              />
             </div>
           </div>
 
@@ -555,7 +573,7 @@ const AddStaffModal: React.FC<AddStaffModalProps> = ({ isOpen, onClose, onSucces
                       </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-64 max-h-72 overflow-y-auto">
-                      {SUBJECTS.map((subject) => (
+                      {subjectOptions.map((subject) => (
                         <DropdownMenuCheckboxItem
                           key={subject}
                           checked={formData.subjects.includes(subject)}

@@ -89,6 +89,11 @@ export interface TeacherScheduleEntry {
   _id: string;
   className: string;
   subject: string;
+  /**
+   * The subject's catalogue colour. Null on periods that predate the catalogue
+   * or whose name never matched one — those render grey rather than breaking.
+   */
+  colour?: string | null;
   day: string;
   startTime: string;
   endTime: string;

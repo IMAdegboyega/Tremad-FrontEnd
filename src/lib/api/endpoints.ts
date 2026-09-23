@@ -58,6 +58,8 @@ export const API = {
         `/super-admin/users/${userId}/deactivate`,
       REACTIVATE: (userId: string) =>
         `/super-admin/users/${userId}/reactivate`,
+      /** Undo a delete inside the 365-day window. POST — issues a new password. */
+      RESTORE: (userId: string) => `/super-admin/users/${userId}/restore`,
       UPLOAD_AVATAR: (userId: string) => `/super-admin/users/${userId}/avatar`,
     },
     
@@ -81,6 +83,21 @@ export const API = {
       LIST: '/super-admin/messages',
       UPDATE: (id: string) => `/super-admin/messages/${id}`,
     },
+    SUBJECTS: {
+      LIST: '/super-admin/subjects',
+      CREATE: '/super-admin/subjects',
+      UPDATE: (subjectId: string) => `/super-admin/subjects/${subjectId}`,
+      // DELETE archives rather than removing — past timetables and results
+      // still name the subject.
+      ARCHIVE: (subjectId: string) => `/super-admin/subjects/${subjectId}`,
+    },
+    CURRICULUM: {
+      // One per grade — no session parameter.
+      GET: '/super-admin/curriculum',
+      SAVE: '/super-admin/curriculum',
+      /** What a destructive edit would touch. Read-only. */
+      IMPACT: '/super-admin/curriculum/impact',
+    },
     CONTENT: {
       LIST: (kind: string) => `/super-admin/content/${kind}`,
       SAVE: (kind: string) => `/super-admin/content/${kind}`,
@@ -94,6 +111,10 @@ export const API = {
       UPDATE: (staffId: string) => `/super-admin/staff/${staffId}`,
       TEMP_PASSWORD: (staffId: string) =>
         `/super-admin/staff/${staffId}/temp-password`,
+      // Separate from UPDATE on purpose: assigning a class teacher releases the
+      // class from whoever held it, which must not ride along on a profile save.
+      CLASS_TEACHER: (staffId: string) =>
+        `/super-admin/staff/${staffId}/class-teacher`,
     },
 
     // Result Management
@@ -116,14 +137,13 @@ export const API = {
         `/super-admin/payments/students/${studentId}`,
     },
 
-    // Exam Folders + Files
-    EXAMS: {
-      FOLDERS: '/super-admin/exam-folders',
-      FOLDER: (folderId: string) =>
-        `/super-admin/exam-folders/${folderId}`,
-      FILES_IN: (folderId: string) =>
-        `/super-admin/exam-folders/${folderId}/files`,
-      FILE: (fileId: string) => `/super-admin/exam-files/${fileId}`,
+    // Exam papers. No folder endpoints — the Year > Class > Subject > Term
+    // tree is derived from fields on the paper, so one browse call serves
+    // every level.
+    EXAM_PAPERS: {
+      BROWSE: '/super-admin/exam-papers/browse',
+      UPLOAD: '/super-admin/exam-papers',
+      ONE: (paperId: string) => `/super-admin/exam-papers/${paperId}`,
     },
     
     // Admission Pool
@@ -220,6 +240,13 @@ export const API = {
   // TEACHER/ADMIN ENDPOINTS
   // ============================================================================
   TEACHER: {
+    // Same handlers as the super-admin routes; the server scopes them to the
+    // teacher's own classes and subjects.
+    EXAM_PAPERS: {
+      BROWSE: '/admin/exam-papers/browse',
+      UPLOAD: '/admin/exam-papers',
+      ONE: (paperId: string) => `/admin/exam-papers/${paperId}`,
+    },
     PROFILE: {
       GET: '/admin/profile',
       UPDATE: '/admin/profile',

@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { GRADE_LEVELS } from '@/Constants/classes';
+import { getSubjects } from '@/lib/api/curriculum.service';
 import DeactivateAccountModal from '@/components/modals/Deactivate';
 import DeleteAccountModal from '@/components/modals/DeleteAcount';
 import ResetPasswordModal from '@/components/modals/ResetPassword';
@@ -39,18 +40,14 @@ import {
   getStaff,
   getStaffTempPassword,
   reactivateUser,
+  setClassTeacher,
   updateStaff,
+  type ClassTeacherConflict,
   type Staff,
 } from '@/lib/api/superAdmin.service';
 import { getApiErrorMessage } from '@/lib/api/client';
 import UserAvatar from '@/components/shared/UserAvatar';
-
-const SUBJECTS = [
-  'Mathematics', 'English Language', 'Physics', 'Chemistry', 'Biology',
-  'Economics', 'Geography', 'History', 'Literature', 'Agricultural Science',
-  'Commerce', 'Government', 'Civic Education', 'Computer Science',
-  'Physical Education', 'Fine Arts', 'Music', 'French', 'Yoruba', 'Igbo', 'Hausa',
-];
+import ClassTeacherBadge from '@/components/shared/ClassTeacherBadge';
 
 interface Props {
   staffId: string;
@@ -64,6 +61,9 @@ const fullName = (s: Staff) =>
 
 const StaffDetail: React.FC<Props> = ({ staffId, onBack, onSaved }) => {
   const [staff, setStaff] = useState<Staff | null>(null);
+  // From the catalogue rather than a hardcoded array — see AddStaff.tsx, which
+  // held an identical copy of the same 21 names.
+  const [subjectOptions, setSubjectOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -126,6 +126,22 @@ const StaffDetail: React.FC<Props> = ({ staffId, onBack, onSaved }) => {
   useEffect(() => {
     load();
   }, [load]);
+
+  useEffect(() => {
+    let cancelled = false;
+    getSubjects({ kind: 'subject' })
+      .then((res) => {
+        if (!cancelled && res?.success && res.data) {
+          setSubjectOptions(res.data.subjects.map((x) => x.name));
+        }
+      })
+      .catch(() => {
+        // Non-fatal: the picker is empty, the rest of the panel still works.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Restoring access isn't destructive, so it doesn't get a confirmation step.
   const reactivate = async () => {
@@ -268,7 +284,16 @@ const StaffDetail: React.FC<Props> = ({ staffId, onBack, onSaved }) => {
                 <input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} placeholder="Last name" className={inputCls} />
               </div>
             ) : (
-              <h1 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{name}</h1>
+              <h1 className="text-lg sm:text-xl font-semibold text-gray-900 flex items-center gap-1.5 min-w-0">
+                <span className="truncate">{name}</span>
+                {staff.classTeacherOf && (
+                  <ClassTeacherBadge
+                    grade={staff.classTeacherOf}
+                    size={18}
+                    className="text-primary-green"
+                  />
+                )}
+              </h1>
             )}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 mt-1">
               <span className="flex items-center gap-1.5">
@@ -303,6 +328,16 @@ const StaffDetail: React.FC<Props> = ({ staffId, onBack, onSaved }) => {
                 </span>
               )}
             </div>
+
+            {!editing && (
+              <ClassTeacherControl
+                staff={staff}
+                onChanged={async () => {
+                  await load();
+                  onSaved?.();
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -340,7 +375,7 @@ const StaffDetail: React.FC<Props> = ({ staffId, onBack, onSaved }) => {
             <p className="text-xs font-medium text-gray-500 mb-2">Subjects</p>
             {editing ? (
               <div className="flex flex-wrap gap-1.5 max-h-48 overflow-y-auto">
-                {SUBJECTS.map((s) => (
+                {subjectOptions.map((s) => (
                   <Chip key={s} label={s} active={form.subjects.includes(s)} onClick={() => toggleIn('subjects', s)} />
                 ))}
               </div>
@@ -669,5 +704,168 @@ const Detail = ({
 
 const inputCls =
   'w-full text-sm border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:ring-2 focus:ring-green-500/30 focus:border-green-500';
+
+/**
+ * "Class teacher" toggle for one staff member.
+ *
+ * Reads as a switch plus, when on, which grade. Only grades they're actually
+ * assigned to are offered — being form teacher of a class you don't teach is
+ * a data-entry mistake every time, and the backend rejects it anyway.
+ *
+ * THE CONFIRMATION IS NOT DECORATIVE. A grade has exactly one class teacher,
+ * so taking one takes it FROM somebody. The server answers 409 with the
+ * current holder's name rather than just refusing, and that name is what the
+ * dialog shows — a generic "are you sure?" would hide the only fact that
+ * matters. Releasing gets a confirmation too, since it leaves the grade with
+ * nobody to sign its report cards.
+ */
+const ClassTeacherControl: React.FC<{
+  staff: Staff;
+  onChanged: () => Promise<void> | void;
+}> = ({ staff, onChanged }) => {
+  const held = staff.classTeacherOf || '';
+  const classes = staff.assignedClasses || [];
+
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  /** What we're about to do, pending confirmation. */
+  const [pending, setPending] = useState<
+    | { kind: 'assign'; grade: string; conflict?: ClassTeacherConflict }
+    | { kind: 'release' }
+    | null
+  >(null);
+
+  const apply = async (grade: string | null, force: boolean) => {
+    setBusy(true);
+    setError('');
+    try {
+      const res = await setClassTeacher(staff._id, grade, force);
+      if (res?.success) {
+        setPending(null);
+        await onChanged();
+        return;
+      }
+      setError(res?.message || 'Could not change that.');
+    } catch (err: any) {
+      // 409 carries the current holder, which turns the warning from "are you
+      // sure" into "this is whose class you are taking".
+      const conflict: ClassTeacherConflict | undefined =
+        err?.data?.conflict ?? err?.response?.data?.data?.conflict;
+      if (err?.status === 409 && conflict) {
+        setPending({ kind: 'assign', grade: conflict.grade, conflict });
+      } else {
+        setError(getApiErrorMessage(err, 'Could not change that.'));
+      }
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const start = (grade: string) => {
+    if (!grade) {
+      setPending({ kind: 'release' });
+      return;
+    }
+    // Ask the server first: it knows whether anyone holds this grade, and its
+    // 409 is what fills in the dialog.
+    apply(grade, false);
+  };
+
+  if (!classes.length && !held) {
+    return (
+      <p className="mt-3 text-xs text-gray-400">
+        Assign a class before making them a class teacher.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          role="switch"
+          aria-checked={Boolean(held)}
+          disabled={busy}
+          onClick={() => (held ? start('') : start(classes[0]))}
+          className={`relative inline-flex h-6 w-11 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
+            held ? 'bg-primary-green' : 'bg-gray-200'
+          }`}
+        >
+          <span
+            className={`inline-block h-5 w-5 mt-0.5 rounded-full bg-white transition-transform ${
+              held ? 'translate-x-[22px]' : 'translate-x-0.5'
+            }`}
+          />
+        </button>
+
+        <span className="text-sm text-gray-700">
+          {held ? 'Class teacher' : 'Not a class teacher'}
+        </span>
+
+        {held && (
+          <select
+            value={held}
+            disabled={busy}
+            onChange={(e) => start(e.target.value)}
+            className="text-sm border border-gray-200 rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-2 focus:ring-green-500/30 disabled:opacity-50"
+          >
+            {/* The held grade is listed even if it somehow isn't in their
+                assigned classes, so the select can never show a blank. */}
+            {[...new Set([held, ...classes])].map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        )}
+
+        {busy && <Loader2 size={15} className="animate-spin text-gray-400" />}
+      </div>
+
+      {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+
+      {pending && (
+        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+          {pending.kind === 'release' ? (
+            <p className="text-sm text-amber-900">
+              Remove {staff.firstName || 'this staff member'} as class teacher
+              of <strong>{held}</strong>? That grade will have no class teacher
+              until someone else is assigned, and nobody to sign its report
+              cards.
+            </p>
+          ) : (
+            <p className="text-sm text-amber-900">
+              <strong>{pending.conflict?.grade}</strong> is currently held by{' '}
+              <strong>{pending.conflict?.holderName}</strong>. Confirming moves
+              it to {staff.firstName || 'this staff member'} and removes it from
+              them.
+            </p>
+          )}
+          <div className="mt-2 flex gap-2">
+            <button
+              onClick={() =>
+                pending.kind === 'release'
+                  ? apply(null, false)
+                  : apply(pending.grade, true)
+              }
+              disabled={busy}
+              className="text-xs px-3 py-1.5 rounded-lg bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+            >
+              {pending.kind === 'release' ? 'Remove' : 'Reassign'}
+            </button>
+            <button
+              onClick={() => setPending(null)}
+              disabled={busy}
+              className="text-xs px-3 py-1.5 rounded-lg border border-amber-300 text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default StaffDetail;

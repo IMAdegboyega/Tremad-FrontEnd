@@ -5,6 +5,7 @@ import Link from 'next/link';
 import React, { useState } from 'react'
 import LogoutButton from './LogoutButton';
 import NeedHelpDialog from './shared/NeedHelpDialog';
+import { useUser } from '@/Constants/UserContext';
 
 type NavItem = {
   name: string;
@@ -27,6 +28,18 @@ export default function SideBar({ navItems, showHelpCard = false }: SidebarProps
   // nothing. This is the state it was missing.
   const [helpOpen, setHelpOpen] = useState(false);
 
+  // Students in JSS 1 – SS 3 see TREMAD COLLEGE; anyone below sees TREMAD
+  // SCHOOL. Staff and super-admins have no division at all (see UserContext),
+  // so they fall through to the neutral brand — which means the admin and
+  // staff shells cannot change here by accident, only by someone deliberately
+  // giving those roles a division.
+  //
+  // All three shells render this inside <UserProvider>, and useUser() returns
+  // null rather than throwing when there isn't one, so this is safe wherever
+  // the sidebar ends up.
+  const user = useUser();
+  const brand = user?.divisionLabel ?? 'TREMAD SCHOOLS';
+
   return (
     <aside className=' bg-gray-50 rounded-2xl p-4 space-y-5 max-h-fit w-70 sticky'>
       <nav className='flex flex-col gap-1'>
@@ -37,7 +50,7 @@ export default function SideBar({ navItems, showHelpCard = false }: SidebarProps
             width={50}
             height={50}
           />
-          <h2 className='font-medium'>TREMAD SCHOOLS</h2>
+          <h2 className='font-medium'>{brand}</h2>
         </div>
 
         {navItems.map((item) => (

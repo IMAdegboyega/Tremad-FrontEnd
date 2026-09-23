@@ -6,12 +6,26 @@
 
 import apiClient, { ApiResponse } from './client';
 import { API } from './endpoints';
+import type { DeletionState } from '@/Constants/retention';
+
+export type { DeletionState };
 
 // ============================================================================
 // TYPES
 // ============================================================================
 
-export interface Student {
+/**
+ * Student and Staff both extend DeletionState.
+ *
+ * Deleting no longer hides the row — it starts a 365-day clock — so every
+ * list row and detail payload now carries `isDeleted`, `deletedAt`,
+ * `purgeAfter` and a server-computed `daysUntilPurge`. Extending one shared
+ * interface rather than repeating four optional fields on each is what stops
+ * the two halves of the app disagreeing about what a pending deletion looks
+ * like, which is the exact drift that made `className` vs `currentClass`
+ * expensive.
+ */
+export interface Student extends DeletionState {
   _id: string;
   admissionNumber: string;
   /**
@@ -81,6 +95,21 @@ export interface CreateStudentData {
   guardianPhone?: string;
   guardianEmail?: string;
   emergencyContact?: string;
+
+  /**
+   * What this student takes, chosen on the Add Student page from the grade's
+   * curriculum. A snapshot: the curriculum is read once here, and editing it
+   * later never reaches back into students already created.
+   *
+   * Bare subject ids — the backend re-checks each one's `kind` and
+   * de-duplicates before writing.
+   */
+  enrolledSubjects?: Array<{
+    subject: string;
+    requirement: 'core' | 'elective';
+  }>;
+  /** Activity ids. No requirement — activities are always optional. */
+  enrolledActivities?: string[];
 }
 
 export interface CreateStudentResponse {
@@ -90,7 +119,8 @@ export interface CreateStudentResponse {
   tempPassword: string;
 }
 
-export interface Staff {
+/** See the note on `Student` for why this extends DeletionState. */
+export interface Staff extends DeletionState {
   _id: string;
   /** Server-generated identifier returned from createStaff. */
   staffId?: string;
@@ -121,6 +151,13 @@ export interface Staff {
   subjects?: string[];
   /** GRADES they teach, e.g. ["JSS 1"] — a grade covers all its sections. */
   assignedClasses?: string[];
+
+  /**
+   * The grade this staff member is class teacher (form teacher) of, if any.
+   * A grade, matching assignedClasses — "JSS 1", not "JSS 1 A". At most one
+   * staff member holds each grade.
+   */
+  classTeacherOf?: string;
   nextOfKin?: {
     name?: string;
     relationship?: string;
@@ -296,6 +333,14 @@ export interface SATimetableEntry {
   _id: string;
   className: string;
   subject: string;
+  /** Catalogue link. Null on periods written before the catalogue existed. */
+  subjectId: string | null;
+  /**
+   * The subject's colour, denormalised by the server so every view can render
+   * a coloured cell without fetching the catalogue. Null when the period isn't
+   * linked — those render grey rather than breaking.
+   */
+  colour: string | null;
   /** Teacher, or invigilator on an exam. Null until someone is assigned. */
   teacherId: string | null;
   teacherName: string | null;
@@ -354,7 +399,15 @@ export interface TeacherOption {
 /** Payload for creating/updating a timetable period. */
 export interface TimetableEntryInput {
   className: string;
+  /**
+   * The subject's name. Still accepted on its own for back-compat — the
+   * builder now sends `subjectId` too, and the server resolves whichever it
+   * gets. A name with no catalogue match is stored as plain text and renders
+   * without a colour, rather than being rejected.
+   */
   subject: string;
+  /** Catalogue link. What gives the period its colour. */
+  subjectId?: string;
   /** Optional — a period can be scheduled before staff are assigned. */
   teacherId?: string;
   day: SATimetableEntry['day'];
@@ -682,38 +735,8 @@ export interface CreateResultPayload {
 // EXAM CONTENT TYPES
 // ============================================================================
 
-export interface ExamFolder {
-  _id: string;
-  subject: string;
-  description?: string;
-  questionCount: number;
-  lastModified: string;
-  createdAt: string;
-  updatedAt?: string;
-}
 
-export interface ExamFileUploader {
-  _id: string;
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  role?: string;
-}
 
-export interface ExamFile {
-  _id: string;
-  folder: string;
-  fileName: string;
-  originalName?: string;
-  fileType: 'PDF' | 'Word' | 'Excel' | 'CSV' | 'Other';
-  mimeType?: string;
-  source: string;
-  cloudinaryPublicId?: string;
-  sizeBytes?: number;
-  uploadedBy?: string | ExamFileUploader | null;
-  createdAt: string;
-  updatedAt?: string;
-}
 
 // ============================================================================
 // USER MANAGEMENT
@@ -773,14 +796,40 @@ export const forceLogoutUser = async (
 };
 
 /**
- * Permanently remove a user — soft-delete that flips `isDeleted=true`,
- * mangles the email, releases the admission number, and ends sessions.
- * Deleted users no longer appear in `getStudents` / `getStudent`.
+ * Delete a user — which starts a 365-day clock rather than destroying them.
+ *
+ * The account goes inactive and its sessions end immediately, but the record
+ * stays whole: the email, the admission number, the results, all of it. The
+ * row keeps appearing in `getStudents` / `getStaff`, greyed and sorted last,
+ * carrying `isDeleted` and a countdown. `restoreUser` undoes it.
+ *
+ * The admission number is HELD, not released — reserved in the pool so nobody
+ * else can be issued it while the student might still come back. It only
+ * returns to circulation when the record is actually purged.
  */
 export const removeUser = async (
   userId: string
-): Promise<ApiResponse> => {
+): Promise<ApiResponse<{ userId: string } & DeletionState>> => {
   return apiClient.delete(API.SUPER_ADMIN.USERS.REMOVE(userId));
+};
+
+/**
+ * Undo a delete, inside the window.
+ *
+ * Always issues a NEW temporary password — the old credential is treated as
+ * stale, since the account may have sat deleted for months. The password comes
+ * back in the response so the admin can hand it over there and then; it is
+ * also emailed, and recoverable later through the temp-password endpoint.
+ *
+ * Fails with 410 once the window has closed, even if the record is still in
+ * the database because the sweep hasn't reached it.
+ */
+export const restoreUser = async (
+  userId: string
+): Promise<
+  ApiResponse<{ userId: string; email: string; tempPassword: string } & DeletionState>
+> => {
+  return apiClient.post(API.SUPER_ADMIN.USERS.RESTORE(userId));
 };
 
 /**
@@ -816,7 +865,13 @@ export const getStudents = async (params?: {
   limit?: number;
   search?: string;
   className?: string;
-  status?: 'active' | 'inactive';
+  /**
+   * Three states. 'deleted' means inside the 365-day restore window — those
+   * rows are also `isActive: false`, so without a name of their own they'd
+   * hide inside 'inactive' beside students merely suspended for a term.
+   * Omitting the filter returns everything, with deleted rows sorted last.
+   */
+  status?: 'active' | 'inactive' | 'deleted';
 }): Promise<ApiResponse<PaginatedResponse<Student>>> => {
   return apiClient.get(API.SUPER_ADMIN.STUDENTS.GET_ALL, params);
 };
@@ -839,6 +894,30 @@ export const updateStudent = async (
 ): Promise<ApiResponse<Student>> => {
   return apiClient.put(API.SUPER_ADMIN.STUDENTS.UPDATE(studentId), data);
 };
+
+/**
+ * Make a staff member the class teacher of a grade, or clear it.
+ *
+ * `grade: null` clears. `force: true` takes a grade someone else holds —
+ * without it, a held grade returns 409 with `data.conflict` naming the current
+ * holder, which is what the confirmation dialog is built from.
+ *
+ * Deliberately not part of updateStaff: assigning releases the grade from
+ * whoever had it, and that must never ride along on a routine profile save.
+ */
+export const setClassTeacher = async (
+  staffId: string,
+  grade: string | null,
+  force = false
+): Promise<ApiResponse<{ staff: Staff; conflict?: ClassTeacherConflict }>> =>
+  apiClient.put(API.SUPER_ADMIN.STAFF.CLASS_TEACHER(staffId), { grade, force });
+
+/** Returned in `data` alongside a 409 when the grade is already held. */
+export interface ClassTeacherConflict {
+  grade: string;
+  holderId: string;
+  holderName: string;
+}
 
 /**
  * Fetch a student's temporary password (the auto-generated one, viewable only
@@ -867,7 +946,8 @@ export const getAllStaff = async (params?: {
   limit?: number;
   search?: string;
   department?: string;
-  status?: 'active' | 'inactive';
+  /** Same three states as getStudents — see the note there. */
+  status?: 'active' | 'inactive' | 'deleted';
 }): Promise<ApiResponse<PaginatedResponse<Staff>>> => {
   return apiClient.get(API.SUPER_ADMIN.STAFF.GET_ALL, params);
 };
@@ -1465,45 +1545,10 @@ export const getBroadsheet = async (params: {
 // EXAM FOLDERS + FILES
 // ============================================================================
 
-/** List every exam folder with file counts + last-modified timestamps. */
-export const listExamFolders = async (): Promise<
-  ApiResponse<{ folders: ExamFolder[] }>
-> => {
-  return apiClient.get(API.SUPER_ADMIN.EXAMS.FOLDERS);
-};
 
-/** Create a new exam folder (subject). */
-export const createExamFolder = async (
-  subject: string,
-  description?: string
-): Promise<ApiResponse<{ folder: ExamFolder }>> => {
-  return apiClient.post(API.SUPER_ADMIN.EXAMS.FOLDERS, {
-    subject,
-    description,
-  });
-};
 
-/** Rename a folder (and/or update its description). */
-export const updateExamFolder = async (
-  folderId: string,
-  updates: { subject?: string; description?: string }
-): Promise<ApiResponse<{ folder: ExamFolder }>> => {
-  return apiClient.patch(API.SUPER_ADMIN.EXAMS.FOLDER(folderId), updates);
-};
 
-/** Delete a folder and all of its files (cloudinary cleanup happens server-side). */
-export const deleteExamFolder = async (
-  folderId: string
-): Promise<ApiResponse<{ folderId: string; fileCount: number }>> => {
-  return apiClient.delete(API.SUPER_ADMIN.EXAMS.FOLDER(folderId));
-};
 
-/** List the files inside a folder (with populated uploadedBy). */
-export const listExamFiles = async (
-  folderId: string
-): Promise<ApiResponse<{ folder: ExamFolder; files: ExamFile[] }>> => {
-  return apiClient.get(API.SUPER_ADMIN.EXAMS.FILES_IN(folderId));
-};
 
 /**
  * Upload one or more files into a folder.
@@ -1511,31 +1556,8 @@ export const listExamFiles = async (
  * The browser-native File objects are wrapped in a FormData (field name
  * "files"). Cloudinary handles the actual byte stream on the backend.
  */
-export const uploadExamFiles = async (
-  folderId: string,
-  files: File[]
-): Promise<ApiResponse<{ files: ExamFile[] }>> => {
-  const form = new FormData();
-  for (const file of files) {
-    form.append('files', file);
-  }
-  return apiClient.upload(API.SUPER_ADMIN.EXAMS.FILES_IN(folderId), form);
-};
 
-/** Rename a file's display name (Cloudinary asset is unchanged). */
-export const renameExamFile = async (
-  fileId: string,
-  fileName: string
-): Promise<ApiResponse<{ file: ExamFile }>> => {
-  return apiClient.patch(API.SUPER_ADMIN.EXAMS.FILE(fileId), { fileName });
-};
 
-/** Delete a single file (Cloudinary + DB). */
-export const deleteExamFile = async (
-  fileId: string
-): Promise<ApiResponse<{ fileId: string }>> => {
-  return apiClient.delete(API.SUPER_ADMIN.EXAMS.FILE(fileId));
-};
 
 /**
  * Get audit logs
@@ -1563,6 +1585,7 @@ const superAdminService = {
   resetUserPassword,
   forceLogoutUser,
   removeUser,
+  restoreUser,
   deactivateUser,
   reactivateUser,
   
